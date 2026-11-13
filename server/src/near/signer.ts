@@ -4,7 +4,6 @@ import type { ErrorCode } from '../../../shared/api.js';
 import type { KeyPair } from './keys.js';
 import { Rpc, RpcError } from './rpc.js';
 import { signTransaction, type Action } from './tx.js';
-import { b58encode } from './base58.js';
 import { formatPublicKey } from './keys.js';
 
 export interface TxResult {
@@ -165,4 +164,3 @@ export function newSalt(): Uint8Array {
   return s;
 }
 
-export { b58encode };

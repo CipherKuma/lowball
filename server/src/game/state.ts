@@ -63,6 +63,8 @@ export interface SessionState {
   /** lines spoken aloud so far (public to buyers) */
   aloud: { buyer: BuyerId; text: string; day: number }[];
   holds: number;
+  /** holds taken on the current day (capped) */
+  holdsToday: { day: number; n: number };
   confessed: boolean;
   confessor: BuyerId | null;
   leniencyTx: Record<string, string>;
@@ -93,6 +95,7 @@ export function newState(init: {
     pact: null,
     aloud: [],
     holds: 0,
+    holdsToday: { day: 0, n: 0 },
     confessed: false,
     confessor: null,
     leniencyTx: {},

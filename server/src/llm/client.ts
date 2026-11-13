@@ -55,7 +55,7 @@ export class NearAiLlm implements Llm {
   private fetchFn: typeof fetch;
   private timeoutMs: number;
   private sleep: (ms: number) => Promise<void>;
-  private preflight: { signer: PreflightSigner | null; at: number } | null = null;
+  private preflight: { signer: Promise<PreflightSigner | null>; at: number } | null = null;
   private useSchema = true;
   calls = 0;
   private maxCalls: number;
@@ -65,7 +65,7 @@ export class NearAiLlm implements Llm {
     this.model = o.model ?? DEFAULT_MODEL;
     this.base = (o.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
     this.fetchFn = o.fetchFn ?? ((...a) => fetch(...a));
-    this.timeoutMs = o.timeoutMs ?? 45000;
+    this.timeoutMs = o.timeoutMs ?? 25000;
     this.sleep = o.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.maxCalls = o.maxCalls ?? Infinity;
   }
@@ -91,8 +91,14 @@ export class NearAiLlm implements Llm {
   }
 
   /** Gateway signer identity, fetched once before completions (cached 10 minutes). */
-  async getPreflight(): Promise<PreflightSigner | null> {
+  getPreflight(): Promise<PreflightSigner | null> {
     if (this.preflight && Date.now() - this.preflight.at < 600_000) return this.preflight.signer;
+    const signer = this.fetchPreflight(); // share one in-flight request between concurrent buyers
+    this.preflight = { signer, at: Date.now() };
+    return signer;
+  }
+
+  private async fetchPreflight(): Promise<PreflightSigner | null> {
     let signer: PreflightSigner | null = null;
     try {
       const nonce = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, '0')).join('');
@@ -107,7 +113,6 @@ export class NearAiLlm implements Llm {
     } catch (e) {
       debug('nearai', 'preflight failed', String(e));
     }
-    this.preflight = { signer, at: Date.now() };
     return signer;
   }
 

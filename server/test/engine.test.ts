@@ -96,6 +96,37 @@ describe('season flow', () => {
     expect((await getEvents(rig.deps, sessionId, 0)).status.phase).toBe('lot_open');
   });
 
+  it('a commit that fails mid-auction resumes without re-asking the models or double-committing', async () => {
+    const rig = makeRig();
+    const { sessionId } = await start(rig);
+    const real = rig.chain.commitBid.bind(rig.chain);
+    let failed = false;
+    rig.chain.commitBid = async (b, id, h) => {
+      if (b === 'ines' && !failed) {
+        failed = true;
+        return { hash: 'x', ok: false, errorCode: 'TX_FAILED' as const };
+      }
+      return real(b, id, h);
+    };
+    await expect(step(rig.deps, sessionId, 'sell')).rejects.toBeInstanceOf(AppError);
+    expect((await getEvents(rig.deps, sessionId, 0)).status.phase).toBe('lot_open');
+    await step(rig.deps, sessionId, 'sell');
+    const t = types(await all(rig, sessionId));
+    expect(t.filter((x) => x === 'bid_committed')).toHaveLength(5);
+    expect(t).toContain('lot_settled');
+    expect(rig.llm.calls.filter((c) => c.kind === 'bid')).toHaveLength(5); // not asked again
+    expect(rig.chain.log.filter((l) => l.label === 'commit_bid' && l.ok)).toHaveLength(5);
+  });
+
+  it('caps holds per day so the lot cannot be stalled forever', async () => {
+    const rig = makeRig();
+    const { sessionId } = await start(rig);
+    await step(rig.deps, sessionId, 'hold');
+    await step(rig.deps, sessionId, 'hold');
+    await expect(step(rig.deps, sessionId, 'hold')).rejects.toMatchObject({ code: 'BAD_PHASE' });
+    await expect(step(rig.deps, sessionId, 'sell')).resolves.toMatchObject({ ok: true });
+  });
+
   it('returns BUSY while a step holds the session lock', async () => {
     const rig = makeRig();
     const { sessionId } = await start(rig);

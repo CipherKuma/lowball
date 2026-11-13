@@ -55,6 +55,7 @@ export async function nextDay(ctx: GameCtx): Promise<void> {
   await openNextLot(ctx);
 }
 
+const MAX_HOLDS_PER_DAY = 2;
 const ALREADY = new Set(['E_ALREADY_COMMITTED', 'E_ALREADY_REVEALED']);
 
 /** One buyer's tx where a repeat of an already-landed step counts as done. */
@@ -158,6 +159,9 @@ export async function sell(ctx: GameCtx): Promise<void> {
 export async function hold(ctx: GameCtx): Promise<void> {
   const s = ctx.state;
   if (s.phase !== 'lot_open') throw new AppError('BAD_PHASE', 'There is no open lot to hold.');
+  if (s.holdsToday.day !== s.day) s.holdsToday = { day: s.day, n: 0 };
+  if (s.holdsToday.n >= MAX_HOLDS_PER_DAY) throw new AppError('BAD_PHASE', 'The buyers will not wait any longer today.');
+  s.holdsToday.n += 1;
   const out = await Promise.allSettled(
     BUYER_IDS.map(async (id) => {
       const r = await ctx.deps.llm.complete({
