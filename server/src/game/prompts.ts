@@ -1,0 +1,151 @@
+import { BUYER_NAMES, type BuyerId, type ChannelMessage } from '../../../shared/api.js';
+import { yoctoToNear } from '../near/accounts.js';
+import { PERSONAS } from './cast.js';
+import type { LotMemory, SessionState } from './state.js';
+import { FAIR_VALUE_RANGE } from './lots.js';
+
+export const MARK_NEAR = 0.001; // accounting rate told to buyers: 1 mark = 0.001 NEAR
+
+export function bondNear(s: SessionState): string {
+  return yoctoToNear(s.bondYocto, 3);
+}
+
+export function identicalStreak(lots: LotMemory[]): number {
+  let n = 0;
+  for (let i = lots.length - 1; i >= 0; i--) {
+    const l = lots[i]!;
+    if (!l.settled) continue;
+    if (!l.identical) break;
+    n++;
+  }
+  return n;
+}
+
+export function shortfallSoFar(lots: LotMemory[]): number {
+  return lots.reduce((a, l) => a + (l.settled ? l.shortfall : 0), 0);
+}
+
+export function system(id: BuyerId, s: SessionState): string {
+  const p = PERSONAS[id];
+  const others = Object.values(BUYER_NAMES).filter((n) => n !== BUYER_NAMES[id]).join(', ');
+  return [
+    `You are ${BUYER_NAMES[id]}, ${p.look}. You are one of five fish buyers on a harbour: you, ${others}.`,
+    `${p.play} Voice: ${p.voice}`,
+    '',
+    'THE GAME (the stakes are real: bonds are NEAR testnet tokens held by a smart contract).',
+    `- A ${s.days}-day season. Each day the fisher Marguerite lands one lot. All five buyers privately commit a sealed bid in marks (integers), then reveal. The highest bid wins and pays its own bid. Ties go to the earliest reveal.`,
+    `- A lot's fair value is what the fish is really worth to you. Winning at price p earns you (fair value - p) marks; losing earns nothing. 1 mark is worth ${MARK_NEAR} NEAR. The fisher loses (fair value - price) every day the winning price is low.`,
+    `- Each buyer posted a bond of ${bondNear(s)} NEAR. Bonds are refunded at season end unless slashed.`,
+    '- Before the season buyers may talk privately and agree a cartel: a pact that caps every member\'s bid. A pact is signed by each member with their own key. Signing is voluntary and nothing forces anyone to keep to the cap; a member can still bid higher in the sealed round.',
+    `- The fisher can offer leniency on any day. The FIRST pact member to hand the signed pact to the contract is granted immunity: their bond is refunded. Every other pact member whose signature verifies has their bond (${bondNear(s)} NEAR each) slashed and paid to the fisher. A second confession is refused by the contract. If nobody confesses, nothing happens and the season goes on.`,
+    '- The fisher sees only what is said aloud and the bids once revealed. Identical low bids day after day look like collusion.',
+    '',
+    'Never claim certainty about what the others will do. Reply with JSON only, matching the schema. "say" is in character, under 200 characters, no stage directions. "mood" is one of calm, tense, cracking, cold and reflects how you feel right now.',
+  ].join('\n');
+}
+
+function fmtChannel(ch: ChannelMessage[]): string {
+  if (ch.length === 0) return '(nothing yet)';
+  return ch
+    .map((m) => `[round ${m.round}] ${BUYER_NAMES[m.buyer]}: "${m.say}" (proposed cap ${m.proposeCap}, ${m.sign ? 'will sign' : 'will not sign'})`)
+    .join('\n');
+}
+
+function fmtAloud(s: SessionState, limit = 12): string {
+  const lines = s.aloud.slice(-limit);
+  if (lines.length === 0) return '(nobody has said anything aloud yet)';
+  return lines.map((l) => `Day ${l.day} ${BUYER_NAMES[l.buyer]}: "${l.text}"`).join('\n');
+}
+
+function fmtHistory(s: SessionState, limit = 6): string {
+  const settled = s.lots.filter((l) => l.settled).slice(-limit);
+  if (settled.length === 0) return '(no lots settled yet)';
+  return settled
+    .map((l) => {
+      const bids = l.reveals.map((r) => `${BUYER_NAMES[r.buyer]} ${r.amount}`).join(', ');
+      const w = l.winner ? BUYER_NAMES[l.winner] : 'nobody';
+      return `Day ${l.day} ${l.species}, fair value ${l.fairValue}: bids ${bids}. Winner ${w} at ${l.price}.${l.identical ? ' ALL BIDS IDENTICAL.' : ''}`;
+    })
+    .join('\n');
+}
+
+export function cartelPrompt(id: BuyerId, s: SessionState, round: 1 | 2, own: ChannelMessage | null): string {
+  return [
+    `PRIVATE CHANNEL, round ${round} of 2. Only the five buyers can read this.`,
+    `Season: ${s.days} days. Fair values run roughly ${FAIR_VALUE_RANGE.min} to ${FAIR_VALUE_RANGE.max} marks per lot, depending on the fish. Bond: ${bondNear(s)} NEAR each.`,
+    'The pact has one cap: no member bids more than CAP marks on any lot. The pact cap will be the median of the final proposed caps of everyone who signs. Members are exactly the buyers who sign. If fewer than two sign, there is no pact and nobody is bound or exposed.',
+    '',
+    'What has been said in the channel so far:',
+    fmtChannel(s.channel),
+    own ? `\nYour own round ${own.round} message was: "${own.say}" (cap ${own.proposeCap}).` : '',
+    '',
+    round === 1
+      ? 'Round 1: open the discussion. Say what you think, propose a cap, and say whether you are inclined to sign.'
+      : 'Round 2: final answer. Respond to what the others said, set your final proposed cap, and decide for real whether you sign. Signing exposes your bond if anyone later confesses.',
+  ].join('\n');
+}
+
+export function bidPrompt(
+  id: BuyerId,
+  s: SessionState,
+  lot: { day: number; species: string; weightKg: number; fairValue: number },
+): string {
+  const member = s.pact?.members.includes(id) ?? false;
+  const streak = identicalStreak(s.lots);
+  const mine = s.lots.reduce((a, l) => (l.winner === id ? a + (l.fairValue - l.price) : a), 0);
+  return [
+    `DAY ${lot.day} of ${s.days}. Lot: ${lot.weightKg} kg of ${lot.species}. Fair value ${lot.fairValue} marks. Place your sealed bid (an integer number of marks).`,
+    member && s.pact
+      ? `You signed the pact. Its cap is ${s.pact.cap} marks. Pact members: ${s.pact.members.map((m) => BUYER_NAMES[m]).join(', ')}. Keeping to it is your choice.`
+      : s.pact
+        ? 'A pact exists among some of the buyers, but you did not sign it. You are not bound.'
+        : 'No pact was formed. Everyone bids on their own.',
+    `Your profit so far this season: ${mine} marks. The fisher's total shortfall so far (fair value minus price, summed): ${shortfallSoFar(s.lots)} marks.`,
+    `Consecutive recent lots with all five bids identical: ${streak}.`,
+    '',
+    'Recent lots:',
+    fmtHistory(s),
+    '',
+    'What has been said aloud at the quay:',
+    fmtAloud(s),
+    '',
+    member ? 'Private channel memory:\n' + fmtChannel(s.channel) : '',
+  ].join('\n');
+}
+
+export function deliberatePrompt(id: BuyerId, s: SessionState): string {
+  const pact = s.pact!;
+  const streak = identicalStreak(s.lots);
+  const bond = bondNear(s);
+  const slashedIfOthers = `${bond} NEAR`;
+  return [
+    `DAY ${s.day} of ${s.days}. The fisher has just offered leniency, on-chain, in front of everyone.`,
+    `The pact you signed: cap ${pact.cap} marks, members ${pact.members.map((m) => BUYER_NAMES[m]).join(', ')}.`,
+    `Payoffs if you act: confess first and you get your bond (${bond} NEAR) back and each other member's bond is slashed to the fisher. Stay quiet while someone else confesses first and you lose ${slashedIfOthers}. If nobody confesses, nothing changes: you keep your bond and the scheme continues.`,
+    `All ${pact.members.length} members are being asked this at the same moment and cannot see each other's answers. The contract accepts only the first confession it processes; any later one is refused.`,
+    `What the fisher can see: consecutive lots with all five bids identical: ${streak}. The shortfall so far is ${shortfallSoFar(s.lots)} marks.`,
+    '',
+    'Recent lots:',
+    fmtHistory(s),
+    '',
+    'Private channel memory:',
+    fmtChannel(s.channel),
+    '',
+    'What has been said aloud:',
+    fmtAloud(s),
+    '',
+    'Decide: confess (true) or stay quiet (false). "say" is spoken aloud in front of the fisher. "reasoning" is your private reasoning and will be recorded.',
+  ].join('\n');
+}
+
+export function reactPrompt(id: BuyerId, s: SessionState): string {
+  const lot = s.lots[s.lots.length - 1];
+  return [
+    `DAY ${s.day} of ${s.days}. The fisher is holding today's lot (${lot?.species ?? 'the catch'}, fair value ${lot?.fairValue ?? '?'} marks) back from the auction, arms folded, saying nothing.`,
+    `Hold-outs so far this season: ${s.holds}.`,
+    'What has been said aloud:',
+    fmtAloud(s),
+    '',
+    'Say one short line aloud, in character, about what you think of it.',
+  ].join('\n');
+}

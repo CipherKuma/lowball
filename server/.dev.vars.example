@@ -1,0 +1,5 @@
+# copy to .dev.vars (gitignored) and fill from the vault; never commit values
+HOUSE_PRIVATE_KEY=
+BUYER_KEYS_JSON=
+NEARAI_API_KEY=
+ELEVENLABS_API_KEY=

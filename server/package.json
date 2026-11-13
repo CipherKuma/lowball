@@ -1,0 +1,32 @@
+{
+  "name": "lowball-server",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "wrangler dev --local --persist-to .wrangler/state",
+    "db:migrate": "wrangler d1 migrations apply lowball --local --persist-to .wrangler/state",
+    "sync": "tsx scripts/sync-config.ts",
+    "setup-accounts": "tsx scripts/setup-accounts.ts",
+    "e2e": "tsx scripts/e2e.ts",
+    "sim": "tsx sim/run.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "adversarial-real": "tsx sim/adversarial-real.ts",
+    "smoke-sim": "tsx sim/run.ts --smoke-scripted"
+  },
+  "dependencies": {
+    "@noble/curves": "1.9.7",
+    "@noble/hashes": "1.8.0",
+    "hono": "4.9.2",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "4.20250813.0",
+    "@types/node": "^22.20.5",
+    "tsx": "4.20.3",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4",
+    "wrangler": "4.30.0"
+  }
+}

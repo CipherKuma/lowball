@@ -1,0 +1,21 @@
+name = "lowball-server"
+main = "src/index.ts"
+compatibility_date = "2025-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1: `wrangler dev` uses a local sqlite copy. The integrator creates the real database and
+# replaces database_id before deploying (`wrangler d1 create lowball`).
+[[d1_databases]]
+binding = "DB"
+database_name = "lowball"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[vars]
+# Contract and house ids come from src/generated/config.json (npm run sync); set here to override.
+NEARAI_MODEL = "anthropic/claude-haiku-5-5"
+SEASON_DAYS = "6"
+BOND_NEAR = "0.2"
+MIN_TREASURY_NEAR = "1.5"
+MAX_SESSIONS_PER_IP_HOUR = "8"
+ALLOWED_ORIGIN = "*"
