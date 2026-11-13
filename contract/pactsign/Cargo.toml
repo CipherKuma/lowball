@@ -1,0 +1,13 @@
+[package]
+name = "pactsign"
+version = "0.1.0"
+edition = "2021"
+description = "Sign a Lowball pact with an ed25519 secret key (matches the contract's message encoding)"
+
+[dependencies]
+lowball = { path = ".." }
+near-sdk = { version = "~5.27", features = ["non-contract-usage"] }
+ed25519-dalek = "2"
+hex = "0.4"
+base64 = "0.22"
+serde_json = "1"

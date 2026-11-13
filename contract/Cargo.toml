@@ -1,0 +1,30 @@
+[package]
+name = "lowball"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.86"
+description = "Lowball: cartel-leniency game contract (NEAR testnet)"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "~5.27"
+
+[dev-dependencies]
+near-sdk = { version = "~5.27", features = ["unit-testing"] }
+hex = "0.4"
+base64 = "0.22"
+
+[workspace]
+members = [".", "pactsign"]
+exclude = ["it"]
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true
