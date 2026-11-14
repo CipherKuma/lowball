@@ -77,6 +77,7 @@ export function App() {
     current === 'case' ? '/art/bg_casefile.webp' : current === 'title' || current === 'identity' ? '/art/bg_pier_title.webp' : '/art/bg_auction.webp';
   const tense = view.leniencyOpen && !view.slashed && !view.holdout;
   const front = current === 'title' || current === 'tutorial' || current === 'identity';
+  const kindNow = g.meta?.playerKind ?? chosen ?? 'guest';
 
   return (
     <>
@@ -87,7 +88,7 @@ export function App() {
         tense={tense}
       />
       <div className="app">
-        {!front && <TopBar txs={view.txs} player={view.playerAccountId} seasonId={view.seasonId} mode={view.mode} />}
+        {!front && <TopBar txs={view.txs} player={view.playerAccountId} seasonId={view.seasonId} mode={view.mode} playerKind={kindNow} />}
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
@@ -128,6 +129,7 @@ export function App() {
                 error={g.failure?.message ?? null}
                 errorCode={g.failure?.code}
                 onRetry={g.failure?.retry}
+                playerKind={kindNow}
               />
             )}
             {current === 'room' && g.meta && (
@@ -137,6 +139,8 @@ export function App() {
                 pending={g.pending}
                 act={g.act}
                 offerLeniency={g.offerLeniency}
+                leniencyStage={g.leniencyState === 'idle' ? undefined : g.leniencyState}
+                playerKind={kindNow}
                 openCase={() => setScreen('case')}
                 interro={{
                   ask: (buyer, input) => void g.interrogate(buyer, input),

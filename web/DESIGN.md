@@ -12,7 +12,7 @@ folder (case file), rubber stamps (verdicts), brass plaques (primary actions). N
 
 ## Tokens and materials (use these, don't invent)
 - `src/styles/tokens.css`: palette (night/wood, lamp, papers, slate/chalk, stamp inks, harbour), type roles, motion, shadows, textures.
-- `src/styles/materials.css` + `src/styles/objects.css`: `.desk .lamp-pool .paper(--aged|--telegram|--manila|--kraft|--ruled) .pin .tape .tilt
+- `src/styles/materials.css` + `src/styles/objects.css`: `.desk .lamp-pool .paper(--aged|--telegram|--manila|--kraft|--ruled) .pin .tape-strip .tilt
   .sign .stencil .typed .spoken .data .label .plaque(--stamp) .plaque-note .ticket .typed-link .stamp(--verified|--carbon|--on-dark)
   .slate .chalk .envelope .poster .telegram-strip .camera .rec-dot`.
 - `src/components/ui/`: `<MaterialDefs/>` (rendered once by App), `<Stamp/>` (animated slam), `<Envelope/>`, `<Poster/>`.
