@@ -1,0 +1,28 @@
+Executing on-chain with NEAR deposit.
+
+Running wasm:https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/5685f429bc3aa2317c320f2b2c5ac20075195d28281e58b97cb7be5d5e8f44cf.wasm (on-chain, ~0.0020 NEAR)...
+Tx: 49UfA2bnttS1CERtnpnMfPiJCBf36XTwWRyGYg9nXAwG
+{
+  "buyer": "sully",
+  "canary_message": "LOWBALL-TEE-CANARY-v1:sully:run2",
+  "canary_signature_b64": "wKEECaX4jGlbSRIKNT7ZAkmYbMZ4fSAWPraBr7IpUgZ+qqkDIdFrv5BPWFdWK0lgWVxhjlhZwJd+jcRDX8/mBA==",
+  "has_api_key": false,
+  "model": "z-ai/glm-5.3-flash",
+  "model_listed": true,
+  "models_bytes": 65690,
+  "models_http_status": 200,
+  "models_sha256": "a95e1981f3e0ebfed90a4efe57e1fee218acf28f7f2f80469abb8eb898a61f25",
+  "ok": true,
+  "op": "probe",
+  "public_key_b64": "bf/excbXlDoRSKdDTpqYQOPnvhlyfSMmXJfS494bWdE=",
+  "public_key_hex": "6dffdec5c6d7943a1148a7434e9a9840e3e7be19727d23265c97d2e3de1b59d1",
+  "run": {
+    "block_height": "277621199",
+    "call_id": "",
+    "execution_type": "NEAR",
+    "network": "testnet",
+    "request_id": "43042",
+    "tx_hash": "49UfA2bnttS1CERtnpnMfPiJCBf36XTwWRyGYg9nXAwG",
+    "user_account": "outlayer.lowball-house-ck.testnet"
+  }
+}

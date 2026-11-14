@@ -1,0 +1,12 @@
+{
+  "display": {
+    "name": "Lowball buyer (TEE pact signer)"
+  },
+  "operations": ["probe", "decide"],
+  "capabilities": {
+    "network": [{"host": "cloud-api.near.ai", "timeout_secs": 60}]
+  },
+  "signing_keys": [
+    {"path": "pact", "type": "ed25519", "bind": "wasm", "caller": "none"}
+  ]
+}

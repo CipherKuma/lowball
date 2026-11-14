@@ -1,0 +1,30 @@
+[package]
+name = "lowball-buyer"
+version = "0.1.0"
+edition = "2021"
+description = "Lowball buyer agent: a WASI P2 job for OutLayer (Intel TDX) that decides with NEAR AI Cloud and signs with a TEE-derived ed25519 key"
+publish = false
+
+[[bin]]
+name = "lowball-buyer"
+path = "src/main.rs"
+
+[dependencies]
+wit-bindgen = "0.36"
+wasi-http-client = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+hex = "0.4"
+base64 = "0.22"
+
+[features]
+# Spike-only: replaces the NEAR AI Cloud call with a fixed "sign" so the signing path can be tested
+# without an API key. Never deployed for the game.
+mock-model = []
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1

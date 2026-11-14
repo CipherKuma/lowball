@@ -1,0 +1,16 @@
+{
+  "_comment": "Arguments for outlayer.testnet.request_execution (attach the estimate_execution_cost result, ~0.0070001 NEAR for these limits, unused part is refunded; gas 300 Tgas, what the OutLayer CLI sends). input_data is a JSON STRING.",
+  "source": {
+    "WasmUrl": {
+      "url": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/<WASM_SHA256>.wasm",
+      "hash": "<WASM_SHA256>",
+      "build_target": "wasm32-wasip2"
+    }
+  },
+  "resource_limits": {"max_instructions": 1000000000, "max_memory_mb": 128, "max_execution_seconds": 60},
+  "input_data": "{\"op\":\"decide\",\"season_id\":7,\"round\":1,\"buyer_account\":\"sully.lowball-ck.testnet\",\"pact_json\":{\"season_id\":7,\"cap\":40,\"members\":[\"marlow.lowball-ck.testnet\",\"odile.lowball-ck.testnet\",\"sully.lowball-ck.testnet\"],\"nonce\":\"1234567890123456789\"},\"decision_context\":{}}",
+  "secrets_ref": {"profile": "default", "account_id": "outlayer.lowball-house-ck.testnet"},
+  "response_format": "Json",
+  "payer_account_id": null,
+  "params": null
+}

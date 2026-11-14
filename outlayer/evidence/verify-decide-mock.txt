@@ -1,0 +1,119 @@
+▸ Fetching the record for transaction 5QiDtVxeFYhREQkCBRED8qBny2RLRruqJ7UogRC2Gcmu
+  ✓ record found: task 103609
+▸ Recovering the request and response from the chain
+  ✓ both recovered from the transaction
+▸ Fetching Intel collateral for platform b0c06f000000, valid at 2026-11-14T06:52:08Z
+  ✓ published by worker.outlayer.testnet, valid 2026-11-08T00:15:55Z .. 2026-12-08T00:15:19Z
+▸ Reading that collateral from worker.outlayer.testnet on chain, at block 276791207
+  ! could not read it from chain ({"name":"HANDLER_ERROR","cause":{"info":{"block_hash":"7MVCywCfbpp3XiQuwiLsYXAtvNAQ5eKXtRzuyctVxWLe","block_height":276791207},"name":"GARBAGE_COLLECTED_BLOCK"},"code":-32000,"message":"Server error",) — falling back to the API's copy
+▸ Asking worker.outlayer.testnet whether these measurements are approved
+  ✓ the chain recognises this build
+
+── Record as published ─────────────────────────────────────────────────────────────────────────
+  task id                103609
+  task type              execute
+  executed at            2026-11-14T06:52:08Z (1794639128)
+  format                 V1 — commits to caller, project, secrets, timestamp and payment
+  network                testnet
+  transaction            5QiDtVxeFYhREQkCBRED8qBny2RLRruqJ7UogRC2Gcmu
+  block height           277622390
+  caller                 outlayer.lowball-house-ck.testnet
+  build target           wasm32-wasip2
+  wasm sha256            737dfa801454f3ba94631b98333e49ee9e9eb88bf05655683072139263d54a40
+  input sha256           01c3a889ceeeb0ad848881df75ddd2217070394d19d0bc1eb54673d06852c419
+  output sha256          68ca62d11ba5fd8cf5c21089f5a67895b2ba9f88837eee7237fe22a3ea97bfca
+  attached payment       0
+
+── Inside the signed quote ─────────────────────────────────────────────────────────────────────
+  read from the quote AFTER Intel's signature was checked, not from the record
+  size                   5006 bytes
+  platform (FMSPC)       b0c06f000000 — taken from the signed PCK certificate
+  MRTD                   7fe60787222bd394cb516abca2435f22f035ab2cc9c0a4b4b3b148e46297f3d931a237b72f359052c6e657d8c1409173
+  RTMR0                  573aadb4d478839c803c4b1d3e03dd748976b63a89622f377e32a54dd60546e88ec2097f595ceafc324f48a0d0d31db6
+  RTMR1                  e7b3ffa0e72b50557d85f7ecd8dc98a4ffc3dd6f82d01f122ef522d61361abeac310d70d2877e56be9c9408d9bcc320c
+  RTMR2                  764489f277a8540189761e72b4238ba36d4d647e11bd958d8ab5522af2a4867b0ff63e06b0c4967f1857236244040a5d
+  RTMR3                  d85416a5a567dd0313fd66c309f736ec608d1e0e0c246d069517a616bd3d01d6a6bef8f2f6467d239ce3754de16f99b6
+  report_data[..32]      54466695057a2475b2232889cdea0d2b3979f44ac5c92c65f8ad3948360d9336
+  report_data[32..]      0000000000000000000000000000000000000000000000000000000000000000 (zero,
+                         as the format requires)
+
+── Intel collateral used ───────────────────────────────────────────────────────────────────────
+  Intel-signed TCB data; altering it breaks the chain, so its source cannot change the verdict
+  published by           worker.outlayer.testnet
+  at block               276791207
+  sha256                 2e80992e78a9e76e5726db22b7399c553439574e6fe512a3b311ae4c3d559140
+  valid from             2026-11-08T00:15:55Z
+  valid until            2026-12-08T00:15:19Z
+  covers execution       yes — this execution falls inside the validity window
+  bytes read from        the API's archive — the chain copy could not be read, see the log
+                         above
+  archived via           sync
+
+── Checks ──────────────────────────────────────────────────────────────────────────────────────
+
+  [ PASS     ] Authenticity  is this a genuine Intel TDX quote?
+                         Intel signature chain valid, TCB UpToDate
+    Intel TCB status     UpToDate
+    trust anchor         sha256 44a0196b2b99f889b8e149e95b807a350e7424964399e885a7cbb8ccfab674d3
+                         — CN=Intel SGX Root CA, compiled in
+    Intel checks         ✓ TCB Info document signed by Intel
+                         ✓ QE Identity document signed by Intel
+                         ✓ PCK certificate chains to the Intel root
+                         ✓ QE report signed by that PCK certificate
+                         ✓ QE report hash covers the attestation key
+                         ✓ QE report satisfies the QE Identity policy
+                         ✓ enclave report signed by the attestation key
+                         ✓ platform TCB (CPU_SVN, PCE_SVN, FMSPC) matches TCB Info
+
+  [ PASS     ] Identity  is this code approved on chain?
+                         measurements approved on worker.outlayer.testnet
+
+  [ PASS     ] Binding  does the quote cover this execution?
+                         report_data commits to exactly these task fields
+    fields hash to       54466695057a2475b2232889cdea0d2b3979f44ac5c92c65f8ad3948360d9336
+    quote commits to     54466695057a2475b2232889cdea0d2b3979f44ac5c92c65f8ad3948360d9336 —
+                         identical
+
+  [ PASS     ] Input  do the request bytes match what was attested?
+                         recovered from the transaction
+    content              {"buyer_account":"sully.lowball-ck.testnet","decision_context":{"note":"spike
+                         mock"},"op":"decide","pact_json":{"cap":40,"members":["marlow.lowball-ck.testnet","odile.lowball-ck.testnet","sully.lowball-ck.testnet"],"nonce":"1234567890123456789","season_id":7},"round":1,"season_id":7}
+    hashes to            01c3a889ceeeb0ad848881df75ddd2217070394d19d0bc1eb54673d06852c419
+    attested             01c3a889ceeeb0ad848881df75ddd2217070394d19d0bc1eb54673d06852c419
+                         the attested value is itself inside the signed quote — it is part of
+                         the commitment checked by Binding above, so matching it means matching
+                         what the TEE signed
+
+  [ PASS     ] Output  do the response bytes match what was attested?
+                         recovered from the transaction
+    content              {"buyer":"sully","buyer_account":"sully.lowball-ck.testnet","completion_id":"mock-completion","context_sha256":"c5f0528a1e6d87f154cf4ddf6ac20f2346ad200d100857dd83276b6128791956","decision":"sign","model":"z-ai/glm-5.3-flash","ok":true,"op":"decide","pact_message_sha256":"dd89b6e968c1cd0be990df7533936508488ee55dd0434b1b9e5c9e4dc57d3e59","public_key_b64":"6Tg+hZiz2n/h2t7XzMUWXJ8yKsUZJV/qlVPZE3jHonU=","public_key_hex":"e9383e8598b3da7fe1daded7ccc5165c9f322ac519255fea9553d91378c7a275","reason":"mock
+                         model (spike
+                         build)","receipt":{"message":"LOWBALL-DECISION-v1:sully|7|1|sign|c5f0528a1e6d87f154cf4
+                         … 578 more characters, full text in --bundle
+    hashes to            68ca62d11ba5fd8cf5c21089f5a67895b2ba9f88837eee7237fe22a3ea97bfca
+    attested             68ca62d11ba5fd8cf5c21089f5a67895b2ba9f88837eee7237fe22a3ea97bfca
+                         the attested value is itself inside the signed quote — it is part of
+                         the commitment checked by Binding above, so matching it means matching
+                         what the TEE signed
+
+  PROVEN  every check passed: this input produced this output, inside genuine
+          Intel TDX hardware, running code approved on chain.
+
+  In values you can quote and re-check:
+    execution            task 103609 (execute) on testnet, 2026-11-14T06:52:08Z
+    commitment           54466695057a2475b2232889cdea0d2b3979f44ac5c92c65f8ad3948360d9336 —
+                         SHA-256 of the task fields, and the same 32 bytes found in report_data
+                         inside the Intel-signed quote
+    enclave              RTMR3
+                         d85416a5a567dd0313fd66c309f736ec608d1e0e0c246d069517a616bd3d01d6a6bef8f2f6467d239ce3754de16f99b6
+                         — listed as approved by worker.outlayer.testnet
+    collateral           sha256
+                         2e80992e78a9e76e5726db22b7399c553439574e6fe512a3b311ae4c3d559140, Intel
+                         TCB UpToDate
+    input → output       01c3a889ceeeb0ad848881df75ddd2217070394d19d0bc1eb54673d06852c419 →
+                         68ca62d11ba5fd8cf5c21089f5a67895b2ba9f88837eee7237fe22a3ea97bfca
+    reproduce            outlayer-verify tx 5QiDtVxeFYhREQkCBRED8qBny2RLRruqJ7UogRC2Gcmu
+                         --network testnet
+
+  Evidence bundle written to ../bundle-decide-mock.json
+  Re-check it with no network at all: outlayer-verify bundle ../bundle-decide-mock.json --offline
