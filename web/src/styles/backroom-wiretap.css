@@ -1,0 +1,102 @@
+/* The wiretap: a reel-to-reel deck with a burned-in readout (Cuchillo-style OSD). Lives in the case file. */
+.tape {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  padding: 16px;
+  color: var(--text);
+  background:
+    var(--noise),
+    linear-gradient(180deg, #23292a, #141819);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 0 3px #3a3226, 0 0 0 4px rgba(0, 0, 0, 0.6), var(--shadow-lift);
+}
+.tape-deck { display: grid; gap: 12px; }
+.tape-reels { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tape-path {
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 10%;
+  height: 2px;
+  background: #4a3524;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.reel { width: min(44%, 150px); height: auto; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.6)); }
+.reel-tape { fill: #3d2a1b; stroke: #22170e; stroke-width: 1; transition: r 400ms linear; }
+.reel-flange { fill: rgba(176, 182, 178, 0.32); stroke: rgba(225, 230, 226, 0.55); stroke-width: 1.5; }
+.reel-cut { fill: rgba(5, 7, 8, 0.5); stroke: rgba(225, 230, 226, 0.4); stroke-width: 1; }
+.reel-rim { fill: none; stroke: rgba(225, 230, 226, 0.22); stroke-width: 1; }
+.reel-hub { fill: #c9cdc8; stroke: #6b706c; }
+.reel-pin { fill: #23292a; }
+.reel-spin { transform-origin: 50px 50px; animation: reel 2.2s linear infinite; animation-play-state: paused; }
+.tape[data-state='playing'] .reel-spin { animation-play-state: running; }
+.tape[data-state='loading'] .reel-spin { animation-play-state: running; animation-duration: 6s; }
+@keyframes reel { to { transform: rotate(-360deg); } }
+
+.tape-panel { display: flex; align-items: stretch; gap: 10px; }
+.tape-osd {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #9fe0b0;
+  text-shadow: 0 0 6px rgba(120, 220, 150, 0.45);
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px), #061009;
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.tape-mode { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.tape-time { white-space: nowrap; }
+.tape-time small { font-size: 12px; opacity: 0.6; }
+.tape[data-state='error'] .tape-osd { color: #ff9a86; text-shadow: 0 0 6px rgba(255, 120, 100, 0.45); }
+.tape[data-state='empty'] .tape-osd { color: rgba(159, 224, 176, 0.45); text-shadow: none; }
+
+/* the deck's piano key */
+.tape-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 112px;
+  min-height: 48px;
+  padding: 0 16px;
+  font-family: var(--font-sign);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1c1106;
+  background: linear-gradient(180deg, var(--lamp-hot), var(--lamp) 46%, var(--lamp-deep));
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 210, 0.75), inset 0 -3px 0 rgba(90, 50, 10, 0.5), 0 0 0 1px rgba(60, 35, 8, 0.7), 0 4px 0 #3a2410, 0 8px 14px rgba(0, 0, 0, 0.5);
+  transition: transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
+}
+.tape-key:hover:not(:disabled) { filter: brightness(1.07); }
+.tape-key:active:not(:disabled),
+.tape[data-state='playing'] .tape-key {
+  transform: translateY(3px);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 210, 0.6), inset 0 -2px 0 rgba(90, 50, 10, 0.5), 0 0 0 1px rgba(60, 35, 8, 0.7), 0 1px 0 #3a2410, 0 3px 6px rgba(0, 0, 0, 0.5);
+}
+.tape-key:disabled { cursor: not-allowed; color: rgba(239, 231, 212, 0.5); background: linear-gradient(180deg, #3b3226, #2a231a); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.6); }
+.tape-key:focus-visible { outline: 2px solid var(--lamp-hot); outline-offset: 4px; }
+
+.tape-label p { margin: 0; }
+.tape-label .sign { font-size: clamp(28px, 3vw, 40px); color: var(--paper); }
+.tape-label .typed { margin-top: 8px; font-size: 15px; line-height: 1.45; color: var(--text); }
+.tape-label .plaque-note { margin-top: 10px; }
+
+@media (max-width: 700px) {
+  .tape { grid-template-columns: 1fr; }
+  .tape-panel { flex-direction: column; }
+  .tape-key { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reel-spin { animation: none; }
+}

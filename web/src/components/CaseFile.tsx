@@ -1,16 +1,26 @@
-import { motion } from 'motion/react';
-import { useEffect, useState } from 'react';
-import type { BuyerId, CasefileResponse, ForgeResponse } from '../../../shared/api';
-import { ForgeryDrill } from './ForgeryDrill';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import type { CasefileResponse, ForgeResponse } from '../../../shared/api';
 import { BUYER_NAMES } from '../../../shared/api';
 import { audio } from '../lib/audio';
 import type { View } from '../lib/state';
-import { accountUrl, txUrl } from '../lib/wallet';
-import { recheckPact, type SigResult } from '../lib/sigcheck';
+import { yoctoToNear } from '../lib/wallet';
+import { Chain } from './casefile/Chain';
+import { Pact } from './casefile/Pact';
+import { Transcripts } from './casefile/Transcripts';
+import { ForgeryDrill } from './ForgeryDrill';
+import { Stamp } from './ui/Stamp';
 import { Wiretap } from './Wiretap';
+import '../styles/casefile-docs.css';
 
-type Tab = 'pact' | 'room' | 'chain' | 'cheat';
-const ease = [0.23, 1, 0.32, 1] as const;
+type Tab = 'pact' | 'chain' | 'room' | 'cheat';
+const TABS: ReadonlyArray<readonly [Tab, string]> = [
+  ['pact', 'The pact'],
+  ['chain', 'On-chain record'],
+  ['room', 'The back room'],
+  ['cheat', 'Try to cheat'],
+];
+const drop = [0.2, 0.9, 0.25, 1.15] as const;
 
 export function CaseFile({
   load,
@@ -25,156 +35,135 @@ export function CaseFile({
   forge: () => Promise<ForgeResponse>;
   onReplay: () => void;
 }) {
+  const still = useReducedMotion();
   const [data, setData] = useState<CasefileResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('pact');
+  const tabRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({});
 
   useEffect(() => {
     audio.sfx('folder_open', 0.7);
     load().then(setData, (e: Error) => setErr(e.message));
   }, [load]);
 
+  const pick = (t: Tab) => {
+    if (t === tab) return;
+    audio.sfx('paper_slide', 0.4);
+    setTab(t);
+    tabRefs.current[t]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  };
+  const onTabKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const i = TABS.findIndex(([k]) => k === tab);
+    const next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : null;
+    if (next === null) return;
+    e.preventDefault();
+    const k = TABS[(next + TABS.length) % TABS.length][0];
+    pick(k);
+    tabRefs.current[k]?.focus();
+  };
+
   const verified = data?.receipts.filter((r) => r.verification.verified).length ?? 0;
   const confessor = view.slashed?.confessor;
+  const slashedCount = view.slashed?.slashed.length ?? 0;
 
   return (
-    <main className="casefile">
-      <motion.div className="folder" initial={{ y: 40, opacity: 0, rotate: -1.2 }} animate={{ y: 0, opacity: 1, rotate: -0.4 }} transition={{ duration: 0.7, ease }}>
-        <div className="folder-tab display">Case file · Season #{data?.seasonId ?? view.seasonId ?? '—'}</div>
-        <header className="folder-head">
-          <div>
-            <p className="folder-kicker">The harbour vs. the Pier Nine ring</p>
-            <h2 className="display">{confessor ? `${BUYER_NAMES[confessor]} talked.` : 'Nobody talked.'}</h2>
+    <main className="cf">
+      <div className="lamp-pool" style={{ ['--ly' as string]: '12%' }} aria-hidden />
+      <motion.div
+        className="cf-folder"
+        data-tour="casefile"
+        initial={still ? false : { y: 36, opacity: 0, rotate: -1.6 }}
+        animate={{ y: 0, opacity: 1, rotate: -0.3 }}
+        transition={{ duration: 0.6, ease: drop }}
+      >
+        <p className="cf-tab stencil">Case file · Season #{data?.seasonId ?? view.seasonId ?? '—'}</p>
+        <div className="cf-cover paper paper--manila">
+          <header className="cf-head">
+            <div className="cf-verdict">
+              <p className="cf-kicker typed">The harbour vs. the Pier Nine ring</p>
+              <h2 className="cf-title sign">{confessor ? `${BUYER_NAMES[confessor]} talked.` : 'Nobody talked.'}</h2>
+              <span className="cf-verdict-stamp">
+                {confessor ? (
+                  <Stamp angle={-8} delay={0.5} className="stamp-rot">Confessed</Stamp>
+                ) : (
+                  <Stamp angle={-8} delay={0.5} tone="carbon" className="stamp-rot">Case closed</Stamp>
+                )}
+              </span>
+            </div>
+            <dl className="cf-facts">
+              <div>
+                <dt className="label">Taken from you</dt>
+                <dd><span className="sign">{view.shortfallTotal}</span> <span className="typed">marks</span></dd>
+              </div>
+              <div>
+                <dt className="label">Paid to you</dt>
+                <dd>
+                  <span className="sign">{view.slashed ? yoctoToNear(view.slashed.payoutYocto, 2) : '0'}</span> <span className="typed">Ⓝ</span>
+                </dd>
+                <dd className="cf-fact-note typed">
+                  {view.slashed ? `from ${slashedCount} slashed bond${slashedCount === 1 ? '' : 's'}` : 'no bonds were slashed'}
+                </dd>
+              </div>
+              <div>
+                <dt className="label">AI receipts verified</dt>
+                <dd><span className="sign">{data ? `${verified}/${data.receipts.length}` : '…'}</span></dd>
+                <dd className="cf-fact-note data">{data?.model ?? ''}</dd>
+              </div>
+            </dl>
+          </header>
+
+          <div className="cf-tabs" role="tablist" aria-label="Case file sections" onKeyDown={onTabKey}>
+            {TABS.map(([k, label]) => (
+              <button
+                key={k}
+                ref={(n) => {
+                  tabRefs.current[k] = n;
+                }}
+                id={`cf-tab-${k}`}
+                role="tab"
+                className="cf-tabbtn"
+                aria-selected={tab === k}
+                aria-controls={`cf-panel-${k}`}
+                tabIndex={tab === k ? 0 : -1}
+                onClick={() => pick(k)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <dl className="folder-facts mono">
-            <div><dt>Taken from you</dt><dd>{view.shortfallTotal} marks</dd></div>
-            <div><dt>Model receipts verified</dt><dd>{data ? `${verified}/${data.receipts.length}` : '…'}</dd></div>
-            <div><dt>Model</dt><dd>{data?.model ?? '…'}</dd></div>
-          </dl>
-        </header>
-        <nav className="folder-tabs" role="tablist">
-          {(
-            [
-              ['pact', 'The pact'],
-              ['room', 'The back room'],
-              ['chain', 'On-chain record'],
-              ['cheat', 'Try to cheat'],
-            ] as const
-          ).map(([k, label]) => (
-            <button key={k} role="tab" aria-selected={tab === k} onClick={() => { audio.sfx('paper_slide', 0.4); setTab(k); }}>
-              {label}
-            </button>
-          ))}
-        </nav>
-        <section className="folder-body">
-          {err && <p className="setup-error">The case file would not open: {err}</p>}
-          {!data && !err && <p className="folder-loading">Pulling the file…</p>}
-          {data && tab === 'pact' && <Pact data={data} confessor={confessor} />}
-          {data && tab === 'room' && (
-            <>
-              <Wiretap url={wiretapUrl} />
-              <BackRoom data={data} />
-            </>
-          )}
-          {data && tab === 'chain' && <Chain data={data} view={view} />}
-          {tab === 'cheat' && <ForgeryDrill run={forge} />}
-        </section>
-        <footer className="folder-foot">
-          <button className="btn btn-amber" onClick={onReplay}>Play another season</button>
+
+          <section className="cf-body" role="tabpanel" id={`cf-panel-${tab}`} aria-labelledby={`cf-tab-${tab}`}>
+            {err && <p className="cf-error typed" role="alert">The case file would not open: {err}</p>}
+            {!data && !err && tab !== 'cheat' && <p className="cf-loading typed">Pulling the file…</p>}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={tab + (data ? '1' : '0')}
+                initial={still ? false : { opacity: 0, y: -10, rotate: -0.6 }}
+                animate={{ opacity: 1, y: 0, rotate: 0 }}
+                exit={still ? undefined : { opacity: 0, y: 6, transition: { duration: 0.12 } }}
+                transition={{ duration: 0.36, ease: drop }}
+              >
+                {data && tab === 'pact' && <Pact data={data} confessor={confessor} />}
+                {data && tab === 'chain' && <Chain data={data} view={view} />}
+                {data && tab === 'room' && (
+                  <div className="cf-room">
+                    <Wiretap url={wiretapUrl} />
+                    <Transcripts data={data} view={view} />
+                  </div>
+                )}
+                {tab === 'cheat' && <ForgeryDrill run={forge} />}
+              </motion.div>
+            </AnimatePresence>
+          </section>
+        </div>
+
+        <footer className="cf-foot">
+          <button className="plaque" onClick={onReplay}>
+            Play another season
+          </button>
+          <span className="plaque-note">A fresh pact, the same five buyers, new money on the line.</span>
         </footer>
       </motion.div>
     </main>
-  );
-}
-
-function Pact({ data, confessor }: { data: CasefileResponse; confessor?: BuyerId }) {
-  const [check, setCheck] = useState<'idle' | 'running' | SigResult[]>('idle');
-  if (!data.pact) return <p>No pact was ever signed: fewer than two buyers agreed. The low bids were their own.</p>;
-  const p = data.pact;
-  const results = Array.isArray(check) ? new Map(check.map((r) => [r.signer, r])) : null;
-  const runCheck = async () => {
-    setCheck('running');
-    setCheck(await recheckPact(data.contractId, p.messageHex, p.signatures));
-  };
-  return (
-    <div className="pact-doc">
-      <p className="pact-title display">Agreement of the Pier Nine buyers</p>
-      <p className="pact-body">
-        We, the undersigned, will bid no more than <strong className="mono">{p.cap} marks</strong> on any lot in season{' '}
-        <span className="mono">#{p.seasonId}</span>. Nonce <span className="mono">{p.nonce}</span>.
-      </p>
-      <ul className="sigs">
-        {p.signatures.map((s) => (
-          <li key={s.buyer} data-confessor={s.buyer === confessor || undefined}>
-            <span className="sig-name display">{BUYER_NAMES[s.buyer]}</span>
-            <code className="mono">{s.signatureB64.slice(0, 22)}…</code>
-            <span className="sig-ok" data-fail={results?.get(s.signer)?.ok === false || undefined}>
-              {results?.get(s.signer)
-                ? results.get(s.signer)!.ok
-                  ? 'ed25519 ✓ re-checked in your browser'
-                  : `✗ ${results.get(s.signer)!.note ?? 'failed'}`
-                : 'ed25519 ✓ checked on-chain'}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <div className="recheck">
-        <button className="btn btn-ghost" onClick={() => void runCheck()} disabled={check === 'running'}>
-          {check === 'running' ? 'Checking…' : 'Re-check every signature in your browser'}
-        </button>
-        <span>Fetches each buyer's key from the contract and verifies the exact signed bytes locally. No trust in us required.</span>
-      </div>
-      <details className="pact-bytes">
-        <summary>Exact signed bytes</summary>
-        <code className="mono">LOWBALL-PACT-v1: ‖ borsh(pact) = {p.messageHex}</code>
-      </details>
-    </div>
-  );
-}
-
-function BackRoom({ data }: { data: CasefileResponse }) {
-  const byChat = new Map(data.receipts.map((r) => [r.chatId, r]));
-  return (
-    <ol className="transcript">
-      {data.channel.map((m, i) => {
-        const r = byChat.get(m.chatId);
-        return (
-          <motion.li key={m.chatId + i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05, duration: 0.3 }}>
-            <img src={`/art/${m.buyer}_calm.webp`} alt="" />
-            <div>
-              <p className="t-who">
-                {BUYER_NAMES[m.buyer]} <span className="mono">round {m.round} · cap {m.proposeCap} · {m.sign ? 'signs' : 'refuses'}</span>
-              </p>
-              <p className="t-say">“{m.say}”</p>
-              {r && (
-                <p className="t-receipt mono" data-ok={r.verification.verified || undefined}>
-                  {r.verification.verified ? 'NEAR AI receipt verified' : `receipt not verified${r.verification.error ? `: ${r.verification.error}` : ''}`} · {m.chatId.slice(0, 18)}…
-                </p>
-              )}
-            </div>
-          </motion.li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function Chain({ data, view }: { data: CasefileResponse; view: View }) {
-  const txs = data.txs.length ? data.txs.map((t) => ({ label: t.label, hash: t.hash, ok: t.ok, code: t.errorCode })) : view.txs.map((t) => ({ label: t.label, hash: t.tx, ok: true, code: undefined }));
-  return (
-    <div>
-      <p className="chain-head">
-        Contract <a className="mono" href={accountUrl(data.contractId)} target="_blank" rel="noreferrer">{data.contractId} ↗</a> · You{' '}
-        <a className="mono" href={accountUrl(data.playerAccountId)} target="_blank" rel="noreferrer">{data.playerAccountId.split('.')[0]} ↗</a>
-      </p>
-      <ol className="chain-list">
-        {txs.map((t, i) => (
-          <li key={t.hash + i} data-fail={!t.ok || undefined}>
-            <span>{t.label}{t.code ? ` · ${t.code}` : ''}</span>
-            <a className="mono" href={txUrl(t.hash)} target="_blank" rel="noreferrer">{t.hash.slice(0, 8)}… ↗</a>
-          </li>
-        ))}
-      </ol>
-    </div>
   );
 }

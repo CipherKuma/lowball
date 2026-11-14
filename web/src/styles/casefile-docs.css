@@ -1,0 +1,121 @@
+/* Documents inside the case file: the pact, the receipt roll, transcripts, the forgery exhibits. */
+.stamp-rot { rotate: var(--angle, -7deg); }
+
+.cf-doc { padding: clamp(18px, 2.6vw, 30px) clamp(16px, 3vw, 34px); }
+.cf-doc + .cf-doc { margin-top: 18px; }
+.cf-doc-hd { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.cf-doc-title { margin: 0; font-size: clamp(24px, 2.6vw, 32px); color: var(--paper-ink); }
+.cf-doc-ref { margin: 0; font-size: 13px; color: var(--paper-ink-2); }
+.cf-doc-body { margin: 12px 0 0; font-size: 16px; line-height: 1.6; max-width: 62ch; }
+.cf-doc-body strong { font-weight: 700; }
+
+/* ---------- the pact ---------- */
+.cf-sigs {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px 30px;
+}
+.cf-sig { display: grid; gap: 4px; min-width: 0; }
+.cf-sig-hand { font-size: 30px; font-style: italic; line-height: 1.1; color: #1d2a44; rotate: -2deg; transform-origin: 0 100%; padding-left: 6px; }
+.cf-sig-line { height: 1px; background: var(--paper-ink); opacity: 0.6; }
+.cf-sig-meta { display: grid; font-size: 12px; line-height: 1.5; color: var(--paper-ink-2); overflow-wrap: anywhere; }
+.cf-sig-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 40px; }
+.cf-sig-status .stamp { font-size: 18px; border-width: 3px; }
+.cf-sig-why { font-size: 13px; color: var(--paper-ink-2); }
+.cf-sig-talked { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--stamp); border-bottom: 2px solid currentColor; }
+.cf-recheck { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 24px; padding-top: 18px; border-top: 1px dashed rgba(31, 23, 14, 0.35); }
+.cf-recheck .ticket { background-color: var(--telegram); }
+.cf-recheck-note { flex: 1 1 260px; margin: 0; font-size: 14px; line-height: 1.5; color: var(--paper-ink-2); }
+.cf-bytes { margin-top: 16px; }
+.cf-bytes summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 14px; color: var(--carbon); }
+.cf-bytes code { display: block; padding: 10px 12px; font-size: 12px; line-height: 1.5; word-break: break-all; background: rgba(31, 23, 14, 0.07); }
+
+/* ---------- the receipt roll ---------- */
+.cf-roll { position: relative; max-width: 760px; margin: 0 auto 12px; padding: 22px clamp(14px, 3vw, 30px) 18px; }
+.cf-roll::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 10px;
+  background: linear-gradient(-45deg, transparent 7px, var(--telegram) 0) 0 0 / 14px 10px repeat-x, linear-gradient(45deg, transparent 7px, var(--telegram) 0) 0 0 / 14px 10px repeat-x;
+}
+.cf-roll-hd { text-align: center; padding-bottom: 12px; border-bottom: 2px dashed rgba(31, 23, 14, 0.4); }
+.cf-roll-hd p { margin: 0; }
+.cf-roll-hd .sign { font-size: 28px; }
+.cf-roll-hd .typed { margin-top: 4px; font-size: 14px; color: var(--paper-ink-2); }
+.cf-roll-who { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 20px; margin: 14px 0; }
+.cf-roll-who dt { font-size: 11px; }
+.cf-roll-who dd { margin: 2px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+.cf-txs { list-style: none; margin: 0; padding: 12px 0 0; border-top: 1px dashed rgba(31, 23, 14, 0.4); }
+.cf-txs li { display: grid; grid-template-columns: 3ch minmax(0, auto) minmax(16px, 1fr) auto; align-items: baseline; gap: 8px; padding: 7px 0; font-size: 15px; }
+.cf-tx-n { color: var(--paper-ink-2); font-size: 13px; }
+.cf-tx-label { min-width: 0; }
+.cf-tx-dots { border-bottom: 2px dotted rgba(31, 23, 14, 0.4); transform: translateY(-4px); }
+.cf-tx-hash { font-size: 14px; white-space: nowrap; min-height: 32px; display: inline-flex; align-items: center; }
+.cf-txs li[data-fail] .cf-tx-label { color: var(--stamp); }
+.cf-tx-code { font-size: 13px; }
+.cf-roll-end { margin: 14px 0 0; text-align: center; font-size: 13px; color: var(--paper-ink-2); }
+.cf-empty { margin: 16px 0; font-size: 15px; text-align: center; }
+
+/* ---------- transcripts ---------- */
+.cf-room { display: grid; gap: 22px; }
+.cf-tlist { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 18px; }
+.cf-t { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; padding-bottom: 16px; border-bottom: 1px dashed rgba(31, 23, 14, 0.3); }
+.cf-t:last-child { border-bottom: 0; padding-bottom: 0; }
+.cf-t img { width: 64px; height: 80px; object-fit: cover; object-position: 50% 20%; border: 4px solid #f4ecd6; box-shadow: var(--shadow-paper); filter: grayscale(0.5) sepia(0.45) contrast(1.1); rotate: -2deg; }
+.cf-t p { margin: 0; }
+.cf-t-who { font-size: 21px; color: var(--paper-ink); }
+.cf-t-who .data { margin-left: 6px; font-size: 12px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--paper-ink-2); }
+.cf-t-q { margin-top: 6px !important; font-size: 14px; color: var(--paper-ink-2); }
+.cf-t-say { margin-top: 6px !important; font-size: 20px; line-height: 1.35; font-style: italic; }
+.cf-t .cf-t-stamp { margin-top: 10px; font-size: 13px; }
+.cf-t-unverified { margin-top: 8px !important; font-size: 12px; color: var(--paper-ink-2); overflow-wrap: anywhere; }
+
+/* ---------- try to cheat ---------- */
+.cf-drill-hd p { margin: 0; }
+.cf-drill-hd .ui { margin-top: 8px; max-width: 74ch; font-size: 15px; line-height: 1.5; color: var(--paper-ink); }
+.cf-forgeries { list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.cf-forgery { display: flex; flex-direction: column; gap: 8px; padding: 18px 18px 16px; outline: 1px dashed rgba(163, 49, 42, 0.45); outline-offset: -8px; }
+.cf-forgery:nth-child(1) { rotate: -0.8deg; }
+.cf-forgery:nth-child(2) { rotate: 0.6deg; }
+.cf-forgery:nth-child(3) { rotate: -0.3deg; }
+.cf-forgery p { margin: 0; }
+.cf-forgery-no { font-size: 12px; letter-spacing: 0.1em; color: var(--stamp); }
+.cf-forgery-title { font-size: 23px; }
+.cf-forgery-how { font-size: 14px; line-height: 1.5; color: var(--paper-ink-2); }
+.cf-forgery-meta { font-size: 12px; color: var(--paper-ink-2); overflow-wrap: anywhere; }
+.cf-forgery-meta a { white-space: nowrap; }
+.cf-forgery-sending { font-size: 13px; color: var(--carbon); }
+.cf-forgery-verdict { margin-top: auto; padding-top: 10px; min-height: 92px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.cf-forgery .cf-refused { font-size: clamp(34px, 3.6vw, 46px); color: var(--stamp-hot); border-width: 5px; padding: 4px 16px 2px; }
+.cf-forgery[data-breach] .cf-refused { color: #ff5a45; }
+.cf-forgery-code { font-size: 14px; font-weight: 700; color: var(--stamp); }
+.cf-forgery[data-breach] { color: var(--paper); background: #3a0d0a; outline: 3px solid var(--stamp-hot); }
+.cf-forgery[data-breach] :is(.cf-forgery-how, .cf-forgery-meta, .cf-forgery-no, .cf-forgery-code) { color: #ffcfc4; }
+.cf-forgery[data-breach] .cf-forgery-title { color: var(--paper); }
+.cf-drill-go { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 22px; }
+.cf-drill-go .ticket { background-color: var(--telegram); }
+.cf-drill-go .plaque-note { margin: 0; color: var(--paper-ink-2); }
+.cf-drill-sum { margin: 22px 0 0; font-size: clamp(24px, 2.8vw, 32px); color: var(--verified); }
+.cf-drill-sum[data-breach] { color: var(--stamp-hot); }
+.cf-dots { display: inline-block; width: 3ch; overflow: hidden; vertical-align: bottom; animation: cf-dots 1.4s steps(4) infinite; }
+@keyframes cf-dots { from { width: 0; } to { width: 4ch; } }
+
+@media (max-width: 860px) {
+  .cf-forgeries { grid-template-columns: 1fr; }
+  .cf-forgery-verdict { min-height: 0; }
+}
+@media (max-width: 560px) {
+  .cf-txs li { grid-template-columns: 3ch minmax(0, 1fr); }
+  .cf-tx-dots { display: none; }
+  .cf-tx-hash { grid-column: 2; }
+  .cf-sig-hand { font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-dots { animation: none; }
+}
