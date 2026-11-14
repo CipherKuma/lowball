@@ -12,7 +12,8 @@ are on the record, lean on a buyer in the back room, then offer **leniency**. Th
 the signed pact to our NEAR contract walks free. Every other signer loses their bond to you. A second
 confession, a forged one, or a replayed one is refused on-chain.
 
-- **Play:** https://play.lowball-game.pages.dev · **Connect your NEAR wallet** (NEAR Connect: Meteor web or extension, Intear, Nightly, Ledger; NEAR testnet). Judging without a wallet? Use **Judge demo: no wallet** on the landing page. · **Demo video:** _X post linked at submission_
+- **Play:** https://play.lowball-game.pages.dev · **Connect your NEAR wallet** (NEAR Connect: Meteor web or extension, Intear, Nightly, Ledger, or MetaMask through Ethereum Wallets; NEAR testnet). Judging without a wallet? Use **Judge demo: no wallet** on the landing page. · **Demo video:** _[X post link — added at submission]_
+- **Also filed at this hackathon:** _[other filed project — Gabriel names it at submission]_
 - **Contract:** [`lowball-ck.testnet`](https://testnet.nearblocks.io/address/lowball-ck.testnet) · **Payout desk:** [`desk.lowball-ck.testnet`](https://testnet.nearblocks.io/address/desk.lowball-ck.testnet)
 - **Tracks:** Games With Real Economies · Privacy & Private AI · Agent Economy
 
@@ -67,9 +68,14 @@ confession, a forged one, or a replayed one is refused on-chain.
 - **Contract:** 87 tests (unit + near-workspaces sandbox, including a real confession race) — `contract/TEST-RESULTS.md`.
 - **On the deployed contract:** 18 of 18 adversarial refusals as expected — `server/sim/ADVERSARIAL-REAL.md`; the forgery drill's real refused transactions — `server/FEATURES-RUN.md`.
 - **Server:** 348 tests (including NEP-413 and EIP-191 sign-in: wrong recipient, tampered signature, replayed and expired nonce, function-call key refused; wallet seasons; wallet leniency without a tx hash) — `server/TEST-RESULTS.md`.
-- **Wallets:** the NEAR Connect selector opens on the deployed site and lists Meteor, Intear, Ledger, Nightly and NEAR CLI on testnet. A season played end to end with a real Meteor wallet is pending; its transactions will be listed here.
-- **Live on the deployed game (14 Nov, season 46):** a buyer confessed, four bonds were slashed and paid to the player, a second
-  confession was refused, all five pact signatures re-checked in the browser, and the forgery drill's three attacks were refused.
+- **Wallets:** the NEAR Connect selector on the deployed site lists Meteor, Intear, Ledger, Nightly, Ethereum Wallets (MetaMask) and NEAR CLI on testnet.
+- **A real wallet season (15 Nov, season 64, the demo film):** `cipherkuma.testnet` signed in with Meteor (NEP-413), then
+  signed `offer_leniency` in Meteor ([`58XrpDpt…`](https://testnet.near.rocks/tx/58XrpDpt7WNFrxL7qwygCfAvVhKF6TsE1xS2NQBT5Vjj));
+  Sully confessed first ([`DZgEwTip…`](https://testnet.near.rocks/tx/DZgEwTipRDmoY1tYYXWvrjJXLFyYoxixgJCpF9xL3sdv)), Ines and Odile were refused
+  `E_ALREADY_CONFESSED`, four bonds were slashed and 0.20 NEAR paid to the wallet, all five pact signatures re-checked in the
+  browser, and three forgeries were refused — every outcome re-read on testnet in `demo/truth-ledger.md`.
+- **Earlier live season (14 Nov, season 46):** a buyer confessed, four bonds were slashed and paid to the player, a second
+  confession was refused, and the forgery drill's three attacks were refused.
 - **Behaviour (simulation, real NEAR AI buyers on a rule-faithful mock chain):** without leniency the ring
   held identical bids on 96% of days and took 153 marks per lot from the fisher; with leniency a buyer
   cracked in 9 of 10 seasons (day 3.6 on average) and the loss fell to 92 marks per lot — `server/sim/RESULTS.md`.
