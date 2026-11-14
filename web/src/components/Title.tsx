@@ -75,7 +75,7 @@ export function Title({ onConnect, onJudgeDemo, onHowTo, starting, tutorialDone,
             <p className="landing-cta-note typed">
               {wallet.status === 'signing'
                 ? 'Sign the harbour book in your wallet. It is a free message, not a transaction.'
-                : `Meteor, Intear, Nightly or Ledger on NEAR testnet.${tutorialDone ? '' : ' A one-minute walkthrough comes first; skip it any time.'}`}
+                : `Meteor, Intear, Nightly, Ledger, or MetaMask through Ethereum Wallets · NEAR testnet.${tutorialDone ? '' : ' A one-minute walkthrough comes first; skip it any time.'}`}
             </p>
             {wallet.error && <p className="landing-error typed" role="alert">{wallet.error}</p>}
             <p className="landing-alt typed">

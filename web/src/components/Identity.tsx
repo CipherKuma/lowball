@@ -62,7 +62,7 @@ export function Identity({ status, accountId, error, starting, onConnect, onJudg
                 {status === 'connecting' ? 'Choose your wallet…' : status === 'signing' ? 'Sign in your wallet…' : 'Connect a NEAR wallet'}
               </button>
               <p className="plaque-note" aria-live="polite">
-                {status === 'signing' ? 'Sign the harbour book in your wallet. It costs nothing.' : 'Meteor (web or extension), Intear, Nightly or Ledger · NEAR testnet'}
+                {status === 'signing' ? 'Sign the harbour book in your wallet. It costs nothing.' : 'Meteor (web or extension), Intear, Nightly, Ledger, or MetaMask through Ethereum Wallets · NEAR testnet'}
               </p>
             </motion.div>
           )}

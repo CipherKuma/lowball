@@ -43,6 +43,9 @@ export function App() {
   const { view } = g;
 
   const walletReady = id.status === 'ready' && id.kind === 'wallet' && !!id.accountId;
+  // Signed in with an Ethereum wallet (0x NEAR account): that address is the default Chain Signatures payout.
+  const [payNear, setPayNear] = useState(false);
+  const payoutAddress = evm.address ?? (payNear ? null : id.evmAddress ?? null);
   const openTutorial = () => {
     audio.unlock();
     setScreen('tutorial');
@@ -82,7 +85,7 @@ export function App() {
     setChosen(mode);
     if (mode === 'guest') id.playAsGuest();
     setScreen('setup');
-    g.start({ mode, payoutEvm: evm.address ?? undefined });
+    g.start({ mode, payoutEvm: mode === 'wallet' ? payoutAddress ?? undefined : evm.address ?? undefined });
   };
 
   // Setup ends when the first lot is on the zinc.
@@ -139,7 +142,18 @@ export function App() {
                   void id.disconnect();
                 }}
                 onBegin={() => begin('wallet')}
-                payout={{ ...evm, onConnect: () => void connectEvm(), onClear: () => setEvm({ address: null, busy: false, error: null }) }}
+                payout={{
+                  ...evm,
+                  address: payoutAddress,
+                  onConnect: () => {
+                    setPayNear(false);
+                    void connectEvm();
+                  },
+                  onClear: () => {
+                    setPayNear(true);
+                    setEvm({ address: null, busy: false, error: null });
+                  },
+                }}
               />
             )}
             {current === 'setup' && (
@@ -179,7 +193,7 @@ export function App() {
                 forge={g.forge}
                 onReplay={() => {
                   setScreen('setup');
-                  g.start({ mode: chosen ?? undefined, payoutEvm: evm.address ?? undefined });
+                  g.start({ mode: chosen ?? undefined, payoutEvm: chosen === 'guest' ? evm.address ?? undefined : payoutAddress ?? undefined });
                 }}
               />
             )}
