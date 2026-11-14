@@ -147,9 +147,15 @@ export async function sell(ctx: GameCtx): Promise<void> {
     if (t) auction.transfer = { tokenId: t.tokenId, to: t.to, memo: t.memo };
     await ctx.save();
   }
-  const view = await ctx.chain.getSeason(seasonId);
-  const lv = view.lots.find((l) => l.day === s.day);
-  if (!lv || !lv.settled) throw new AppError('TX_FAILED', 'lot not settled on-chain');
+  // The settle tx has executed, but the next read can land on an RPC node a block behind (season 53, 14 Nov):
+  // read again for a few seconds before calling it a failure.
+  let lv: Awaited<ReturnType<typeof ctx.chain.getSeason>>['lots'][number] | undefined;
+  for (let i = 0; i < 6; i++) {
+    lv = (await ctx.chain.getSeason(seasonId)).lots.find((l) => l.day === s.day);
+    if (lv?.settled) break;
+    await ctx.sleep(1000);
+  }
+  if (!lv || !lv.settled) throw new AppError('TX_FAILED', 'The sale is still landing on NEAR. Try again in a moment.');
   const winner = BUYER_IDS.find((id) => s.buyers.find((b) => b.id === id)!.accountId === lv.winner) ?? null;
   const shortfall = Math.max(0, lot.fairValue - lv.price);
 

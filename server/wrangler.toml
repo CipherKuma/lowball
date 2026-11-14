@@ -18,7 +18,8 @@ migrations_dir = "migrations"
 NEARAI_MODEL = "Qwen/Qwen3.6-35B-A3B-FP8"
 SEASON_DAYS = "6"
 BOND_NEAR = "0.05"
-MIN_TREASURY_NEAR = "1.5"
+# A season costs the house about 0.18 NEAR (measured 14 Nov) and at most ~0.4 in the worst case.
+MIN_TREASURY_NEAR = "0.9"
 MAX_SESSIONS_PER_IP_HOUR = "8"
 # Spend caps enforced by code (src/pricing.ts): POST /api/session answers 402 BUDGET_EXHAUSTED once the D1 ledger of
 # NEAR AI token spend reaches this many USD; ElevenLabs upstream calls are capped per session (cache hits are free).

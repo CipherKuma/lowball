@@ -265,3 +265,26 @@ describe('leniency', () => {
     await expect(leniency(rig.deps, sessionId, tx.hash)).resolves.toMatchObject({ confessor: null });
   });
 });
+
+describe('read-after-write lag', () => {
+  it('a settle read that lands on a lagging node is read again instead of failing the sale', async () => {
+    const rig = makeRig();
+    const { sessionId } = await start(rig);
+    const real = rig.chain.getSeason.bind(rig.chain);
+    let stale = 2;
+    rig.chain.getSeason = async (id: number) => {
+      const v = await real(id);
+      // The first two reads after the settle tx come from a node one block behind.
+      if (stale > 0 && v.lots.some((l) => l.settled && l.day === v.day)) {
+        stale--;
+        return { ...v, lots: v.lots.map((l) => (l.day === v.day ? { ...l, settled: false } : l)) };
+      }
+      return v;
+    };
+    await step(rig.deps, sessionId, 'sell');
+    const { status, events } = await getEvents(rig.deps, sessionId, 0);
+    expect(stale).toBe(0);
+    expect(status.phase).toBe('settled');
+    expect(events.some((e) => e.type === 'error')).toBe(false);
+  });
+});
