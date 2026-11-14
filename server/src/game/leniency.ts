@@ -12,6 +12,9 @@ import { toB64 } from '../near/bytes.js';
 /** Default wall-clock one /leniency request may spend waiting on the chain (the proxy cuts at 100 s). */
 export const DEFAULT_WAIT_MS = 40_000;
 
+/** Longest a hash-less confirmation polls the chain for the window the player's wallet just opened. */
+export const CONFIRM_OPEN_MS = 20_000;
+
 export interface LeniencyOutcome {
   confessor: BuyerId | null;
 }
@@ -31,10 +34,30 @@ interface Attempt {
 }
 
 /**
- * Run the deliberation after the player's offer_leniency landed on-chain. Every pact member decides
+ * Wallet seasons only: the wallet did not hand back a tx hash, so confirm on chain that the player's own
+ * window is live. Only the season's player can open one (the contract enforces E_NOT_PLAYER), so an open
+ * window for this season is the player's. Same result shape as verifyLeniencyTx; polls for CONFIRM_OPEN_MS.
+ */
+async function confirmWindowOpen(ctx: GameCtx, seasonId: number): Promise<{ openBlock: number; deadlineBlock: number }> {
+  const step = Math.max(1, ctx.deps.pollMs ?? 1000);
+  const tries = Math.ceil(CONFIRM_OPEN_MS / step) + 1;
+  for (let i = 0; i < tries; i++) {
+    const v = await ctx.chain.getSeason(seasonId).catch(() => null);
+    if (v && v.player !== ctx.state.playerAccountId) throw new AppError('TX_MISMATCH', 'That season belongs to another player.');
+    if (v?.leniency_open && v.leniency_open_block !== null && v.leniency_deadline_block !== null) {
+      return { openBlock: v.leniency_open_block, deadlineBlock: v.leniency_deadline_block };
+    }
+    if (i < tries - 1) await ctx.sleep(step);
+  }
+  throw new AppError('TX_FAILED', 'The leniency window is not open on-chain yet. Approve offer_leniency in your wallet, then try again.');
+}
+
+/**
+ * Run the deliberation after the player's offer_leniency landed on-chain. `txHash` null means a wallet
+ * player whose wallet returned no hash: the open window itself is confirmed instead. Every pact member decides
  * concurrently; each member that decides to confess submits at once, so the contract settles a real race.
  */
-export async function runLeniency(ctx: GameCtx, txHash: string): Promise<LeniencyOutcome> {
+export async function runLeniency(ctx: GameCtx, txHash: string | null): Promise<LeniencyOutcome> {
   const s = ctx.state;
   if ((s.phase !== 'lot_open' && s.phase !== 'settled') || s.seasonId === null || s.confessed || s.finalize) {
     throw new AppError('BAD_PHASE', 'Leniency is not available right now.');
@@ -42,11 +65,18 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
   if (s.deliberatedDays.includes(s.day)) {
     throw new AppError('BAD_PHASE', 'The buyers already answered leniency today.');
   }
-  const check = await ctx.chain.verifyLeniencyTx(txHash, s.playerAccountId, s.seasonId);
-  if (!check.ok) throw new AppError(check.errorCode ?? 'TX_FAILED', check.message ? 'The offer_leniency transaction failed.' : undefined);
-  s.leniencyTx[String(s.day)] = txHash;
-  const deadlineBlock = check.deadlineBlock ?? (await ctx.chain.blockHeight()) + 200;
-  await ctx.emit({ type: 'leniency_open', tx: txHash, deadlineBlock });
+  let deadlineBlock: number;
+  if (txHash === null) {
+    if (s.playerKind !== 'wallet') throw new AppError('BAD_REQUEST', 'A guest must send the offer_leniency tx hash.');
+    deadlineBlock = (await confirmWindowOpen(ctx, s.seasonId)).deadlineBlock;
+    await ctx.emit({ type: 'leniency_open', tx: '', deadlineBlock });
+  } else {
+    const check = await ctx.chain.verifyLeniencyTx(txHash, s.playerAccountId, s.seasonId);
+    if (!check.ok) throw new AppError(check.errorCode ?? 'TX_FAILED', check.message ? 'The offer_leniency transaction failed.' : undefined);
+    s.leniencyTx[String(s.day)] = txHash;
+    deadlineBlock = check.deadlineBlock ?? (await ctx.chain.blockHeight()) + 200;
+    await ctx.emit({ type: 'leniency_open', tx: txHash, deadlineBlock });
+  }
 
   if (!s.pact) {
     // No cartel formed, so nobody holds a pact to hand over and nobody will confess; the chain window just

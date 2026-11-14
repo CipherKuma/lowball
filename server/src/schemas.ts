@@ -26,7 +26,7 @@ export const StepSchema = z.object({ action: z.enum(['begin', 'sell', 'hold', 'n
 
 /** NEAR tx hashes are base58 of 32 bytes: 43 or 44 chars. */
 export const LeniencySchema = z
-  .object({ txHash: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{42,46}$/, 'txHash must be a base58 transaction hash') })
+  .object({ txHash: z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{42,46}$/, 'txHash must be a base58 transaction hash').optional() })
   .strict();
 
 export const SessionIdSchema = z.string().uuid();

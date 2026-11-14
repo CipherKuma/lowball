@@ -49,7 +49,10 @@ export type ServerErrorCode =
   // additive: the voice interrogation (one per day) and its speech-to-text step
   | 'ALREADY_INTERROGATED' | 'STT_UNAVAILABLE'
   // additive: the Case File forgery drill (one per session)
-  | 'ALREADY_FORGED';
+  | 'ALREADY_FORGED'
+  // additive: wallet sign-in (NEP-413) and wallet-mode seasons, and the short-recording guard
+  | 'AUTH_BAD_SIGNATURE' | 'AUTH_NONCE_USED' | 'AUTH_NONCE_EXPIRED' | 'AUTH_NONCE_UNKNOWN'
+  | 'AUTH_NOT_FULL_ACCESS' | 'AUTH_BAD_RECIPIENT' | 'AUTH_REQUIRED' | 'TOO_SHORT';
 
 export type ErrorCode = ContractErrorCode | ServerErrorCode;
 
@@ -96,6 +99,36 @@ export interface CreateSessionRequest {
    */
   payoutEvm?: string;
 }
+/** POST /api/session with `Authorization: Bearer <token>`: the signed-in wallet account is the player. */
+export interface WalletSessionRequest {
+  mode: 'wallet';
+  payoutEvm?: string;
+}
+
+// ---- POST /api/auth/nonce | /api/auth/verify | GET /api/auth/me | POST /api/auth/logout ----
+export interface AuthNonceResponse {
+  /** base64, 32 bytes */
+  nonce: string;
+  recipient: string;
+  message: string;
+  expiresAt: number;
+}
+export interface AuthVerifyRequest {
+  accountId: string;
+  /** "ed25519:<base58>" */
+  publicKey: string;
+  /** base64, 64 bytes */
+  signature: string;
+  nonce: string;
+  recipient: string;
+  message: string;
+}
+export interface AuthVerifyResponse {
+  token: string;
+  accountId: string;
+  expiresAt: number;
+}
+
 export interface CreateSessionResponse {
   sessionId: string;
   playerAccountId: string;
@@ -107,6 +140,8 @@ export interface CreateSessionResponse {
   network: 'testnet';
   /** the validated payout address the season was created with, or null (NEAR payout) */
   payoutEvm?: string | null;
+  /** who signs offer_leniency: a guest's throwaway key or the player's own wallet */
+  playerKind?: 'guest' | 'wallet';
 }
 
 // ---- GET /api/session/:id/events?after=n ----
@@ -127,8 +162,11 @@ export interface StepResponse {
 
 // ---- POST /api/session/:id/leniency ----
 export interface LeniencyRequest {
-  /** tx hash of the player's offer_leniency call, signed in the browser */
-  txHash: string;
+  /**
+   * tx hash of the player's offer_leniency call, signed in the browser. Required for guests. Wallet seasons
+   * may omit it ({}): the server then confirms on chain that the player's window is open (polls up to 20 s).
+   */
+  txHash?: string;
 }
 export interface LeniencyResponse {
   ok: true;

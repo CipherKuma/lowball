@@ -133,7 +133,7 @@ export function createApp(o: AppOptions): Hono {
   app.post('/api/session/:id/leniency', async (c) => {
     const id = sessionId(c);
     const body = await parseBody(c, LeniencySchema);
-    return c.json(await leniency(o.deps(c), id, body.txHash));
+    return c.json(await leniency(o.deps(c), id, body.txHash ?? null));
   });
 
   app.get('/api/session/:id/casefile', async (c) => {

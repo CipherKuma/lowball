@@ -208,7 +208,7 @@ export async function step(deps: GameDeps, id: string, action: StepAction): Prom
   return { ok: true, status: statusOf(ctx.state, false) };
 }
 
-export async function leniency(deps: GameDeps, id: string, txHash: string): Promise<LeniencyResponse> {
+export async function leniency(deps: GameDeps, id: string, txHash: string | null): Promise<LeniencyResponse> {
   const { ctx, out } = await locked(deps, id, (c) => {
     // Backstop for the UI gate: leniency needs a case on the record first.
     if (caseDays(c.state.lots) < (c.deps.config.minCaseDays ?? CASE_DAYS)) {
