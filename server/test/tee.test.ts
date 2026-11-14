@@ -71,6 +71,11 @@ describe('TEE_BUYERS=1', () => {
     // two attempts for the dead buyer, one for each of the others
     expect(enclave.calls.filter((c) => c.buyer === 'deacon' && c.op === 'sign_pact')).toHaveLength(2);
     expect(rig.deps.tee!.stats).toMatchObject({ failedJobs: 1 });
+    // both attempts share one 90 s budget: the first is capped at 55 s, the retry gets the rest
+    const caps = enclave.calls.filter((c) => c.buyer === 'deacon').map((c) => c.cap!);
+    expect(caps[0]).toBe(55_000);
+    expect(caps[1]).toBeGreaterThan(12_000);
+    expect(caps[1]).toBeLessThanOrEqual(90_000);
     // round 1 was asked once per buyer and no server key signed anything
     expect(rig.llm.calls.filter((c) => c.kind === 'cartel')).toHaveLength(5);
   });

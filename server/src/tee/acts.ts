@@ -61,6 +61,11 @@ function fail(msg: string): never {
   throw new AppError('TEE_UNAVAILABLE', msg);
 }
 
+/** Time one enclave job (both attempts together) may take, and how it is split. */
+export const JOB_BUDGET_MS = 90_000;
+export const FIRST_ATTEMPT_MS = 55_000;
+export const MIN_RETRY_MS = 12_000;
+
 export interface TeeStats {
   /** jobs started (retries counted once each) */
   jobs: number;
@@ -90,15 +95,23 @@ export class TeeActs {
     }
   }
 
-  /** One job with one retry: a transport error, a timeout, an empty result (a guest trap) or a guest error is tried again once. */
+  /**
+   * One job with one retry: a transport error, a timeout, an empty result (a guest trap) or a guest error is tried
+   * again once. The two attempts share one budget (JOB_BUDGET_MS, so a pact round ends in about 90 s): the first may
+   * use FIRST_ATTEMPT_MS of it, the retry whatever is left (skipped when under MIN_RETRY_MS).
+   */
   private async runJob(ctx: GameCtx, buyer: BuyerId, input: Record<string, unknown>): Promise<{ run: TeeRun; attempts: number }> {
     this.stats.jobs++;
     const op = String(input.op);
+    const t00 = Date.now();
     let last: unknown = null;
     for (let attempt = 1; attempt <= 2; attempt++) {
+      const left = JOB_BUDGET_MS - (Date.now() - t00);
+      if (attempt === 2 && left < MIN_RETRY_MS) break;
+      const cap = attempt === 1 ? Math.min(FIRST_ATTEMPT_MS, left) : left;
       const t0 = Date.now();
       try {
-        const run = await this.transport.run(buyer, input);
+        const run = await this.transport.run(buyer, input, { timeoutMs: cap });
         this.stats.latenciesMs.push(run.ms);
         const good = run.output !== null && run.output !== undefined && (run.output as { ok?: unknown }).ok !== false;
         await this.record(ctx, buyer, op, good, run.ms);

@@ -38,7 +38,24 @@ export class OutlayerTransport implements TeeTransport {
     this.now = o.now ?? Date.now;
   }
 
+  /**
+   * The whole job (send, wait, read) never takes longer than the cap: one RPC poll can itself spend a minute
+   * failing over rate-limited providers, so the cap is a hard deadline, not just the loop's condition.
+   */
   async run(buyer: BuyerId, input: Record<string, unknown>, opts: TeeJobOptions = {}): Promise<TeeRun> {
+    const cap = opts.timeoutMs ?? this.o.timeoutMs ?? 100_000;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new AppError('TEE_UNAVAILABLE', `The enclave job did not finish within ${Math.round(cap / 1000)} s.`)), cap + 1500);
+    });
+    try {
+      return await Promise.race([this.runInner(buyer, input, { ...opts, timeoutMs: cap }), deadline]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  private async runInner(buyer: BuyerId, input: Record<string, unknown>, opts: TeeJobOptions): Promise<TeeRun> {
     const d = this.o.deployment;
     const b = d.buyers[buyer];
     const started = this.now();

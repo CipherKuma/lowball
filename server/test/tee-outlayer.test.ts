@@ -79,4 +79,13 @@ describe('OutlayerTransport', () => {
     const rejected = rig([() => ok({})], false);
     await expect(rejected.transport.run('ines', {})).rejects.toMatchObject({ code: 'TEE_UNAVAILABLE' });
   });
+
+  it('the cap is a hard deadline: an RPC call that never answers cannot hold the job past it', async () => {
+    const signer = { accountId: 'house.testnet', send: async () => ({ hash: 'H', ok: true }) };
+    const rpc = { call: () => new Promise(() => undefined) };
+    const transport = new OutlayerTransport({ deployment, signer: signer as never, rpc: rpc as never, sleep: async () => undefined, pollMs: 1 });
+    const t0 = Date.now();
+    await expect(transport.run('sully', {}, { timeoutMs: 100 })).rejects.toMatchObject({ code: 'TEE_UNAVAILABLE' });
+    expect(Date.now() - t0).toBeLessThan(3000);
+  });
 });
