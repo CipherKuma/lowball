@@ -4,120 +4,120 @@
   "file": "audio/music/confession_sting.mp3",
   "fileOgg": "audio/music/confession_sting.ogg",
   "kind": "music",
-  "durationSec": 4.2,
+  "durationSec": 5.0,
   "loop": false,
-  "lufs": -20.0,
-  "truePeakDb": -7.9
+  "lufs": -20.5,
+  "truePeakDb": -1.5
  },
  {
   "key": "defeat",
   "file": "audio/music/defeat.mp3",
   "fileOgg": "audio/music/defeat.ogg",
   "kind": "music",
-  "durationSec": 8.13,
+  "durationSec": 8.91,
   "loop": false,
-  "lufs": -20.0,
-  "truePeakDb": -9.3
+  "lufs": -20.4,
+  "truePeakDb": -7.1
  },
  {
   "key": "harbour_loop",
   "file": "audio/music/harbour_loop.mp3",
   "fileOgg": "audio/music/harbour_loop.ogg",
   "kind": "music",
-  "durationSec": 88.1,
+  "durationSec": 92.57,
   "loop": true,
-  "lufs": -20.0,
-  "truePeakDb": -8.1
+  "lufs": -20.5,
+  "truePeakDb": -4.1
  },
  {
   "key": "harbour_tense",
   "file": "audio/music/harbour_tense.mp3",
   "fileOgg": "audio/music/harbour_tense.ogg",
   "kind": "music",
-  "durationSec": 88.1,
+  "durationSec": 85.71,
   "loop": true,
-  "lufs": -20.0,
-  "truePeakDb": -7.1
+  "lufs": -20.4,
+  "truePeakDb": -5.7
  },
  {
   "key": "victory",
   "file": "audio/music/victory.mp3",
   "fileOgg": "audio/music/victory.ogg",
   "kind": "music",
-  "durationSec": 12.7,
+  "durationSec": 11.95,
   "loop": false,
-  "lufs": -20.0,
-  "truePeakDb": -5.1
+  "lufs": -20.4,
+  "truePeakDb": -5.2
  },
  {
   "key": "auction_bell",
   "file": "audio/sfx/auction_bell.mp3",
   "fileOgg": "audio/sfx/auction_bell.ogg",
   "kind": "sfx",
-  "durationSec": 2.0,
+  "durationSec": 1.49,
   "loop": false,
-  "lufs": -17.9,
-  "truePeakDb": -3.8
+  "lufs": -18.6,
+  "truePeakDb": -1.8
  },
  {
   "key": "bond_slash",
   "file": "audio/sfx/bond_slash.mp3",
   "fileOgg": "audio/sfx/bond_slash.ogg",
   "kind": "sfx",
-  "durationSec": 2.48,
+  "durationSec": 1.38,
   "loop": false,
-  "lufs": -18.0,
-  "truePeakDb": -1.2
+  "lufs": -18.3,
+  "truePeakDb": -4.4
  },
  {
   "key": "card_flip",
   "file": "audio/sfx/card_flip.mp3",
   "fileOgg": "audio/sfx/card_flip.ogg",
   "kind": "sfx",
-  "durationSec": 0.45,
+  "durationSec": 0.33,
   "loop": false,
-  "lufs": -18.8,
-  "truePeakDb": -1.1
+  "lufs": -19.0,
+  "truePeakDb": -1.8
  },
  {
   "key": "coins_pour",
   "file": "audio/sfx/coins_pour.mp3",
   "fileOgg": "audio/sfx/coins_pour.ogg",
   "kind": "sfx",
-  "durationSec": 2.98,
+  "durationSec": 2.94,
   "loop": false,
-  "lufs": -18.1,
-  "truePeakDb": -1.0
+  "lufs": -18.4,
+  "truePeakDb": -2.9
  },
  {
   "key": "foghorn",
   "file": "audio/sfx/foghorn.mp3",
   "fileOgg": "audio/sfx/foghorn.ogg",
   "kind": "sfx",
-  "durationSec": 5.8,
+  "durationSec": 7.12,
   "loop": false,
-  "lufs": -18.0,
-  "truePeakDb": -4.9
+  "lufs": -18.4,
+  "truePeakDb": -6.8
  },
  {
   "key": "folder_open",
   "file": "audio/sfx/folder_open.mp3",
   "fileOgg": "audio/sfx/folder_open.ogg",
   "kind": "sfx",
-  "durationSec": 1.76,
+  "durationSec": 1.78,
   "loop": false,
-  "lufs": -18.1,
-  "truePeakDb": -0.8
+  "lufs": -20.0,
+  "truePeakDb": -2.4
  },
  {
   "key": "gavel",
   "file": "audio/sfx/gavel.mp3",
   "fileOgg": "audio/sfx/gavel.ogg",
   "kind": "sfx",
-  "durationSec": 0.53,
+  "durationSec": 0.62,
   "loop": false,
-  "lufs": -17.9,
-  "truePeakDb": -1.7
+  "lufs": -19.8,
+  "truePeakDb": -2.1
  },
  {
   "key": "lamp_buzz_loop",
@@ -126,18 +126,18 @@
   "kind": "sfx",
   "durationSec": 9.0,
   "loop": true,
-  "lufs": -18.0,
-  "truePeakDb": -8.1
+  "lufs": -18.4,
+  "truePeakDb": -3.7
  },
  {
   "key": "paper_slide",
   "file": "audio/sfx/paper_slide.mp3",
   "fileOgg": "audio/sfx/paper_slide.ogg",
   "kind": "sfx",
-  "durationSec": 1.48,
+  "durationSec": 1.39,
   "loop": false,
-  "lufs": -18.0,
-  "truePeakDb": -3.8
+  "lufs": -18.6,
+  "truePeakDb": -4.6
  },
  {
   "key": "rain_loop",
@@ -146,167 +146,167 @@
   "kind": "sfx",
   "durationSec": 28.5,
   "loop": true,
-  "lufs": -18.0,
-  "truePeakDb": -1.1
+  "lufs": -18.4,
+  "truePeakDb": -1.9
  },
  {
   "key": "refusal_thud",
   "file": "audio/sfx/refusal_thud.mp3",
   "fileOgg": "audio/sfx/refusal_thud.ogg",
   "kind": "sfx",
-  "durationSec": 1.26,
+  "durationSec": 1.37,
   "loop": false,
-  "lufs": -18.3,
-  "truePeakDb": -1.5
+  "lufs": -19.5,
+  "truePeakDb": -1.7
  },
  {
   "key": "ui_hover",
   "file": "audio/sfx/ui_hover.mp3",
   "fileOgg": "audio/sfx/ui_hover.ogg",
   "kind": "sfx",
-  "durationSec": 0.45,
+  "durationSec": 0.44,
   "loop": false,
-  "lufs": -18.0,
-  "truePeakDb": -5.8
+  "lufs": -18.2,
+  "truePeakDb": -4.6
  },
  {
   "key": "ui_tick",
   "file": "audio/sfx/ui_tick.mp3",
   "fileOgg": "audio/sfx/ui_tick.ogg",
   "kind": "sfx",
-  "durationSec": 0.45,
+  "durationSec": 0.23,
   "loop": false,
-  "lufs": -19.3,
-  "truePeakDb": -0.5
+  "lufs": -19.9,
+  "truePeakDb": -1.7
  },
  {
   "key": "wax_seal",
   "file": "audio/sfx/wax_seal.mp3",
   "fileOgg": "audio/sfx/wax_seal.ogg",
   "kind": "sfx",
-  "durationSec": 1.4,
+  "durationSec": 1.48,
   "loop": false,
-  "lufs": -19.0,
-  "truePeakDb": -1.2
+  "lufs": -21.1,
+  "truePeakDb": -1.7
  },
  {
   "key": "confessed",
   "file": "audio/vo/confessed.mp3",
   "fileOgg": "audio/vo/confessed.ogg",
   "kind": "vo",
-  "durationSec": 0.96,
+  "durationSec": 1.45,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -4.7
+  "lufs": -16.6,
+  "truePeakDb": -1.6
  },
  {
   "key": "day_open",
   "file": "audio/vo/day_open.mp3",
   "fileOgg": "audio/vo/day_open.ogg",
   "kind": "vo",
-  "durationSec": 1.2,
+  "durationSec": 1.65,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -5.1
+  "lufs": -16.4,
+  "truePeakDb": -1.8
  },
  {
   "key": "deacon_betrayed",
   "file": "audio/vo/deacon_betrayed.mp3",
   "fileOgg": "audio/vo/deacon_betrayed.ogg",
   "kind": "vo",
-  "durationSec": 1.84,
+  "durationSec": 1.05,
   "loop": false,
-  "lufs": -16.1,
-  "truePeakDb": -1.5
+  "lufs": -16.6,
+  "truePeakDb": -2.1
  },
  {
   "key": "deacon_bid",
   "file": "audio/vo/deacon_bid.mp3",
   "fileOgg": "audio/vo/deacon_bid.ogg",
   "kind": "vo",
-  "durationSec": 2.24,
+  "durationSec": 1.17,
   "loop": false,
-  "lufs": -16.1,
-  "truePeakDb": -1.5
+  "lufs": -16.5,
+  "truePeakDb": -1.7
  },
  {
   "key": "deacon_greet",
   "file": "audio/vo/deacon_greet.mp3",
   "fileOgg": "audio/vo/deacon_greet.ogg",
   "kind": "vo",
-  "durationSec": 1.44,
+  "durationSec": 1.55,
   "loop": false,
-  "lufs": -16.2,
-  "truePeakDb": -1.5
+  "lufs": -16.6,
+  "truePeakDb": -1.7
  },
  {
   "key": "deacon_hold",
   "file": "audio/vo/deacon_hold.mp3",
   "fileOgg": "audio/vo/deacon_hold.ogg",
   "kind": "vo",
-  "durationSec": 2.14,
+  "durationSec": 1.91,
   "loop": false,
-  "lufs": -16.1,
-  "truePeakDb": -1.5
+  "lufs": -16.5,
+  "truePeakDb": -2.0
  },
  {
   "key": "holdout",
   "file": "audio/vo/holdout.mp3",
   "fileOgg": "audio/vo/holdout.ogg",
   "kind": "vo",
-  "durationSec": 2.08,
+  "durationSec": 2.15,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -2.2
+  "lufs": -16.5,
+  "truePeakDb": -1.7
  },
  {
   "key": "identical",
   "file": "audio/vo/identical.mp3",
   "fileOgg": "audio/vo/identical.ogg",
   "kind": "vo",
-  "durationSec": 2.32,
+  "durationSec": 2.73,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -2.7
+  "lufs": -16.5,
+  "truePeakDb": -2.4
  },
  {
   "key": "ines_betrayed",
   "file": "audio/vo/ines_betrayed.mp3",
   "fileOgg": "audio/vo/ines_betrayed.ogg",
   "kind": "vo",
-  "durationSec": 2.4,
+  "durationSec": 2.97,
   "loop": false,
-  "lufs": -16.1,
-  "truePeakDb": -1.5
+  "lufs": -16.7,
+  "truePeakDb": -1.6
  },
  {
   "key": "ines_bid",
   "file": "audio/vo/ines_bid.mp3",
   "fileOgg": "audio/vo/ines_bid.ogg",
   "kind": "vo",
-  "durationSec": 2.8,
+  "durationSec": 3.39,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -1.5
+  "lufs": -16.6,
+  "truePeakDb": -1.6
  },
  {
   "key": "ines_confess",
   "file": "audio/vo/ines_confess.mp3",
   "fileOgg": "audio/vo/ines_confess.ogg",
   "kind": "vo",
-  "durationSec": 4.8,
+  "durationSec": 4.65,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -1.6
+  "lufs": -16.6,
+  "truePeakDb": -1.8
  },
  {
   "key": "ines_greet",
   "file": "audio/vo/ines_greet.mp3",
   "fileOgg": "audio/vo/ines_greet.ogg",
   "kind": "vo",
-  "durationSec": 4.72,
+  "durationSec": 5.19,
   "loop": false,
-  "lufs": -16.0,
+  "lufs": -16.6,
   "truePeakDb": -1.5
  },
  {
@@ -314,169 +314,169 @@
   "file": "audio/vo/intro_1.mp3",
   "fileOgg": "audio/vo/intro_1.ogg",
   "kind": "vo",
-  "durationSec": 5.76,
+  "durationSec": 5.96,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -3.7
+  "lufs": -16.5,
+  "truePeakDb": -1.9
  },
  {
   "key": "intro_2",
   "file": "audio/vo/intro_2.mp3",
   "fileOgg": "audio/vo/intro_2.ogg",
   "kind": "vo",
-  "durationSec": 8.08,
+  "durationSec": 5.28,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -4.0
+  "lufs": -16.6,
+  "truePeakDb": -1.8
  },
  {
   "key": "leniency",
   "file": "audio/vo/leniency.mp3",
   "fileOgg": "audio/vo/leniency.ogg",
   "kind": "vo",
-  "durationSec": 3.11,
+  "durationSec": 3.58,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -3.9
+  "lufs": -16.6,
+  "truePeakDb": -1.9
  },
  {
   "key": "marlow_betrayed",
   "file": "audio/vo/marlow_betrayed.mp3",
   "fileOgg": "audio/vo/marlow_betrayed.ogg",
   "kind": "vo",
-  "durationSec": 4.88,
+  "durationSec": 3.93,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -2.2
+  "lufs": -16.6,
+  "truePeakDb": -1.6
  },
  {
   "key": "marlow_bid",
   "file": "audio/vo/marlow_bid.mp3",
   "fileOgg": "audio/vo/marlow_bid.ogg",
   "kind": "vo",
-  "durationSec": 1.76,
+  "durationSec": 2.85,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -2.3
+  "lufs": -16.6,
+  "truePeakDb": -2.0
  },
  {
   "key": "marlow_greet",
   "file": "audio/vo/marlow_greet.mp3",
   "fileOgg": "audio/vo/marlow_greet.ogg",
   "kind": "vo",
-  "durationSec": 3.68,
+  "durationSec": 3.96,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -2.3
+  "lufs": -16.5,
+  "truePeakDb": -1.7
  },
  {
   "key": "marlow_threat",
   "file": "audio/vo/marlow_threat.mp3",
   "fileOgg": "audio/vo/marlow_threat.ogg",
   "kind": "vo",
-  "durationSec": 3.91,
+  "durationSec": 4.0,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -1.5
+  "lufs": -16.5,
+  "truePeakDb": -1.7
  },
  {
   "key": "odile_betrayed",
   "file": "audio/vo/odile_betrayed.mp3",
   "fileOgg": "audio/vo/odile_betrayed.ogg",
   "kind": "vo",
-  "durationSec": 2.16,
+  "durationSec": 2.55,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -2.1
+  "lufs": -16.6,
+  "truePeakDb": -1.6
  },
  {
   "key": "odile_bid",
   "file": "audio/vo/odile_bid.mp3",
   "fileOgg": "audio/vo/odile_bid.ogg",
   "kind": "vo",
-  "durationSec": 2.0,
+  "durationSec": 2.53,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -2.6
+  "lufs": -16.5,
+  "truePeakDb": -1.5
  },
  {
   "key": "odile_confess",
   "file": "audio/vo/odile_confess.mp3",
   "fileOgg": "audio/vo/odile_confess.ogg",
   "kind": "vo",
-  "durationSec": 2.38,
+  "durationSec": 2.95,
   "loop": false,
-  "lufs": -16.1,
-  "truePeakDb": -1.5
+  "lufs": -16.5,
+  "truePeakDb": -1.6
  },
  {
   "key": "odile_greet",
   "file": "audio/vo/odile_greet.mp3",
   "fileOgg": "audio/vo/odile_greet.ogg",
   "kind": "vo",
-  "durationSec": 2.39,
+  "durationSec": 3.04,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -2.6
+  "lufs": -16.6,
+  "truePeakDb": -1.7
  },
  {
   "key": "season_end_lose",
   "file": "audio/vo/season_end_lose.mp3",
   "fileOgg": "audio/vo/season_end_lose.ogg",
   "kind": "vo",
-  "durationSec": 2.8,
+  "durationSec": 3.77,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -4.2
+  "lufs": -16.5,
+  "truePeakDb": -2.1
  },
  {
   "key": "season_end_win",
   "file": "audio/vo/season_end_win.mp3",
   "fileOgg": "audio/vo/season_end_win.ogg",
   "kind": "vo",
-  "durationSec": 2.4,
+  "durationSec": 2.25,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -3.9
+  "lufs": -16.6,
+  "truePeakDb": -1.6
  },
  {
   "key": "sully_betrayed",
   "file": "audio/vo/sully_betrayed.mp3",
   "fileOgg": "audio/vo/sully_betrayed.ogg",
   "kind": "vo",
-  "durationSec": 1.9,
+  "durationSec": 2.63,
   "loop": false,
-  "lufs": -16.0,
-  "truePeakDb": -2.6
+  "lufs": -16.5,
+  "truePeakDb": -2.1
  },
  {
   "key": "sully_bid",
   "file": "audio/vo/sully_bid.mp3",
   "fileOgg": "audio/vo/sully_bid.ogg",
   "kind": "vo",
-  "durationSec": 2.9,
+  "durationSec": 3.32,
   "loop": false,
-  "lufs": -16.1,
-  "truePeakDb": -0.6
+  "lufs": -16.6,
+  "truePeakDb": -1.5
  },
  {
   "key": "sully_confess",
   "file": "audio/vo/sully_confess.mp3",
   "fileOgg": "audio/vo/sully_confess.ogg",
   "kind": "vo",
-  "durationSec": 6.61,
+  "durationSec": 4.49,
   "loop": false,
-  "lufs": -16.1,
-  "truePeakDb": -1.2
+  "lufs": -16.4,
+  "truePeakDb": -2.0
  },
  {
   "key": "sully_greet",
   "file": "audio/vo/sully_greet.mp3",
   "fileOgg": "audio/vo/sully_greet.ogg",
   "kind": "vo",
-  "durationSec": 3.03,
+  "durationSec": 3.22,
   "loop": false,
-  "lufs": -16.2,
-  "truePeakDb": -1.5
+  "lufs": -16.7,
+  "truePeakDb": -1.7
  }
 ]
