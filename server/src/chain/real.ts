@@ -88,7 +88,9 @@ export class RealChain implements Chain {
   async ensureBuyerFunds(buyer: BuyerId, accountId: string, need: bigint): Promise<TxResult | null> {
     const a = await this.account(accountId);
     const spendable = a.amount > a.storage ? a.amount - a.storage : 0n;
-    const gasReserve = nearToYocto('0.15');
+    // A confess with payout_evm prepays 250 Tgas, which NEAR charges at the pessimistic gas price
+    // (~0.17 NEAR on testnet); 0.15 left buyers unable to confess (live run, 2026-11-14).
+    const gasReserve = nearToYocto('0.35');
     const target = need + gasReserve;
     if (spendable >= target) return null;
     return this.house.send(accountId, [{ kind: 'transfer', deposit: target - spendable }]);
