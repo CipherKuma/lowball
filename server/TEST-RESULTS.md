@@ -1,27 +1,38 @@
 # Test results
 
-Command: `cd server && npm test` (vitest 3.2.4), run 2026-11-14 after the contract-upgrade integration (BRIEF-2).
+Command: `cd server && npm test` (vitest 3.2.4), latest run 2026-11-14 17:15 IST (after the RPC list change and the
+DeleteKey encoder test).
 
 ```
- ✓ test/pact.test.ts (4 tests)
- ✓ test/nearai.test.ts (16 tests | 1 skipped)
- ✓ test/signer.test.ts (14 tests)
- ✓ test/real-chain.test.ts (12 tests)            new: RealChain request shapes, yield-aware offer_leniency verification
- ✓ test/mock-upgrade.test.ts (14 tests)          new: MockChain contract rules (yield, timeout, tokens, payout route, gas)
- ✓ test/attestation-flow.test.ts (18 tests)
- ✓ test/api.test.ts (52 tests)
- ✓ test/chainsig.test.ts (12 tests)
+ ✓ test/real-chain.test.ts (12 tests)
+ ✓ test/features-forge.test.ts (9 tests)
+ ✓ test/features-interrogate.test.ts (13 tests)
  ✓ test/engine.test.ts (20 tests)
+ ✓ test/tee.test.ts (10 tests)
+ ✓ test/tee-mode.test.ts (11 tests)
+ ✓ test/mock-upgrade.test.ts (14 tests)
+ ✓ test/engine-upgrade.test.ts (20 tests)
+ ✓ test/nearai.test.ts (16 tests | 1 skipped)
+ ✓ test/attestation-flow.test.ts (18 tests)
+ ✓ test/pact.test.ts (4 tests)
  ✓ test/chainsig-relay.test.ts (10 tests)
- ✓ test/engine-upgrade.test.ts (20 tests)        new: token events, on-chain holdout, finalize/resume, payout_evm flows
- ✓ test/api-payout.test.ts (10 tests)            new: payoutEvm zod boundary
- ✓ test/budget.test.ts (12 tests)                new: pricing, usage ledger, BUDGET_EXHAUSTED, TTS cap
+ ✓ test/features-data.test.ts (18 tests)
+ ✓ test/features-wiretap.test.ts (6 tests)
+ ✓ test/api.test.ts (53 tests)
  ✓ test/attestation.test.ts (14 tests)
- ✓ test/d1.test.ts (5 tests)                     spend ledger and voice counter on real D1 (migrations 0001 + 0002)
+ ✓ test/chainsig.test.ts (13 tests)
+ ✓ test/api-payout.test.ts (10 tests)
+ ✓ test/budget.test.ts (12 tests)
+ ✓ test/tee-outlayer.test.ts (4 tests)
+ ✓ test/d1.test.ts (7 tests)
+ ✓ test/signer.test.ts (15 tests)
 
- Test Files  15 passed (15)
-      Tests  232 passed | 1 skipped (233)
+ Test Files  22 passed (22)
+      Tests  308 passed | 1 skipped (309)
 ```
+
+Earlier the same day (BRIEF-2 integration): 232 passed | 1 skipped across 15 files. The coverage sections below describe
+what that integration added.
 
 `npm run typecheck` is clean; `npm run smoke-sim` (scripted model, MockChain with the 200-block window) completes both modes;
 `wrangler deploy --dry-run` bundles the Worker (chainsig relayer included); `npm run db:migrate` applies `0002_spend.sql`.
@@ -73,8 +84,16 @@ tests, now mapped: `E_LENIENCY_OPEN E_BAD_EVM E_NO_TOKEN E_NOT_TOKEN_OWNER E_MT_
 
 ## What is NOT covered (and why)
 
-- **Recorded real NEAR AI response**: the one skipped test needs `test/fixtures/nearai-recorded.json`; `NEARAI_API_KEY` was not in the vault, so no real completion or signature was ever fetched. Signature verification is tested against synthetic gateway signatures that follow the documented format.
-- **Real contract / real testnet transactions**: `contract/deployed.json` did not exist when this was written, so the hand-written NEAR transaction encoder, the `wait_until: INCLUDED` RPC reply shape, the real `receipts_outcome` log format and the yielded-receipt timing have not been exercised against the network. The upgraded paths are tested against a fake JSON-RPC node and the rule-faithful MockChain only. See E2E-RUN.md for the exact steps.
-- **Cross-chain leg**: the relayer is tested in `chainsig-relay.test.ts` (chainsig agent); the engine wiring to it is tested with a fake `PayoutRelay`. No real MPC signature or Sepolia broadcast was made from this suite.
+- **Recorded real NEAR AI response**: the one skipped test still needs `test/fixtures/nearai-recorded.json`. Real completions
+  and their signatures are checked live instead: each season's case file reports model receipts verified (26/26 in season 46,
+  14 Nov), and `npm run verify-attestation -- --live` re-checks the attestation.
+- **Real testnet behaviour is verified outside this suite**, in recorded runs rather than automated tests: live seasons on the
+  deployed Worker (season 46: a confession, four slashes, a second confession refused, five signatures re-checked in the
+  browser, three forgery-drill refusals), `sim/ADVERSARIAL-REAL.md` (18 of 18 refusals on the deployed contract) and
+  `FEATURES-RUN.md`. The suite itself still uses a fake JSON-RPC node and the rule-faithful MockChain.
+- **Cross-chain leg**: the relayer is unit-tested in `chainsig-relay.test.ts`; one real Sepolia payout is recorded
+  (`0x92fbe20e…610c`). No suite test broadcasts to Sepolia.
+- **OutLayer enclave mode**: covered with fakes in `tee-outlayer.test.ts` and `tee-mode.test.ts`. Live, one enclave season was
+  accepted (season 32); the testnet executor pool has been unreliable since, so seasons fall back to standard mode.
 - **D1 spend ledger under concurrency**: single-writer tests only; the cap can be overshot by in-flight seasons (a season costs cents).
 - The Worker was started with `wrangler dev` and answered `/api/health` and validation errors; no full season ran through it.
