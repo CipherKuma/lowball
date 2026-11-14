@@ -65,7 +65,12 @@ export interface View {
   slashed: { confessor: BuyerId; slashed: SlashedBuyer[]; payoutYocto: string; tx: string } | null;
   holdout: boolean;
   closed: boolean;
-  error: { code: ErrorCode; message: string; retryable: boolean; seq: number } | null;
+  /** NEP-245 token for today's lot, and who holds it */
+  token: { id: string; amount: number; mintTx: string; owner: string | null; ownerBuyer: BuyerId | null; transferTx: string | null } | null;
+  deadlineBlock: number | null;
+  holdoutReason: 'timeout' | 'no_pact' | null;
+  payoutEvm: { to: string; amountWei: string; sepoliaTx: string; nearTx: string; status?: string } | null;
+  error:{ code: ErrorCode; message: string; retryable: boolean; seq: number } | null;
   txs: TxItem[];
   status: SessionStatus | null;
 }
@@ -92,6 +97,10 @@ export const initialView: View = {
   slashed: null,
   holdout: false,
   closed: false,
+  token: null,
+  deadlineBlock: null,
+  holdoutReason: null,
+  payoutEvm: null,
   error: null,
   txs: [],
   status: null,
@@ -125,7 +134,25 @@ export function apply(v: View, e: GameEvent): View {
         identical: false,
         settled: null,
         leniencyOpen: false,
+        token: null,
         txs: tx(v, e.seq, `Day ${e.day}: lot opened`, e.tx),
+      };
+    case 'lot_minted':
+      return {
+        ...n,
+        token: { id: e.tokenId, amount: e.amount, mintTx: e.tx, owner: null, ownerBuyer: null, transferTx: null },
+        txs: tx(v, e.seq, `Catch minted as token ${e.tokenId}`, e.tx),
+      };
+    case 'lot_transferred':
+      return {
+        ...n,
+        token: v.token && v.token.id === e.tokenId ? { ...v.token, owner: e.to, ownerBuyer: e.buyer ?? null, transferTx: e.tx } : v.token,
+        txs: tx(v, e.seq, `Token ${e.tokenId} sent to ${e.buyer ?? e.to}`, e.tx),
+      };
+    case 'payout_evm':
+      return {
+        ...n,
+        payoutEvm: { to: e.to, amountWei: e.amountWei, sepoliaTx: e.sepoliaTx, nearTx: e.nearTx, status: e.status },
       };
     case 'bid_committed':
       return {
@@ -162,7 +189,13 @@ export function apply(v: View, e: GameEvent): View {
     case 'line':
       return { ...n, lines: [...v.lines, { seq: e.seq, buyer: e.buyer, text: e.text, mood: e.mood }].slice(-30) };
     case 'leniency_open':
-      return { ...n, leniencyOpen: true, holdout: false, txs: tx(v, e.seq, 'You offered leniency', e.tx) };
+      return {
+        ...n,
+        leniencyOpen: true,
+        holdout: false,
+        deadlineBlock: e.deadlineBlock ?? null,
+        txs: tx(v, e.seq, 'You offered leniency', e.tx),
+      };
     case 'deliberating':
       return { ...n, deliberating: [...new Set([...v.deliberating, e.buyer])] };
     case 'confession_attempt':
@@ -180,7 +213,7 @@ export function apply(v: View, e: GameEvent): View {
         txs: tx(v, e.seq, 'Bonds slashed, paid to you', e.tx),
       };
     case 'holdout':
-      return { ...n, deliberating: [], holdout: true, leniencyOpen: false };
+      return { ...n, deliberating: [], holdout: true, leniencyOpen: false, holdoutReason: e.reason ?? null };
     case 'season_closed':
       return { ...n, closed: true, txs: tx(v, e.seq, 'Season closed', e.tx) };
     case 'error':

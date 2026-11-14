@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BuyerId } from '../../../shared/api';
 import type { SessionMeta } from '../lib/driver';
 import { lastLineOf, type View } from '../lib/state';
+import { useBlockHeight } from '../lib/useBlockHeight';
 import type { Pending } from '../lib/useGame';
 import { txUrl, yoctoToNear } from '../lib/wallet';
 import { BuyerCard, type BondState, type Outcome } from './BuyerCard';
@@ -36,6 +37,7 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase }: Prop
   const bestBid = view.reveals ? Math.max(...view.reveals.map((r) => r.amount)) : null;
   const bondNear = yoctoToNear(meta.bondYocto, 2);
   const deliberatingSet = useMemo(() => new Set(view.deliberating), [view.deliberating]);
+  const height = useBlockHeight(view.leniencyOpen && !view.slashed && !view.holdout && view.deadlineBlock != null);
 
   // Holds are capped per day by the server; count re-seals of a lot that was already fully sealed.
   const [holds, setHolds] = useState(0);
@@ -65,7 +67,11 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase }: Prop
             >
               <strong className="display">Leniency is on the table.</strong>
               <span>The first buyer to hand the contract a signed pact walks free. Everyone else loses their bond.</span>
-              <span className="leniency-clock">On-chain window · the contract closes it by itself after 200 blocks</span>
+              <span className="leniency-clock">
+                {view.deadlineBlock && height
+                  ? `On-chain window · ${Math.max(0, view.deadlineBlock - height)} blocks left · closes itself at block ${view.deadlineBlock.toLocaleString()}`
+                  : 'On-chain window · the contract closes it by itself after 200 blocks'}
+              </span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -93,7 +99,14 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase }: Prop
         </div>
 
         <div style={{ visibility: view.leniencyOpen && !view.slashed && !view.holdout ? 'hidden' : 'visible' }}>
-          <Slab lot={view.lot} bestBid={bestBid} identical={view.identical} settledPrice={view.settled?.price ?? null} />
+          <Slab
+            lot={view.lot}
+            bestBid={bestBid}
+            identical={view.identical}
+            settledPrice={view.settled?.price ?? null}
+            token={view.token}
+            ownerName={view.token?.ownerBuyer ? meta.buyers.find((b) => b.id === view.token?.ownerBuyer)?.name ?? null : null}
+          />
         </div>
       </div>
 
@@ -195,6 +208,11 @@ function Verdict({
             <a href={txUrl(s.tx)} target="_blank" rel="noreferrer">
               See the slash on NEAR testnet ↗
             </a>
+            {view.payoutEvm && (
+              <a href={`https://sepolia.etherscan.io/tx/${view.payoutEvm.sepoliaTx}`} target="_blank" rel="noreferrer">
+                Paid out on Ethereum Sepolia via NEAR chain signatures ↗
+              </a>
+            )}
           </div>
         )}
       </motion.div>

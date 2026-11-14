@@ -90,6 +90,31 @@
 .slab-prices [data-tone='bad'] dd {
   color: #e0574a;
 }
+.token-chip {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 10px 0 0;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 181, 154, 0.3);
+  background: rgba(127, 181, 154, 0.08);
+  font-size: 11px;
+  color: var(--fog);
+}
+.token-chip strong {
+  color: var(--text);
+}
+.token-chip a {
+  color: var(--ok);
+}
+.token-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+}
 .slab-alert {
   margin: 10px 0 0;
   font: italic 500 15px/1.3 var(--font-display);

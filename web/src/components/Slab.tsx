@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
-import type { Lot } from '../lib/state';
+import type { Lot, View } from '../lib/state';
+import { txUrl } from '../lib/wallet';
 
 const FISH: Array<[RegExp, string]> = [
   [/cod/i, 'fish_cod'],
@@ -16,11 +17,15 @@ export function Slab({
   bestBid,
   identical,
   settledPrice,
+  token,
+  ownerName,
 }: {
   lot: Lot | null;
   bestBid: number | null;
   identical: boolean;
   settledPrice: number | null;
+  token: View['token'];
+  ownerName: string | null;
 }) {
   const price = settledPrice ?? bestBid;
   const gap = lot && price != null ? lot.fairValue - price : null;
@@ -59,6 +64,26 @@ export function Slab({
                   <dd className="mono">{gap != null ? (gap > 0 ? `−${gap}` : '0') : '··'}</dd>
                 </div>
               </dl>
+              {token && (
+                <motion.p
+                  className="token-chip mono"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <span className="token-dot" aria-hidden />
+                  NEP-245 CATCH <strong>{token.id}</strong> · {token.amount} kg ·{' '}
+                  {token.transferTx ? (
+                    <a href={txUrl(token.transferTx)} target="_blank" rel="noreferrer">
+                      now held by {ownerName ?? token.owner} ↗
+                    </a>
+                  ) : (
+                    <a href={txUrl(token.mintTx)} target="_blank" rel="noreferrer">
+                      minted, held in escrow ↗
+                    </a>
+                  )}
+                </motion.p>
+              )}
               <AnimatePresence>
                 {identical && (
                   <motion.p

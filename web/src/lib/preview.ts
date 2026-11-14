@@ -89,6 +89,7 @@ export class PreviewDriver implements Driver {
     this.holds = 0;
     const lot = LOTS[this.day - 1];
     await this.emit({ type: 'day_opened', day: this.day, ...lot, tx: fakeTx() }, 700);
+    await this.emit({ type: 'lot_minted', tokenId: `s7-d${this.day}`, amount: lot.weightKg, tx: fakeTx() }, 400);
     for (const b of BUYER_IDS) await this.emit({ type: 'bid_committed', buyer: b, tx: fakeTx() }, 380);
     this.phase = 'lot_open';
     await this.emit({ type: 'rumour', text: 'Five sealed envelopes on the zinc.' }, 200);
@@ -113,6 +114,10 @@ export class PreviewDriver implements Driver {
       await this.emit(
         { type: 'lot_settled', winner: 'marlow', price: cap, shortfall: lot.fairValue - cap, tx: fakeTx() },
         1200,
+      );
+      await this.emit(
+        { type: 'lot_transferred', tokenId: `s7-d${this.day}`, to: `marlow.${HOUSE}`, buyer: 'marlow', tx: fakeTx() },
+        500,
       );
       await this.emit({ type: 'line', buyer: 'marlow', text: 'Pleasure doing business.', mood: 'calm' }, 700);
       this.phase = 'settled';
