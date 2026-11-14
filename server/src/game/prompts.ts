@@ -29,8 +29,30 @@ export function identicalStreak(lots: LotMemory[]): number {
 /** Leniency unlocks once the fisher has a case: this many settled lots with all bids identical. */
 export const CASE_DAYS = 2;
 
+/** A day goes on the record when at least 4 of the 5 sealed bids are the same number, below the board price. */
+export function isEvidence(l: LotMemory): boolean {
+  if (!l.settled) return false;
+  if (l.identical) return true;
+  const counts = new Map<number, number>();
+  for (const r of l.reveals) counts.set(r.amount, (counts.get(r.amount) ?? 0) + 1);
+  return [...counts.entries()].some(([amount, n]) => n >= 4 && amount < l.fairValue);
+}
+
 export function caseDays(lots: LotMemory[]): number {
-  return lots.filter((l) => l.settled && l.identical).length;
+  return lots.filter(isEvidence).length;
+}
+
+/** Members who bid above the cap on a settled lot, for the ring's memory. */
+export function capBreakers(s: SessionState): string[] {
+  const pact = s.pact;
+  if (!pact) return [];
+  const out: string[] = [];
+  for (const l of s.lots.filter((x) => x.settled)) {
+    for (const r of l.reveals) {
+      if (pact.members.includes(r.buyer) && r.amount > pact.cap) out.push(`${BUYER_NAMES[r.buyer]} (day ${l.day}, bid ${r.amount})`);
+    }
+  }
+  return out;
 }
 
 export function shortfallSoFar(lots: LotMemory[]): number {
@@ -114,7 +136,11 @@ export function bidPrompt(
   return [
     `DAY ${lot.day} of ${s.days}. Lot: ${lot.weightKg} kg of ${lot.species}. Fair value ${lot.fairValue} marks. Place your sealed bid (an integer number of marks).`,
     member && s.pact
-      ? `You signed the pact. Its cap is ${s.pact.cap} marks. Pact members: ${s.pact.members.map((m) => BUYER_NAMES[m]).join(', ')}. Ring rule: bid exactly ${s.pact.cap}; winnings go to the pool. Bidding above it is seen at the reveal and gets you thrown out of the pool for good.`
+      ? `You signed the pact. Its cap is ${s.pact.cap} marks. Pact members: ${s.pact.members.map((m) => BUYER_NAMES[m]).join(', ')}. Ring rule: bid exactly ${s.pact.cap}; winnings go to the pool. Bidding above it is seen at the reveal and gets you thrown out of the pool for good.${
+          capBreakers(s).length
+            ? ` The ring has seen cap-breakers this season: ${capBreakers(s).join('; ')}. Marlow has had words with them, and everyone is watching the next reveal.`
+            : ''
+        }`
       : s.pact
         ? 'A pact exists among some of the buyers, but you did not sign it. You are not bound.'
         : 'No pact was formed. Everyone bids on their own.',
