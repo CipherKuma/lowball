@@ -54,6 +54,12 @@ Motion: continuous — push-ins and match cuts between game states, no entrance-
 repeated whooshes (use only the game's own SFX). Captions: burn in narration captions, Inter Tight
 30px, bottom-centre, max 2 lines, phrase-level timing from the VO files.
 
+## Disk
+Run `~/.agents/bin/disk-check` before recording and before each render; if it exits 1, free your own
+space first. Once a take or render is reviewed and no longer the working cut, move it to Dropbox with
+`~/.agents/bin/media-offload <file>` (verifies, then deletes locally) and note the Dropbox path in
+`demo/footage/takes.md`. Keep only the working cut and the final locally.
+
 ## Handback
 `demo/remotion-plan.md` (composition name, Studio URL, asset list with provenance), `demo/out/`
 renders, `demo/footage/takes.md`, encode validation (ffprobe duration/codec/loudness numbers).
