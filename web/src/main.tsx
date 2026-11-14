@@ -5,6 +5,7 @@ import './styles/base.css';
 import './styles/materials.css';
 import './styles/objects.css';
 import './styles/landing.css';
+import './styles/landing-objects.css';
 import './styles/identity.css';
 import './styles/tutorial.css';
 import './styles/scene.css';

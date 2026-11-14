@@ -1,178 +1,154 @@
-/* Landing: the pier shed wall. The bill on the left carries the one action; the ring is pinned beside it. */
+/* Landing: the pier at 4 a.m. seen through a security camera. Neon sign left, the ring pinned on the shed wall right,
+   five sealed bids on the zinc below. One orchestrated moment: the envelopes slit open and a chalk ring closes. */
 .landing {
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(0, 600px) minmax(0, 1fr);
-  grid-template-rows: 1fr auto;
-  column-gap: clamp(28px, 5vw, 72px);
-  row-gap: 18px;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  padding: clamp(52px, 7vh, 76px) max(calc(var(--gutter) + 26px), env(safe-area-inset-right, 0px)) 44px max(calc(var(--gutter) + 26px), env(safe-area-inset-left, 0px));
+}
+
+/* drifting harbour fog */
+.fog {
+  position: absolute;
+  inset: -10% -30%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 40% 22% at 20% 70%, rgba(190, 205, 200, 0.1), transparent 70%),
+    radial-gradient(ellipse 35% 18% at 70% 82%, rgba(190, 205, 200, 0.08), transparent 70%);
+  animation: fog 48s linear infinite alternate;
+}
+.fog-b { animation-duration: 71s; animation-direction: alternate-reverse; opacity: 0.8; transform: translateY(-12%); }
+@keyframes fog { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
+
+/* camera overlay */
+.osd { position: absolute; inset: 16px; z-index: 20; pointer-events: none; --c: rgba(239, 238, 230, 0.55); }
+.osd span { position: absolute; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 0.12em; color: rgba(239, 238, 230, 0.72); }
+.osd-tl { top: 10px; left: 14px; }
+.osd-tr { top: 10px; right: 14px; }
+.osd-bl { bottom: 10px; left: 14px; }
+.osd-br { bottom: 10px; right: 14px; }
+.osd kbd {
+  padding: 1px 6px;
+  font: inherit;
+  font-size: 10.5px;
+  border: 1px solid rgba(239, 238, 230, 0.45);
+  border-radius: 2px;
+}
+
+.landing-stage {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(20px, 4vw, 64px);
   align-items: center;
   width: 100%;
   max-width: 1360px;
   margin: 0 auto;
-  padding: clamp(20px, 4vh, 48px) max(var(--gutter), env(safe-area-inset-right, 0px)) 18px max(var(--gutter), env(safe-area-inset-left, 0px));
+  min-height: 0;
 }
-.landing > .lamp-pool { position: fixed; }
+.landing-left { display: grid; justify-items: start; min-width: 0; }
 
-.landing-bill {
-  padding: 34px clamp(22px, 3vw, 38px) 28px;
-  max-width: 600px;
-}
-.landing-kicker {
-  margin: 0;
+/* the painted plank above the sign */
+.landing-plank {
+  position: relative;
+  margin: 0 0 10px;
+  padding: 7px 26px 6px;
   font-size: 15px;
-  letter-spacing: 0.22em;
-  color: var(--stamp);
+  letter-spacing: 0.26em;
+  color: var(--paper);
+  background: var(--woodgrain), linear-gradient(180deg, var(--wood-hi), var(--wood-2));
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: rotate(-1.2deg);
 }
-.landing-word {
-  margin: 4px 0 6px;
-  font-size: clamp(84px, 10.6vw, 150px);
-  font-weight: 900;
-  line-height: 0.8;
-  letter-spacing: -0.012em;
-  color: var(--paper-ink);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-.landing-word::after {
+.landing-plank::before,
+.landing-plank::after {
   content: '';
-  display: block;
-  width: 64%;
-  height: 7px;
-  margin-top: 12px;
-  background: var(--stamp);
-  opacity: 0.85;
-  transform: rotate(-0.8deg);
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d8d2c4, #6d665a);
 }
-.landing-lede {
-  margin: 14px 0 18px;
-  font-size: clamp(22px, 2.3vw, 28px);
-  font-style: italic;
-  line-height: 1.15;
-  text-wrap: balance;
-}
-.landing-rules {
-  display: grid;
-  gap: 10px;
+.landing-plank::before { left: 9px; }
+.landing-plank::after { right: 9px; }
+
+/* the neon sign: hollow tubes, warm glow, one letter that won't stay lit */
+.neon {
   margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--paper-ink);
-}
-.landing-rules li {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 10px;
-  align-items: baseline;
-}
-.landing-rules li span {
   font-family: var(--font-sign);
   font-weight: 900;
-  font-size: 22px;
-  line-height: 1;
-  color: var(--stamp);
+  font-size: clamp(92px, 12.6vw, 200px);
+  line-height: 0.8;
+  letter-spacing: 0.015em;
+  color: rgba(30, 14, 4, 0.55);
+  -webkit-text-stroke: 3px #ffdcaa;
+  text-shadow:
+    0 0 1px #fff4dc,
+    0 0 6px rgba(255, 194, 102, 0.9),
+    0 0 18px rgba(242, 150, 50, 0.6),
+    0 0 44px rgba(242, 140, 40, 0.35);
+  animation: neon-on 2.4s linear 0.2s both;
 }
-.landing-cta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 20px;
-  margin-top: 24px;
+.neon span { display: inline-block; }
+.neon-buzz { animation: neon-buzz 6.1s steps(1) 3s infinite; }
+@keyframes neon-on {
+  0% { opacity: 0; }
+  6% { opacity: 1; }
+  9% { opacity: 0.15; }
+  13% { opacity: 1; }
+  15% { opacity: 0.3; }
+  22%, 100% { opacity: 1; }
 }
-.landing-cta .plaque { font-size: 20px; padding-inline: 26px; max-width: 100%; }
-.landing-connect { overflow-wrap: anywhere; text-align: left; }
-.landing-cta .plaque-note { flex-basis: 100%; margin: 0; color: var(--paper-ink-2); }
-.landing-error {
-  flex-basis: 100%;
-  margin: 0;
-  padding: 7px 10px;
-  font-size: 13.5px;
-  color: var(--stamp);
-  border-left: 3px solid var(--stamp);
-  background: rgba(163, 49, 42, 0.07);
+@keyframes neon-buzz {
+  0%, 100% { opacity: 1; }
+  48% { opacity: 0.25; }
+  49% { opacity: 1; }
+  51% { opacity: 0.4; }
+  52% { opacity: 1; }
 }
-.landing-alt {
-  margin: 16px 0 0;
-  padding-top: 12px;
-  border-top: 1px dashed rgba(31, 23, 14, 0.3);
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--paper-ink-2);
-}
-.landing-alt .typed-link { font-size: 13.5px; color: var(--carbon); }
-
-/* the ring, pinned to the wall */
-.landing-wall {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 26px 20px;
-  align-content: center;
-  justify-items: center;
-  padding-top: 10px;
-}
-.landing-poster { width: 100%; max-width: 186px; margin: 0; grid-column: span 2; }
-.landing-poster:nth-child(4) { grid-column: 2 / span 2; }
-.landing-poster:nth-child(5) { grid-column: 4 / span 2; }
-.landing-poster-head {
-  margin: -8px 0 8px;
-  text-align: center;
-  font-size: 13px;
-  letter-spacing: 0.34em;
-  color: var(--stamp);
-}
-.landing-poster .poster-name { font-size: 21px; }
-.landing-telegram {
-  grid-column: 1 / -1;
-  margin: 6px 0 0;
-  max-width: 420px;
-  font-size: 14px;
-  line-height: 2;
-  text-align: center;
+.neon-reflect {
+  height: 0.42em;
+  margin-top: 0.06em;
+  overflow: hidden;
+  font-family: var(--font-sign);
+  font-weight: 900;
+  font-size: clamp(92px, 12.6vw, 200px);
+  line-height: 0.8;
+  letter-spacing: 0.015em;
+  color: transparent;
+  -webkit-text-stroke: 3px rgba(255, 210, 150, 0.8);
+  text-shadow: 0 0 18px rgba(242, 150, 50, 0.6);
+  transform: scaleY(-1);
+  transform-origin: top;
+  filter: blur(3px);
+  opacity: 0.45;
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent 85%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent 85%);
+  pointer-events: none;
+  user-select: none;
 }
 
-.landing-foot {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 22px;
-  font-size: 12.5px;
-  color: var(--muted);
+.landing-lede {
+  max-width: 30ch;
+  margin: 6px 0 22px;
+  font-size: clamp(21px, 2.1vw, 28px);
+  line-height: 1.22;
+  color: var(--text);
+  text-wrap: balance;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
 }
-.landing-foot span + span::before {
-  content: '·';
-  margin-right: 22px;
-  color: var(--faint);
-}
+.landing-lede em { font-style: italic; color: var(--lamp-hot); }
 
-@media (max-width: 920px) {
-  .landing {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
-    align-items: start;
-  }
-  .landing-bill { margin: 0 auto; transform: none; }
-  .landing-wall {
-    display: flex;
-    gap: 16px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding: 16px 4px 10px;
-    margin: 0 calc(-1 * var(--gutter));
-    padding-inline: var(--gutter);
-    flex-wrap: nowrap;
-  }
-  .landing-poster { flex: 0 0 148px; scroll-snap-align: start; }
-  .landing-telegram { flex: 0 0 240px; align-self: center; text-align: left; }
-  .landing-foot { justify-content: flex-start; }
-  .landing-foot span + span::before { margin-right: 10px; }
-}
-@media (max-width: 480px) {
-  .landing-word { font-size: 84px; }
-  .landing-rules { font-size: 14px; }
-  .landing-cta .plaque { width: 100%; }
-}
+.landing-cta { display: grid; justify-items: start; gap: 9px; max-width: 520px; }
+.landing-connect { font-size: 21px; padding-inline: 28px; max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+.landing-cta-note { margin: 0; font-size: 13px; color: var(--muted); }
+.landing-error { margin: 0; padding: 7px 10px; font-size: 13.5px; color: var(--danger); border-left: 3px solid var(--danger); background: rgba(224, 112, 95, 0.08); }
+.landing-alt { margin: 6px 0 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.landing-alt .typed-link { font-size: 13.5px; }
+

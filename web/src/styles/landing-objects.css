@@ -1,0 +1,149 @@
+/* Landing objects: the ring on the shed wall, and the zinc counter with five sealed bids. */
+
+/* the shed wall: boards behind the posters */
+.wall {
+  position: relative;
+  justify-self: end;
+  width: min(100%, 580px, 66vh);
+  aspect-ratio: 1 / 1.02;
+  min-width: 0;
+}
+.wall::before {
+  content: '';
+  position: absolute;
+  inset: -4% -6%;
+  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 78px, rgba(0, 0, 0, 0.28) 78px 81px);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 45%, #000 40%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 50% 45%, #000 40%, transparent 75%);
+  pointer-events: none;
+}
+.wall-poster { position: absolute; padding: 0; text-align: left; cursor: pointer; }
+.wall-paper { margin: 0; padding: 24px 9px 10px; transform: none; }
+.wall-head { margin: -10px 0 7px; text-align: center; font-size: 12px; letter-spacing: 0.32em; color: var(--stamp); }
+.wall-poster .poster-name { font-size: clamp(15px, 1.45vw, 21px); }
+.wall-poster .poster-role { font-size: 11.5px; }
+.wall-poster[data-on] .wall-paper { box-shadow: var(--shadow-lift), 0 0 0 1px rgba(255, 208, 138, 0.5), 0 0 40px rgba(255, 190, 110, 0.25); }
+.wall-poster[data-on] .poster-photo { filter: grayscale(0.15) sepia(0.25) contrast(1.15) brightness(1.02); }
+.wall-line {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  z-index: 8;
+  width: max-content;
+  max-width: 250px;
+  margin: 0;
+  padding: 9px 13px;
+  translate: -50% 0;
+  font-size: 16.5px;
+  font-style: italic;
+  line-height: 1.25;
+  color: var(--paper-ink);
+  background: var(--paper);
+  background-image: var(--fibres), var(--noise);
+  box-shadow: var(--shadow-lift);
+}
+
+/* the zinc counter */
+.counter {
+  position: relative;
+  z-index: 3;
+  justify-self: center;
+  width: min(1040px, 100%);
+  margin-top: clamp(4px, 2vh, 18px);
+  padding: 8px clamp(16px, 4vw, 48px) 14px;
+  background:
+    radial-gradient(ellipse 60% 120% at 30% 0%, rgba(255, 225, 180, 0.12), transparent 60%),
+    linear-gradient(180deg, #6d7574 0, #474f4e 9px, #2c3333 55%, #1c2121 100%);
+  border-top: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: 2px;
+  box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.35), 0 24px 40px rgba(0, 0, 0, 0.7);
+}
+.counter-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 132px));
+  justify-content: center;
+  gap: clamp(8px, 2vw, 24px);
+  padding-top: 44px;
+}
+.counter-env { padding: 0; cursor: pointer; }
+.counter-env .envelope { transition: transform 200ms var(--ease-out), filter 200ms; }
+.counter-env:hover .envelope,
+.counter-env[data-focus] .envelope { transform: translateY(-5px); filter: brightness(1.08); }
+.counter-env .envelope-from { position: absolute; left: 6px; bottom: 4px; z-index: 5; font-size: 11px; color: #2b1c0c; }
+.counter-card {
+  display: grid;
+  place-items: center;
+  width: 80%;
+  aspect-ratio: 3 / 2;
+  font-size: clamp(26px, 3vw, 42px);
+  font-weight: 900;
+  color: var(--paper-ink);
+  background: var(--paper);
+  background-image: var(--fibres);
+  box-shadow: var(--shadow-paper);
+}
+.counter-ring {
+  position: absolute;
+  left: -3%;
+  top: 6px;
+  width: 106%;
+  height: calc(100% + 6px);
+  overflow: visible;
+  pointer-events: none;
+}
+.counter-ring path {
+  fill: none;
+  stroke: var(--stamp-hot);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 2700;
+  stroke-dashoffset: 2700;
+  vector-effect: non-scaling-stroke;
+  filter: url(#chalk);
+  transition: stroke-dashoffset 1100ms var(--ease-in-out);
+}
+.counter-ring[data-on] path { stroke-dashoffset: 0; }
+.counter-note {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 2;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 1200ms steps(42);
+}
+.counter-note[data-on] { clip-path: inset(0 0 0 0); }
+
+@media (max-width: 900px) {
+  .landing {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+    padding: 50px max(var(--gutter), env(safe-area-inset-right, 0px)) 36px max(var(--gutter), env(safe-area-inset-left, 0px));
+  }
+  .landing-stage { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  .landing > *, .landing-stage > * { flex-shrink: 0; }
+  .neon, .neon-reflect { font-size: clamp(56px, 17vw, 120px); }
+  .landing-plank { font-size: 12px; letter-spacing: 0.18em; padding-inline: 20px; }
+  .osd .osd-bl, .osd .osd-br, .osd .osd-tr { display: none; }
+  .osd span { font-size: 10.5px; }
+  .wall {
+    flex: none;
+    width: auto;
+    display: flex;
+    gap: 14px;
+    aspect-ratio: auto;
+    max-width: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 18px 4px 70px;
+  }
+  .wall::before { display: none; }
+  .wall-poster { position: relative; left: auto !important; top: auto !important; width: 136px !important; flex: 0 0 136px; scroll-snap-align: start; }
+  .counter-row { grid-template-columns: repeat(5, minmax(0, 1fr)); padding-top: 34px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fog, .neon, .neon-buzz { animation: none; }
+  .counter-ring path, .counter-note { transition: none; }
+}
