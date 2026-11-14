@@ -75,6 +75,22 @@
   background: rgba(163, 49, 42, 0.07);
 }
 
+.idesk-payout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px 12px;
+  max-width: 880px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  text-align: center;
+}
+.idesk-payout .label { color: var(--lamp); }
+.idesk-payout b { font-weight: 700; color: var(--lamp-hot); }
+.idesk-payout-error { flex-basis: 100%; color: var(--danger); }
+
 @media (max-width: 860px) {
   .idesk { align-content: start; }
   .idesk-docs { grid-template-columns: minmax(0, 520px); }

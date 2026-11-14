@@ -1,4 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { shortAddress } from '../lib/evm';
 import { Stamp } from './ui/Stamp';
 
 export type IdentityStatus = 'idle' | 'connecting' | 'signing' | 'ready' | 'error';
@@ -13,6 +14,7 @@ interface Props {
   onGuest: () => void;
   onDisconnect: () => void;
   onBegin: () => void;
+  payout: { address: string | null; busy: boolean; error: string | null; onConnect: () => void; onClear: () => void };
 }
 
 const land = (i: number, still: boolean | null) =>
@@ -25,7 +27,7 @@ const land = (i: number, still: boolean | null) =>
       };
 
 /** Who is selling today: your own NEAR wallet, or a dock pass (no wallet, nothing to install). */
-export function Identity({ status, kind, accountId, error, starting, onConnect, onGuest, onDisconnect, onBegin }: Props) {
+export function Identity({ status, kind, accountId, error, starting, onConnect, onGuest, onDisconnect, onBegin, payout }: Props) {
   const still = useReducedMotion();
   const busy = status === 'connecting' || status === 'signing';
   const licensed = kind === 'wallet' && status === 'ready' && accountId;
@@ -93,6 +95,26 @@ export function Identity({ status, kind, accountId, error, starting, onConnect, 
           {error && kind === 'guest' && <p className="idesk-error typed" role="alert">{error}</p>}
         </motion.section>
       </div>
+
+      <section className="idesk-payout typed" aria-label="Where your winnings go">
+        <span className="label">Payout</span>
+        {payout.address ? (
+          <>
+            <span>
+              Slashed bonds go to <b className="data">{shortAddress(payout.address)}</b> on Ethereum Sepolia, signed by NEAR Chain Signatures.
+            </span>
+            <button className="typed-link" onClick={payout.onClear}>Pay me in NEAR instead</button>
+          </>
+        ) : (
+          <>
+            <span>Slashed bonds are paid in NEAR. Or take them on Ethereum Sepolia, signed by NEAR Chain Signatures:</span>
+            <button className="typed-link" onClick={payout.onConnect} disabled={payout.busy || starting}>
+              {payout.busy ? 'Waiting for your Ethereum wallet…' : 'Connect an Ethereum wallet'}
+            </button>
+          </>
+        )}
+        {payout.error && <span className="idesk-payout-error" role="alert">{payout.error}</span>}
+      </section>
     </main>
   );
 }

@@ -10,6 +10,7 @@ import { TopBar } from './components/TopBar';
 import { Tutorial } from './components/tutorial/Tutorial';
 import { MaterialDefs } from './components/ui/MaterialDefs';
 import { audio } from './lib/audio';
+import { connectEthereum, EvmError } from './lib/evm';
 import { useIdentity } from './lib/identity';
 import { useGame } from './lib/useGame';
 
@@ -29,6 +30,16 @@ export function App() {
   const [screen, setScreen] = useState<Screen>('title');
   const [tutorialDone, setTutorialDone] = useState(readDone);
   const [chosen, setChosen] = useState<'guest' | 'wallet' | null>(null);
+  const [evm, setEvm] = useState<{ address: string | null; busy: boolean; error: string | null }>({ address: null, busy: false, error: null });
+  const connectEvm = async () => {
+    setEvm({ address: null, busy: true, error: null });
+    try {
+      const { address } = await connectEthereum();
+      setEvm({ address, busy: false, error: null });
+    } catch (e) {
+      setEvm({ address: null, busy: false, error: e instanceof EvmError ? e.message : 'The Ethereum wallet did not answer.' });
+    }
+  };
   const { view } = g;
 
   const openTutorial = () => {
@@ -57,7 +68,7 @@ export function App() {
     setChosen(mode);
     if (mode === 'guest') id.playAsGuest();
     setScreen('setup');
-    g.start({ mode });
+    g.start({ mode, payoutEvm: evm.address ?? undefined });
   };
 
   // Setup ends when the first lot is on the zinc.
@@ -107,6 +118,7 @@ export function App() {
                   void id.disconnect();
                 }}
                 onBegin={() => begin('wallet')}
+                payout={{ ...evm, onConnect: () => void connectEvm(), onClear: () => setEvm({ address: null, busy: false, error: null }) }}
               />
             )}
             {current === 'setup' && (
@@ -143,7 +155,7 @@ export function App() {
                 forge={g.forge}
                 onReplay={() => {
                   setScreen('setup');
-                  g.start({ mode: chosen ?? undefined });
+                  g.start({ mode: chosen ?? undefined, payoutEvm: evm.address ?? undefined });
                 }}
               />
             )}
