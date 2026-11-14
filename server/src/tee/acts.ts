@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { debug } from '../log.js';
 import type { BuyerId, Mood, TeeActRecord } from '../../../shared/api.js';
 import type { PactJson } from '../chain/types.js';
 import { AppError } from '../errors.js';
@@ -92,6 +93,7 @@ export class TeeActs {
         last = new AppError('TEE_UNAVAILABLE', `${buyer}'s enclave job returned nothing`);
       } catch (e) {
         last = e;
+        debug('tee', buyer, 'attempt', attempt, 'failed', String(e).slice(0, 160));
       }
       this.stats.failedAttempts++;
     }

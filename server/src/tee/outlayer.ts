@@ -42,6 +42,7 @@ export class OutlayerTransport implements TeeTransport {
     const d = this.o.deployment;
     const b = d.buyers[buyer];
     const started = this.now();
+    debug('tee', buyer, String(input.op), 'send start');
     const args = {
       source: { WasmUrl: { url: b.wasmUrl, hash: b.wasmSha256, build_target: 'wasm32-wasip2' } },
       resource_limits: LIMITS,
@@ -56,8 +57,13 @@ export class OutlayerTransport implements TeeTransport {
       [{ kind: 'functionCall', method: 'request_execution', args: utf8(JSON.stringify(args)), gas: GAS, deposit: DEPOSIT }],
       'INCLUDED',
     );
+    debug('tee', buyer, 'included', sent.hash, `${this.now() - started} ms`, sent.ok ? 'ok' : String(sent.errorCode));
     if (!sent.ok) throw new AppError('TEE_UNAVAILABLE', `request_execution for ${buyer} failed: ${sent.errorCode ?? 'rejected'}`);
-    const output = await this.result(sent.hash, started);
+    const output = await this.result(sent.hash, started).catch((e) => {
+      debug('tee', buyer, 'result failed', sent.hash, `${this.now() - started} ms`, String(e));
+      throw e;
+    });
+    debug('tee', buyer, 'result', sent.hash, `${this.now() - started} ms`, output === null ? 'null' : 'ok');
     return { output, txHash: sent.hash, ms: this.now() - started };
   }
 

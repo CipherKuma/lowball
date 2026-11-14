@@ -35,19 +35,31 @@ export class Rpc {
     this.timeoutMs = opts.timeoutMs ?? 15000;
   }
 
+  /** providers that just failed (rate limit, outage) are skipped for a few seconds while another one is healthy */
+  private coolUntil = new Map<string, number>();
+
   async call<T = any>(method: string, params: unknown): Promise<T> {
     let lastErr: unknown = null;
-    for (let i = 0; i < this.urls.length; i++) {
-      const idx = (this.preferred + i) % this.urls.length;
-      const url = this.urls[idx]!;
-      try {
-        const out = await this.callOne<T>(url, method, params);
-        this.preferred = idx;
-        return out;
-      } catch (e) {
-        if (e instanceof RpcError) throw e; // a definitive answer from the node: do not fail over
-        lastErr = e;
-        debug('rpc', 'failover from', url, String(e));
+    // The public testnet endpoints are free tier and shared: under load every one of them answers 429 now and
+    // then, so a call goes round the providers up to three times, backing off between rounds.
+    const rounds = this.urls.length > 1 ? 3 : 1;
+    for (let round = 0; round < rounds; round++) {
+      if (round > 0) await new Promise((r) => setTimeout(r, round === 1 ? 700 : 2000));
+      for (let i = 0; i < this.urls.length; i++) {
+        const idx = (this.preferred + i) % this.urls.length;
+        const url = this.urls[idx]!;
+        if (round === 0 && (this.coolUntil.get(url) ?? 0) > Date.now() && i < this.urls.length - 1) continue;
+        try {
+          const out = await this.callOne<T>(url, method, params);
+          this.preferred = idx;
+          this.coolUntil.delete(url);
+          return out;
+        } catch (e) {
+          if (e instanceof RpcError) throw e; // a definitive answer from the node: do not fail over
+          lastErr = e;
+          this.coolUntil.set(url, Date.now() + 4000);
+          debug('rpc', 'failover from', url, String(e));
+        }
       }
     }
     throw new AppError('RPC_UNAVAILABLE', `RPC failed on all providers: ${String(lastErr)}`);
@@ -80,6 +92,8 @@ export class Rpc {
       if (json.error.code === -429 || /rate limit/i.test(String(json.error.message))) throw new Error('rate limited');
       // A provider that does not serve this method at all (e.g. send_tx on drpc) is not an answer about the tx: fail over.
       if (json.error.code === -32601 || /method is not available|method not found/i.test(String(json.error.message))) throw new Error('method unsupported');
+      // An error with no cause name is a provider-level failure (quota, gateway), never a chain answer.
+      if (!json.error.cause?.name && !json.error.name) throw new Error(`provider error ${json.error.code ?? ''}`);
       // Transient node-side conditions: try the next provider.
       if (['TIMEOUT_ERROR', 'INTERNAL_ERROR', 'UNAVAILABLE_SHARD', 'NOT_SYNCED_YET'].includes(cause)) {
         throw new Error(`transient ${cause}`);
