@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "wrangler dev --local --persist-to .wrangler/state",
-    "db:migrate": "wrangler d1 migrations apply lowball --local --persist-to .wrangler/state",
+    "db:migrate": "wrangler d1 migrations apply lowball-game --local --persist-to .wrangler/state",
     "sync": "tsx scripts/sync-config.ts",
     "setup-accounts": "tsx scripts/setup-accounts.ts",
     "e2e": "tsx scripts/e2e.ts",

@@ -1,0 +1,7 @@
+name = "lowball-game"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-08-01"
+
+[[services]]
+binding = "API"
+service = "lowball-server"

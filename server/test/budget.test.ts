@@ -1,4 +1,5 @@
 // Spend caps enforced by code: NEAR AI token spend (refuses POST /api/session) and ElevenLabs calls per session.
+import { DEFAULT_MODEL } from '../src/llm/client.js';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { createSession } from '../src/game/engine.js';
@@ -44,8 +45,8 @@ describe('usage ledger from the NEAR AI client', () => {
     const llm = make((n) => (n === 1 ? ok('not json', { prompt_tokens: 900, completion_tokens: 40 }) : ok('{"amount":60,"say":"x","mood":"calm"}', { prompt_tokens: 910, completion_tokens: 30 })), (u) => void seen.push(u));
     await llm.complete(req);
     expect(seen).toEqual([
-      { model: 'z-ai/glm-5.3-flash', promptTokens: 900, completionTokens: 40, estimated: false },
-      { model: 'z-ai/glm-5.3-flash', promptTokens: 910, completionTokens: 30, estimated: false },
+      { model: DEFAULT_MODEL, promptTokens: 900, completionTokens: 40, estimated: false },
+      { model: DEFAULT_MODEL, promptTokens: 910, completionTokens: 30, estimated: false },
     ]);
   });
 
@@ -70,9 +71,9 @@ describe('usage ledger from the NEAR AI client', () => {
 describe('NEAR AI budget refuses new sessions', () => {
   it('allows a session below the cap and refuses with BUDGET_EXHAUSTED once cumulative spend reaches it', async () => {
     const rig = makeRig({}, { nearAiBudgetUsd: 8 });
-    await rig.store.addSpend({ model: 'z-ai/glm-5.3-flash', promptTokens: 1, completionTokens: 1, usd: 7.99 });
+    await rig.store.addSpend({ model: DEFAULT_MODEL, promptTokens: 1, completionTokens: 1, usd: 7.99 });
     await expect(createSession(rig.deps, PLAYER_PK, 'ip')).resolves.toMatchObject({ network: 'testnet' });
-    await rig.store.addSpend({ model: 'z-ai/glm-5.3-flash', promptTokens: 1, completionTokens: 1, usd: 0.01 });
+    await rig.store.addSpend({ model: DEFAULT_MODEL, promptTokens: 1, completionTokens: 1, usd: 0.01 });
     expect(await rig.store.totalSpendUsd()).toBeCloseTo(8, 10);
     await expect(createSession(rig.deps, PLAYER_PK, 'ip')).rejects.toMatchObject({ code: 'BUDGET_EXHAUSTED' });
   });

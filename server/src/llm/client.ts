@@ -15,7 +15,7 @@ import {
 
 export const DEFAULT_BASE_URL = 'https://cloud-api.near.ai/v1';
 /** NEAR AI own-fleet Confidential TEE model (owned_by "nearai"), see server/MODELS.md. */
-export const DEFAULT_MODEL = 'z-ai/glm-5.3-flash';
+export const DEFAULT_MODEL = 'Qwen/Qwen3.6-35B-A3B-FP8';
 const SIGNING_ALGO = 'ecdsa';
 
 export interface NearAiOptions {
@@ -153,6 +153,9 @@ export class NearAiLlm implements Llm {
       max_tokens: req.maxTokens ?? 1500,
       stream: false,
     };
+    // Qwen3-family models think before answering by default; a buyer's decision is the structured answer,
+    // and thinking made each call 10x slower (measured 2026-11-14), so it is switched off.
+    if (/qwen3/i.test(this.model)) body.chat_template_kwargs = { enable_thinking: false };
     if (this.useSchema) {
       body.response_format = {
         type: 'json_schema',

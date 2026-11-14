@@ -7,14 +7,14 @@ compatibility_flags = ["nodejs_compat"]
 # replaces database_id before deploying (`wrangler d1 create lowball`).
 [[d1_databases]]
 binding = "DB"
-database_name = "lowball"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_name = "lowball-game"
+database_id = "7f265ec1-eaa9-4a8c-9041-4a963e98a91e"
 migrations_dir = "migrations"
 
 [vars]
 # Contract and house ids come from src/generated/config.json (npm run sync); set here to override.
 # NEAR AI own-fleet Confidential TEE model (owned_by "nearai"); see MODELS.md. Never an Incognito (Anthropic/OpenAI) id.
-NEARAI_MODEL = "z-ai/glm-5.3-flash"
+NEARAI_MODEL = "Qwen/Qwen3.6-35B-A3B-FP8"
 SEASON_DAYS = "6"
 BOND_NEAR = "0.2"
 MIN_TREASURY_NEAR = "1.5"
