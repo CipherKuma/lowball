@@ -10,9 +10,9 @@ export function Stamp({ children, tone = 'red', angle = -7, delay = 0, className
   return (
     <motion.span
       className={`stamp${toneClass} ${className}`}
-      style={{ ['--angle' as string]: `${angle}deg` }}
-      initial={still ? false : { scale: 1.7, opacity: 0 }}
-      animate={{ scale: 1, opacity: 0.88 }}
+      style={{ ['--angle' as string]: `${angle}deg`, rotate: angle }}
+      initial={still ? false : { scale: 1.7, opacity: 0, rotate: angle }}
+      animate={{ scale: 1, opacity: 0.88, rotate: angle }}
       transition={{ delay, duration: 0.22, ease: [0.2, 0.9, 0.25, 1.15] }}
     >
       {children}
