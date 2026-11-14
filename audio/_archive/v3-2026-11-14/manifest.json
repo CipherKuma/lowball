@@ -1,0 +1,482 @@
+[
+ {
+  "key": "confession_sting",
+  "file": "audio/music/confession_sting.mp3",
+  "fileOgg": "audio/music/confession_sting.ogg",
+  "kind": "music",
+  "durationSec": 4.2,
+  "loop": false,
+  "lufs": -20.0,
+  "truePeakDb": -7.9
+ },
+ {
+  "key": "defeat",
+  "file": "audio/music/defeat.mp3",
+  "fileOgg": "audio/music/defeat.ogg",
+  "kind": "music",
+  "durationSec": 8.13,
+  "loop": false,
+  "lufs": -20.0,
+  "truePeakDb": -9.3
+ },
+ {
+  "key": "harbour_loop",
+  "file": "audio/music/harbour_loop.mp3",
+  "fileOgg": "audio/music/harbour_loop.ogg",
+  "kind": "music",
+  "durationSec": 88.1,
+  "loop": true,
+  "lufs": -20.0,
+  "truePeakDb": -8.1
+ },
+ {
+  "key": "harbour_tense",
+  "file": "audio/music/harbour_tense.mp3",
+  "fileOgg": "audio/music/harbour_tense.ogg",
+  "kind": "music",
+  "durationSec": 88.1,
+  "loop": true,
+  "lufs": -20.0,
+  "truePeakDb": -7.1
+ },
+ {
+  "key": "victory",
+  "file": "audio/music/victory.mp3",
+  "fileOgg": "audio/music/victory.ogg",
+  "kind": "music",
+  "durationSec": 12.7,
+  "loop": false,
+  "lufs": -20.0,
+  "truePeakDb": -5.1
+ },
+ {
+  "key": "auction_bell",
+  "file": "audio/sfx/auction_bell.mp3",
+  "fileOgg": "audio/sfx/auction_bell.ogg",
+  "kind": "sfx",
+  "durationSec": 2.0,
+  "loop": false,
+  "lufs": -17.9,
+  "truePeakDb": -3.8
+ },
+ {
+  "key": "bond_slash",
+  "file": "audio/sfx/bond_slash.mp3",
+  "fileOgg": "audio/sfx/bond_slash.ogg",
+  "kind": "sfx",
+  "durationSec": 2.48,
+  "loop": false,
+  "lufs": -18.0,
+  "truePeakDb": -1.2
+ },
+ {
+  "key": "card_flip",
+  "file": "audio/sfx/card_flip.mp3",
+  "fileOgg": "audio/sfx/card_flip.ogg",
+  "kind": "sfx",
+  "durationSec": 0.45,
+  "loop": false,
+  "lufs": -18.8,
+  "truePeakDb": -1.1
+ },
+ {
+  "key": "coins_pour",
+  "file": "audio/sfx/coins_pour.mp3",
+  "fileOgg": "audio/sfx/coins_pour.ogg",
+  "kind": "sfx",
+  "durationSec": 2.98,
+  "loop": false,
+  "lufs": -18.1,
+  "truePeakDb": -1.0
+ },
+ {
+  "key": "foghorn",
+  "file": "audio/sfx/foghorn.mp3",
+  "fileOgg": "audio/sfx/foghorn.ogg",
+  "kind": "sfx",
+  "durationSec": 5.8,
+  "loop": false,
+  "lufs": -18.0,
+  "truePeakDb": -4.9
+ },
+ {
+  "key": "folder_open",
+  "file": "audio/sfx/folder_open.mp3",
+  "fileOgg": "audio/sfx/folder_open.ogg",
+  "kind": "sfx",
+  "durationSec": 1.76,
+  "loop": false,
+  "lufs": -18.1,
+  "truePeakDb": -0.8
+ },
+ {
+  "key": "gavel",
+  "file": "audio/sfx/gavel.mp3",
+  "fileOgg": "audio/sfx/gavel.ogg",
+  "kind": "sfx",
+  "durationSec": 0.53,
+  "loop": false,
+  "lufs": -17.9,
+  "truePeakDb": -1.7
+ },
+ {
+  "key": "lamp_buzz_loop",
+  "file": "audio/sfx/lamp_buzz_loop.mp3",
+  "fileOgg": "audio/sfx/lamp_buzz_loop.ogg",
+  "kind": "sfx",
+  "durationSec": 9.0,
+  "loop": true,
+  "lufs": -18.0,
+  "truePeakDb": -8.1
+ },
+ {
+  "key": "paper_slide",
+  "file": "audio/sfx/paper_slide.mp3",
+  "fileOgg": "audio/sfx/paper_slide.ogg",
+  "kind": "sfx",
+  "durationSec": 1.48,
+  "loop": false,
+  "lufs": -18.0,
+  "truePeakDb": -3.8
+ },
+ {
+  "key": "rain_loop",
+  "file": "audio/sfx/rain_loop.mp3",
+  "fileOgg": "audio/sfx/rain_loop.ogg",
+  "kind": "sfx",
+  "durationSec": 28.5,
+  "loop": true,
+  "lufs": -18.0,
+  "truePeakDb": -1.1
+ },
+ {
+  "key": "refusal_thud",
+  "file": "audio/sfx/refusal_thud.mp3",
+  "fileOgg": "audio/sfx/refusal_thud.ogg",
+  "kind": "sfx",
+  "durationSec": 1.26,
+  "loop": false,
+  "lufs": -18.3,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "ui_hover",
+  "file": "audio/sfx/ui_hover.mp3",
+  "fileOgg": "audio/sfx/ui_hover.ogg",
+  "kind": "sfx",
+  "durationSec": 0.45,
+  "loop": false,
+  "lufs": -18.0,
+  "truePeakDb": -5.8
+ },
+ {
+  "key": "ui_tick",
+  "file": "audio/sfx/ui_tick.mp3",
+  "fileOgg": "audio/sfx/ui_tick.ogg",
+  "kind": "sfx",
+  "durationSec": 0.45,
+  "loop": false,
+  "lufs": -19.3,
+  "truePeakDb": -0.5
+ },
+ {
+  "key": "wax_seal",
+  "file": "audio/sfx/wax_seal.mp3",
+  "fileOgg": "audio/sfx/wax_seal.ogg",
+  "kind": "sfx",
+  "durationSec": 1.4,
+  "loop": false,
+  "lufs": -19.0,
+  "truePeakDb": -1.2
+ },
+ {
+  "key": "confessed",
+  "file": "audio/vo/confessed.mp3",
+  "fileOgg": "audio/vo/confessed.ogg",
+  "kind": "vo",
+  "durationSec": 0.96,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -4.7
+ },
+ {
+  "key": "day_open",
+  "file": "audio/vo/day_open.mp3",
+  "fileOgg": "audio/vo/day_open.ogg",
+  "kind": "vo",
+  "durationSec": 1.2,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -5.1
+ },
+ {
+  "key": "deacon_betrayed",
+  "file": "audio/vo/deacon_betrayed.mp3",
+  "fileOgg": "audio/vo/deacon_betrayed.ogg",
+  "kind": "vo",
+  "durationSec": 1.84,
+  "loop": false,
+  "lufs": -16.1,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "deacon_bid",
+  "file": "audio/vo/deacon_bid.mp3",
+  "fileOgg": "audio/vo/deacon_bid.ogg",
+  "kind": "vo",
+  "durationSec": 2.24,
+  "loop": false,
+  "lufs": -16.1,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "deacon_greet",
+  "file": "audio/vo/deacon_greet.mp3",
+  "fileOgg": "audio/vo/deacon_greet.ogg",
+  "kind": "vo",
+  "durationSec": 1.44,
+  "loop": false,
+  "lufs": -16.2,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "deacon_hold",
+  "file": "audio/vo/deacon_hold.mp3",
+  "fileOgg": "audio/vo/deacon_hold.ogg",
+  "kind": "vo",
+  "durationSec": 2.14,
+  "loop": false,
+  "lufs": -16.1,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "holdout",
+  "file": "audio/vo/holdout.mp3",
+  "fileOgg": "audio/vo/holdout.ogg",
+  "kind": "vo",
+  "durationSec": 2.08,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -2.2
+ },
+ {
+  "key": "identical",
+  "file": "audio/vo/identical.mp3",
+  "fileOgg": "audio/vo/identical.ogg",
+  "kind": "vo",
+  "durationSec": 2.32,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -2.7
+ },
+ {
+  "key": "ines_betrayed",
+  "file": "audio/vo/ines_betrayed.mp3",
+  "fileOgg": "audio/vo/ines_betrayed.ogg",
+  "kind": "vo",
+  "durationSec": 2.4,
+  "loop": false,
+  "lufs": -16.1,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "ines_bid",
+  "file": "audio/vo/ines_bid.mp3",
+  "fileOgg": "audio/vo/ines_bid.ogg",
+  "kind": "vo",
+  "durationSec": 2.8,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "ines_confess",
+  "file": "audio/vo/ines_confess.mp3",
+  "fileOgg": "audio/vo/ines_confess.ogg",
+  "kind": "vo",
+  "durationSec": 4.8,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -1.6
+ },
+ {
+  "key": "ines_greet",
+  "file": "audio/vo/ines_greet.mp3",
+  "fileOgg": "audio/vo/ines_greet.ogg",
+  "kind": "vo",
+  "durationSec": 4.72,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "intro_1",
+  "file": "audio/vo/intro_1.mp3",
+  "fileOgg": "audio/vo/intro_1.ogg",
+  "kind": "vo",
+  "durationSec": 5.76,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -3.7
+ },
+ {
+  "key": "intro_2",
+  "file": "audio/vo/intro_2.mp3",
+  "fileOgg": "audio/vo/intro_2.ogg",
+  "kind": "vo",
+  "durationSec": 8.08,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -4.0
+ },
+ {
+  "key": "leniency",
+  "file": "audio/vo/leniency.mp3",
+  "fileOgg": "audio/vo/leniency.ogg",
+  "kind": "vo",
+  "durationSec": 3.11,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -3.9
+ },
+ {
+  "key": "marlow_betrayed",
+  "file": "audio/vo/marlow_betrayed.mp3",
+  "fileOgg": "audio/vo/marlow_betrayed.ogg",
+  "kind": "vo",
+  "durationSec": 4.88,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -2.2
+ },
+ {
+  "key": "marlow_bid",
+  "file": "audio/vo/marlow_bid.mp3",
+  "fileOgg": "audio/vo/marlow_bid.ogg",
+  "kind": "vo",
+  "durationSec": 1.76,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -2.3
+ },
+ {
+  "key": "marlow_greet",
+  "file": "audio/vo/marlow_greet.mp3",
+  "fileOgg": "audio/vo/marlow_greet.ogg",
+  "kind": "vo",
+  "durationSec": 3.68,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -2.3
+ },
+ {
+  "key": "marlow_threat",
+  "file": "audio/vo/marlow_threat.mp3",
+  "fileOgg": "audio/vo/marlow_threat.ogg",
+  "kind": "vo",
+  "durationSec": 3.91,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "odile_betrayed",
+  "file": "audio/vo/odile_betrayed.mp3",
+  "fileOgg": "audio/vo/odile_betrayed.ogg",
+  "kind": "vo",
+  "durationSec": 2.16,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -2.1
+ },
+ {
+  "key": "odile_bid",
+  "file": "audio/vo/odile_bid.mp3",
+  "fileOgg": "audio/vo/odile_bid.ogg",
+  "kind": "vo",
+  "durationSec": 2.0,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -2.6
+ },
+ {
+  "key": "odile_confess",
+  "file": "audio/vo/odile_confess.mp3",
+  "fileOgg": "audio/vo/odile_confess.ogg",
+  "kind": "vo",
+  "durationSec": 2.38,
+  "loop": false,
+  "lufs": -16.1,
+  "truePeakDb": -1.5
+ },
+ {
+  "key": "odile_greet",
+  "file": "audio/vo/odile_greet.mp3",
+  "fileOgg": "audio/vo/odile_greet.ogg",
+  "kind": "vo",
+  "durationSec": 2.39,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -2.6
+ },
+ {
+  "key": "season_end_lose",
+  "file": "audio/vo/season_end_lose.mp3",
+  "fileOgg": "audio/vo/season_end_lose.ogg",
+  "kind": "vo",
+  "durationSec": 2.8,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -4.2
+ },
+ {
+  "key": "season_end_win",
+  "file": "audio/vo/season_end_win.mp3",
+  "fileOgg": "audio/vo/season_end_win.ogg",
+  "kind": "vo",
+  "durationSec": 2.4,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -3.9
+ },
+ {
+  "key": "sully_betrayed",
+  "file": "audio/vo/sully_betrayed.mp3",
+  "fileOgg": "audio/vo/sully_betrayed.ogg",
+  "kind": "vo",
+  "durationSec": 1.9,
+  "loop": false,
+  "lufs": -16.0,
+  "truePeakDb": -2.6
+ },
+ {
+  "key": "sully_bid",
+  "file": "audio/vo/sully_bid.mp3",
+  "fileOgg": "audio/vo/sully_bid.ogg",
+  "kind": "vo",
+  "durationSec": 2.9,
+  "loop": false,
+  "lufs": -16.1,
+  "truePeakDb": -0.6
+ },
+ {
+  "key": "sully_confess",
+  "file": "audio/vo/sully_confess.mp3",
+  "fileOgg": "audio/vo/sully_confess.ogg",
+  "kind": "vo",
+  "durationSec": 6.61,
+  "loop": false,
+  "lufs": -16.1,
+  "truePeakDb": -1.2
+ },
+ {
+  "key": "sully_greet",
+  "file": "audio/vo/sully_greet.mp3",
+  "fileOgg": "audio/vo/sully_greet.ogg",
+  "kind": "vo",
+  "durationSec": 3.03,
+  "loop": false,
+  "lufs": -16.2,
+  "truePeakDb": -1.5
+ }
+]
