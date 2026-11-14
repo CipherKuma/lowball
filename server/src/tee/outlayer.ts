@@ -55,9 +55,9 @@ export class OutlayerTransport implements TeeTransport {
     const sent = await this.o.signer.send(
       d.outlayerContract,
       [{ kind: 'functionCall', method: 'request_execution', args: utf8(JSON.stringify(args)), gas: GAS, deposit: DEPOSIT }],
-      'INCLUDED',
+      'NONE',
     );
-    debug('tee', buyer, 'included', sent.hash, `${this.now() - started} ms`, sent.ok ? 'ok' : String(sent.errorCode));
+    debug('tee', buyer, 'sent', sent.hash, `${this.now() - started} ms`, sent.ok ? 'ok' : String(sent.errorCode));
     if (!sent.ok) throw new AppError('TEE_UNAVAILABLE', `request_execution for ${buyer} failed: ${sent.errorCode ?? 'rejected'}`);
     const output = await this.result(sent.hash, started).catch((e) => {
       debug('tee', buyer, 'result failed', sent.hash, `${this.now() - started} ms`, String(e));
@@ -69,7 +69,7 @@ export class OutlayerTransport implements TeeTransport {
 
   private async result(txHash: string, started: number): Promise<unknown> {
     const timeout = this.o.timeoutMs ?? 100_000;
-    const poll = this.o.pollMs ?? 3000;
+    const poll = this.o.pollMs ?? 4000;
     await this.sleep(poll);
     while (this.now() - started < timeout) {
       try {

@@ -102,7 +102,7 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
     } catch (e) {
       modelFailed = true;
       const code = e instanceof AppError ? e.code : tee ? 'TEE_UNAVAILABLE' : 'MODEL_UNAVAILABLE';
-      await ctx.emit({ type: 'error', code, message: `${id} could not answer`, retryable: true });
+      await ctx.emit({ type: 'error', code, message: tee && e instanceof AppError ? e.message.slice(0, 200) : `${id} could not answer`, retryable: true });
       return;
     }
     await ctx.say(id, decision.say, decision.mood);

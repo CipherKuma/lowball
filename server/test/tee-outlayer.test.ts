@@ -44,7 +44,7 @@ function rig(results: (() => unknown)[], sendOk = true) {
 const ok = (obj: unknown) => ({ status: { SuccessValue: btoa(JSON.stringify(obj)) } });
 
 describe('OutlayerTransport', () => {
-  it('sends request_execution for the buyer\'s own wasm with the sealed-secret reference, waits INCLUDED, polls FINAL', async () => {
+  it('sends request_execution for the buyer\'s own wasm with the sealed-secret reference, sends without waiting (NONE), polls FINAL', async () => {
     const { transport, sent, calls } = rig([() => new RpcError('unknown', 'UNKNOWN_TRANSACTION', {}), () => ok({ ok: true, x: 1 })]);
     const r = await transport.run('odile', { op: 'probe' });
     expect(r.output).toEqual({ ok: true, x: 1 });
@@ -52,7 +52,7 @@ describe('OutlayerTransport', () => {
     expect(sent).toHaveLength(1);
     const s = sent[0]!;
     expect(s.receiver).toBe('outlayer.testnet');
-    expect(s.wait).toBe('INCLUDED');
+    expect(s.wait).toBe('NONE');
     expect(s.action.method).toBe('request_execution');
     expect(s.action.gas).toBe(300n * 10n ** 12n);
     expect(s.action.deposit).toBe(7_100_000_000_000_000_000_000n);

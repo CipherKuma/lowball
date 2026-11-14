@@ -57,8 +57,10 @@ export function enqueue<T>(key: string, job: () => Promise<T>): Promise<T> {
  * 'EXECUTED_OPTIMISTIC' (default) waits for every receipt. 'INCLUDED' returns once the tx is in a block: use it
  * for a call that leaves a yielded (NEP-519) receipt pending, such as offer_leniency, which would otherwise hang
  * until the 200-block timeout. An included tx reports ok: the function receipt's result is read from the contract.
+ * 'NONE' returns as soon as the node accepted the signed tx (it validated nonce and balance): the caller tracks the
+ * hash itself. Used to start several OutLayer jobs back to back without waiting for each inclusion.
  */
-export type WaitUntil = 'EXECUTED_OPTIMISTIC' | 'INCLUDED';
+export type WaitUntil = 'EXECUTED_OPTIMISTIC' | 'INCLUDED' | 'NONE';
 
 export interface SignerOptions {
   accountId: string;
