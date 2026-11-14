@@ -53,7 +53,7 @@ export function TopBar({
           </>
         ) : (
           <>
-            dock pass <span>· no wallet</span>
+            judge demo <span>· no wallet</span>
           </>
         )}
       </span>
@@ -92,7 +92,7 @@ export function TopBar({
           >
             <p className="label">Every move is a transaction</p>
             <p className="receipts-who typed">
-              {playerKind === 'wallet' ? 'Your wallet' : 'Your dock pass'} ·{' '}
+              {playerKind === 'wallet' ? 'Your wallet' : 'Judge demo account (no wallet)'} ·{' '}
               {player ? (
                 <a className="data" href={accountUrl(player)} target="_blank" rel="noreferrer">
                   {player} ↗

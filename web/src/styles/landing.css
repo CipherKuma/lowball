@@ -83,9 +83,27 @@
   gap: 12px 20px;
   margin-top: 24px;
 }
-.landing-cta .plaque { font-size: 20px; padding-inline: 26px; }
-.landing-cta .plaque-note { margin: 0; color: var(--paper-ink-2); }
-.landing-cta .typed-link { color: var(--carbon); }
+.landing-cta .plaque { font-size: 20px; padding-inline: 26px; max-width: 100%; }
+.landing-connect { overflow-wrap: anywhere; text-align: left; }
+.landing-cta .plaque-note { flex-basis: 100%; margin: 0; color: var(--paper-ink-2); }
+.landing-error {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 7px 10px;
+  font-size: 13.5px;
+  color: var(--stamp);
+  border-left: 3px solid var(--stamp);
+  background: rgba(163, 49, 42, 0.07);
+}
+.landing-alt {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(31, 23, 14, 0.3);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--paper-ink-2);
+}
+.landing-alt .typed-link { font-size: 13.5px; color: var(--carbon); }
 
 /* the ring, pinned to the wall */
 .landing-wall {

@@ -75,6 +75,16 @@
   background: rgba(163, 49, 42, 0.07);
 }
 
+.idesk-licence-doc { width: min(520px, 100%); }
+.idesk-judge {
+  max-width: 640px;
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.idesk-judge .typed-link { font-size: 13.5px; }
 .idesk-payout {
   display: flex;
   flex-wrap: wrap;

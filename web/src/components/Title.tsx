@@ -19,8 +19,28 @@ const drop = (i: number, still: boolean | null, rot = 0) =>
       };
 
 /** Landing: the noticeboard on the pier shed wall. One job: get the player to start. */
-export function Title({ onStart, onHowTo, starting, tutorialDone }: { onStart: () => void; onHowTo: () => void; starting: boolean; tutorialDone: boolean }) {
+interface Props {
+  onConnect: () => void;
+  onJudgeDemo: () => void;
+  onHowTo: () => void;
+  starting: boolean;
+  tutorialDone: boolean;
+  wallet: { status: 'idle' | 'connecting' | 'signing' | 'ready' | 'error'; accountId: string | null; error: string | null };
+}
+
+export function Title({ onConnect, onJudgeDemo, onHowTo, starting, tutorialDone, wallet }: Props) {
   const still = useReducedMotion();
+  const busy = starting || wallet.status === 'connecting' || wallet.status === 'signing';
+  const signedIn = wallet.status === 'ready' && wallet.accountId;
+  const label = starting
+    ? 'Rowing in…'
+    : wallet.status === 'connecting'
+      ? 'Choose your wallet…'
+      : wallet.status === 'signing'
+        ? 'Sign in your wallet…'
+        : signedIn
+          ? `Continue as ${wallet.accountId}`
+          : 'Connect a NEAR wallet';
   return (
     <main className="landing">
       <div className="lamp-pool" style={{ ['--lx' as string]: '34%', ['--ly' as string]: '30%' }} aria-hidden />
@@ -35,15 +55,24 @@ export function Title({ onStart, onHowTo, starting, tutorialDone }: { onStart: (
           <li><span>3</span>Offer leniency on NEAR. The first to confess walks free; the rest lose their bonds to you.</li>
         </ol>
         <div className="landing-cta">
-          <button className="plaque" onClick={onStart} disabled={starting}>
-            {starting ? 'Rowing in…' : tutorialDone ? 'Start the season' : 'Start: learn the ropes'}
-          </button>
-          {tutorialDone ? (
-            <button className="typed-link" onClick={onHowTo}>Replay the walkthrough</button>
-          ) : (
-            <span className="plaque-note">A one-minute walkthrough first. Skip it any time.</span>
-          )}
+          <button className="plaque landing-connect" onClick={onConnect} disabled={busy}>{label}</button>
+          <span className="plaque-note">
+            {wallet.status === 'signing'
+              ? 'Sign the harbour book in your wallet. It is a free message, not a transaction.'
+              : `Meteor, Intear, Nightly or Ledger · NEAR testnet.${tutorialDone ? '' : ' A one-minute walkthrough follows; skip it any time.'}`}
+          </span>
+          {wallet.error && <p className="landing-error typed" role="alert">{wallet.error}</p>}
         </div>
+        <p className="landing-alt typed">
+          <button className="typed-link" onClick={onJudgeDemo} disabled={busy}>Judge demo: no wallet</button>
+          <span> · nothing to install; the game opens a throwaway testnet account for this browser.</span>
+          {tutorialDone && (
+            <>
+              {' '}
+              <button className="typed-link" onClick={onHowTo}>Replay the walkthrough</button>
+            </>
+          )}
+        </p>
       </motion.section>
 
       <section className="landing-wall" aria-label="The buyers">

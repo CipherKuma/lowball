@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Backdrop } from './components/Backdrop';
 import { CaseFile } from './components/CaseFile';
 import { Identity } from './components/Identity';
@@ -42,13 +42,26 @@ export function App() {
   };
   const { view } = g;
 
+  const walletReady = id.status === 'ready' && id.kind === 'wallet' && !!id.accountId;
   const openTutorial = () => {
     audio.unlock();
     setScreen('tutorial');
   };
-  const fromTitle = () => {
+  // Wallet first: the landing's main button opens NEAR Connect; once signed in, the walkthrough (first visit) then the licence.
+  const connectFromTitle = () => {
     audio.unlock();
-    setScreen(tutorialDone ? 'identity' : 'tutorial');
+    setChosen('wallet');
+    if (walletReady) setScreen(tutorialDone ? 'identity' : 'tutorial');
+    else void id.connectWallet();
+  };
+  useEffect(() => {
+    if (screen === 'title' && chosen === 'wallet' && walletReady) setScreen(tutorialDone ? 'identity' : 'tutorial');
+  }, [screen, chosen, walletReady, tutorialDone]);
+  const judgeDemo = () => {
+    audio.unlock();
+    setChosen('guest');
+    if (tutorialDone) begin('guest');
+    else setScreen('tutorial');
   };
   const tutorialFinished = () => {
     try {
@@ -57,7 +70,8 @@ export function App() {
       /* private mode: the walkthrough shows again next visit */
     }
     setTutorialDone(true);
-    setScreen('identity');
+    if (chosen === 'guest') begin('guest');
+    else setScreen('identity');
   };
   const begin = (mode: 'guest' | 'wallet') => {
     audio.unlock();
@@ -99,21 +113,27 @@ export function App() {
             transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
           >
             {current === 'title' && (
-              <Title onStart={fromTitle} onHowTo={openTutorial} starting={g.pending === 'start'} tutorialDone={tutorialDone} />
+              <Title
+                onConnect={connectFromTitle}
+                onJudgeDemo={judgeDemo}
+                onHowTo={openTutorial}
+                starting={g.pending === 'start'}
+                tutorialDone={tutorialDone}
+                wallet={{ status: id.kind === 'guest' ? 'idle' : id.status, accountId: id.kind === 'wallet' ? id.accountId : null, error: id.error }}
+              />
             )}
             {current === 'tutorial' && <Tutorial onDone={tutorialFinished} />}
             {current === 'identity' && (
               <Identity
-                status={id.status}
-                kind={chosen ?? id.kind}
-                accountId={id.accountId}
+                status={id.kind === 'guest' ? 'idle' : id.status}
+                accountId={id.kind === 'wallet' ? id.accountId : null}
                 error={id.error}
                 starting={g.pending === 'start'}
                 onConnect={() => {
                   setChosen('wallet');
                   void id.connectWallet();
                 }}
-                onGuest={() => begin('guest')}
+                onJudgeDemo={() => begin('guest')}
                 onDisconnect={() => {
                   setChosen(null);
                   void id.disconnect();

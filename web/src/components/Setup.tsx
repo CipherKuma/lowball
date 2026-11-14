@@ -86,7 +86,7 @@ export function Setup({
         </header>
         <ol className="manifest-rows typed">
           <Row index={0} done={accountDone} tx={txOf('Fisher')}>
-            {playerKind === 'wallet' ? 'Your wallet' : 'Dock pass opened on NEAR'}
+            {playerKind === 'wallet' ? 'Your wallet signed in' : 'Judge demo: a throwaway testnet account opened for this browser'}
             {view.playerAccountId ? <span className="data manifest-id"> · {view.playerAccountId}</span> : '…'}
           </Row>
           {(accountDone || seasonDone) && (
