@@ -4,7 +4,8 @@
 
 /* The table: posters on the wall, the desk under the lamp below. Direction A, see web/DESIGN.md. */
 .room {
-  --poster-w: clamp(118px, min(11vw, 16vh), 168px);
+  /* sized so the poster strip stays inside 34vh: a poster is ~172px of type plus a 4:3 photo */
+  --poster-w: clamp(120px, min(11vw, calc(45.3vh - 260px)), 168px);
   flex: 1;
   min-height: 0;
   display: flex;
@@ -19,7 +20,8 @@
 .wall {
   position: relative;
   flex: none;
-  padding: 8px var(--gutter) 22px;
+  max-height: 34vh;
+  padding: 6px var(--gutter) 10px;
 }
 .wall-row {
   display: flex;
@@ -31,15 +33,28 @@
 /* ---------- the desk ---------- */
 .desk-surface {
   flex: 1 0 auto;
+  min-height: 58vh;
+  isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(300px, 24vw, 360px);
   align-items: start;
   gap: clamp(16px, 2vw, 28px);
-  padding: clamp(18px, 2.4vh, 28px) var(--gutter) clamp(20px, 3vh, 32px);
+  padding: clamp(14px, 1.8vh, 22px) var(--gutter) clamp(14px, 2vh, 24px);
   box-shadow: inset 0 3px 0 rgba(255, 220, 160, 0.08), inset 0 18px 30px -18px rgba(0, 0, 0, 0.9), 0 -14px 30px -10px rgba(0, 0, 0, 0.7);
   border-top: 1px solid rgba(0, 0, 0, 0.6);
 }
 .desk-surface .lamp-pool { --ly: 18%; --lx: 42%; }
+/* the lamp's cone on the boards, and the dark at the desk's edges */
+.desk-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 70% at 50% 0%, rgba(255, 208, 138, 0.22), transparent 65%),
+    radial-gradient(ellipse 120% 100% at 50% 30%, transparent 58%, rgba(0, 0, 0, 0.55));
+}
 .desk-surface[data-tense] .lamp-pool { animation-duration: 2.3s; }
 .desk-main {
   position: relative;
@@ -51,7 +66,7 @@
     'lot bar'
     'dispatch dispatch';
   grid-template-rows: auto 1fr auto;
-  gap: 18px clamp(18px, 2.2vw, 32px);
+  gap: 14px clamp(18px, 2.2vw, 32px);
   align-items: start;
 }
 .desk-lot { grid-area: lot; position: relative; min-width: 0; }
@@ -173,7 +188,8 @@ a.lot-source:hover { color: var(--lamp-hot); }
 }
 @media (max-width: 760px) {
   .room { --poster-w: 132px; }
-  .wall { padding: 0 0 12px; }
+  .wall { padding: 0 0 12px; max-height: none; }
+  .desk-surface { min-height: 0; }
   .wall-row { gap: 12px; }
   .poster-slot .poster { padding: 18px 7px 8px; }
   .poster-wanted { font-size: 11px; margin-bottom: 4px; }
@@ -204,3 +220,14 @@ a.lot-source:hover { color: var(--lamp-hot); }
   .lot { grid-template-columns: minmax(0, 1fr) 128px; }
   .lot-species { font-size: 30px; }
 }
+
+/* At most three families at the table: sign, typed, spoken. Stencil and data fold into them here
+   (the back room keeps its own camera type). */
+.rail .stencil,
+.room > .wall .stencil,
+.room > .desk-surface .stencil { font-family: var(--font-sign); font-weight: 800; }
+.rail .data,
+.room > .wall .data,
+.room > .desk-surface .data,
+.room > .desk-surface .ledger-table,
+.room > .desk-surface .ledger-ev .stamp { font-family: var(--font-typed); }

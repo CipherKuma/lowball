@@ -7,9 +7,10 @@
   background:
     radial-gradient(ellipse 70% 55% at 50% 34%, rgba(242, 183, 92, 0.2), transparent 62%),
     radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.75)),
+    repeating-linear-gradient(90deg, transparent 0 238px, rgba(0, 0, 0, 0.45) 238px 240px),
     var(--woodgrain),
     linear-gradient(180deg, var(--wood-2), var(--wood) 55%, #120b06);
-  background-size: auto, auto, 600px 200px, auto;
+  background-size: auto, auto, auto, 600px 200px, auto;
 }
 .lamp-pool {
   position: absolute;

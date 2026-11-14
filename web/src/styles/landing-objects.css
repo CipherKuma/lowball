@@ -1,29 +1,31 @@
-/* Landing objects: the ring on the shed wall, and the zinc counter with five sealed bids. */
+/* Landing objects on the board: the ring's wanted posters, and the strip of five sealed bids pinned under the bill. */
 
-/* the shed wall: boards behind the posters */
+/* ---------- the ring (wide: pinned either side of the bill) ---------- */
 .ring-wall {
-  position: relative;
-  justify-self: end;
-  width: min(100%, 580px, 66vh);
-  aspect-ratio: 1 / 1.02;
-  min-width: 0;
-}
-.ring-wall::before {
-  content: '';
+  --side: calc((100% - var(--bill-w)) / 2 - 28px);
   position: absolute;
-  inset: -4% -6%;
-  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 78px, rgba(0, 0, 0, 0.28) 78px 81px);
-  -webkit-mask-image: radial-gradient(ellipse at 50% 45%, #000 40%, transparent 75%);
-  mask-image: radial-gradient(ellipse at 50% 45%, #000 40%, transparent 75%);
+  inset: 0;
+  z-index: 1;
   pointer-events: none;
 }
-.wall-poster { position: absolute; padding: 0; text-align: left; cursor: pointer; }
+.wall-poster {
+  position: absolute;
+  top: calc(var(--y) * 100%);
+  width: min(calc(var(--side) * var(--w)), 26vh, 230px);
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.wall-poster[data-side='l'] { left: calc(var(--side) * var(--x)); }
+.wall-poster[data-side='r'] { left: calc(100% - var(--side) + var(--side) * var(--x)); }
 .wall-paper { margin: 0; padding: 24px 9px 10px; transform: none; }
-.wall-head { margin: -10px 0 7px; text-align: center; font-size: 12px; letter-spacing: 0.32em; color: var(--stamp); }
-.wall-poster .poster-name { font-size: clamp(15px, 1.45vw, 21px); }
-.wall-poster .poster-role { font-size: 11.5px; }
-.wall-poster[data-on] .wall-paper { box-shadow: var(--shadow-lift), 0 0 0 1px rgba(255, 208, 138, 0.5), 0 0 40px rgba(255, 190, 110, 0.25); }
+.wall-head { margin: -2px 0 7px; text-align: center; font-size: 13px; font-weight: 800; letter-spacing: 0.34em; color: var(--paper-ink); }
+.wall-poster .poster-name { font-size: clamp(15px, 1.4vw, 20px); }
+.wall-poster .poster-role { font-size: 12px; }
+.wall-poster[data-on] .wall-paper { box-shadow: var(--shadow-lift); }
 .wall-poster[data-on] .poster-photo { filter: grayscale(0.15) sepia(0.25) contrast(1.15) brightness(1.02); }
+.wall-poster:focus-visible { outline: 2px solid var(--lamp-hot); outline-offset: 4px; }
 .wall-line {
   position: absolute;
   left: 50%;
@@ -43,40 +45,37 @@
   box-shadow: var(--shadow-lift);
 }
 
-/* the zinc counter */
+/* ---------- five sealed bids pinned under the bill ---------- */
 .counter {
   position: relative;
-  z-index: 3;
-  justify-self: center;
-  width: min(1040px, 100%);
-  margin-top: clamp(4px, 2vh, 18px);
-  padding: 8px clamp(16px, 4vw, 48px) 14px;
-  background:
-    radial-gradient(ellipse 60% 120% at 30% 0%, rgba(255, 225, 180, 0.12), transparent 60%),
-    linear-gradient(180deg, #6d7574 0, #474f4e 9px, #2c3333 55%, #1c2121 100%);
-  border-top: 2px solid rgba(255, 255, 255, 0.28);
-  border-radius: 2px;
-  box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.35), 0 24px 40px rgba(0, 0, 0, 0.7);
+  z-index: 2;
+  width: var(--bill-w);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
 }
+.counter-scroll { width: 100%; }
 .counter-row {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 132px));
+  grid-template-columns: repeat(5, minmax(0, 96px));
   justify-content: center;
-  gap: clamp(8px, 2vw, 24px);
-  padding-top: 44px;
+  gap: clamp(8px, 1.6vw, 16px);
+  padding: 34px 6px 8px;
 }
-.counter-env { padding: 0; cursor: pointer; }
+.counter-env { position: relative; padding: 0; cursor: pointer; }
+.counter-env.pin::before { top: -4px; left: 2px; margin-left: 0; z-index: 6; }
 .counter-env .envelope { transition: transform 200ms var(--ease-out), filter 200ms; }
 .counter-env:hover .envelope,
-.counter-env[data-focus] .envelope { transform: translateY(-5px); filter: brightness(1.08); }
-.counter-env .envelope-from { position: absolute; left: 6px; bottom: 4px; z-index: 5; font-size: 11px; color: #2b1c0c; }
+.counter-env[data-focus] .envelope { transform: translateY(-4px); filter: brightness(1.08); }
+.counter-env:focus-visible { outline: 2px solid var(--lamp-hot); outline-offset: 4px; }
+.counter-env .envelope-from { position: absolute; left: 5px; bottom: 3px; z-index: 5; font-size: 11px; color: #2b1c0c; }
 .counter-card {
   display: grid;
   place-items: center;
   width: 80%;
   aspect-ratio: 3 / 2;
-  font-size: clamp(26px, 3vw, 42px);
+  font-size: clamp(24px, 2.4vw, 30px);
   font-weight: 900;
   color: var(--paper-ink);
   background: var(--paper);
@@ -85,10 +84,10 @@
 }
 .counter-ring {
   position: absolute;
-  left: -3%;
-  top: 6px;
-  width: 106%;
-  height: calc(100% + 6px);
+  left: -4%;
+  top: 8px;
+  width: 108%;
+  height: calc(100% - 4px);
   overflow: visible;
   pointer-events: none;
 }
@@ -101,49 +100,57 @@
   stroke-dashoffset: 2700;
   vector-effect: non-scaling-stroke;
   filter: url(#chalk);
-  transition: stroke-dashoffset 1100ms var(--ease-in-out);
+  transition: stroke-dashoffset 1000ms var(--ease-in-out);
 }
 .counter-ring[data-on] path { stroke-dashoffset: 0; }
-.counter-note {
-  margin: 12px 0 0;
+/* the telegram: its line types on once the ring has closed */
+.counter-telegram {
+  margin: 0;
+  padding: 8px 16px 7px;
+  font-size: 15px;
+  line-height: 1.35;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-align: center;
-  font-size: 14px;
-  line-height: 2;
-  clip-path: inset(0 100% 0 0);
-  transition: clip-path 1200ms steps(42);
+  color: var(--paper-ink);
+  transform: rotate(0.8deg);
 }
-.counter-note[data-on] { clip-path: inset(0 0 0 0); }
+.counter-telegram span { display: inline-block; clip-path: inset(0 100% 0 0); transition: clip-path 1100ms steps(46); }
+.counter-telegram span[data-on] { clip-path: inset(0 0 0 0); }
 
-@media (max-width: 900px) {
-  .landing {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    overflow-y: auto;
-    padding: 50px max(var(--gutter), env(safe-area-inset-right, 0px)) 36px max(var(--gutter), env(safe-area-inset-left, 0px));
-  }
-  .landing-stage { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
-  .landing > *, .landing-stage > * { flex-shrink: 0; }
-  .neon, .neon-reflect { font-size: clamp(56px, 17vw, 120px); }
-  .landing-plank { font-size: 12px; letter-spacing: 0.18em; padding-inline: 20px; }
-  .osd .osd-bl, .osd .osd-br, .osd .osd-tr { display: none; }
-  .osd span { font-size: 10.5px; }
+/* ---------- below wide: the ring becomes one scrolling row under the bill ---------- */
+@media (max-width: 1023px) {
   .ring-wall {
-    flex: none;
-    width: auto;
+    position: relative;
+    inset: auto;
+    width: calc(100% + 2 * var(--gutter));
+    margin: 4px calc(-1 * var(--gutter)) 0;
     display: flex;
-    gap: 14px;
-    aspect-ratio: auto;
-    max-width: none;
+    gap: 16px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    padding: 18px 4px 70px;
+    scroll-padding-inline: var(--gutter);
+    padding: 22px var(--gutter) 64px;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--gutter), #000 calc(100% - 64px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 var(--gutter), #000 calc(100% - 64px), transparent);
   }
-  .ring-wall::before { display: none; }
-  .wall-poster { position: relative; left: auto !important; top: auto !important; width: 136px !important; flex: 0 0 136px; scroll-snap-align: start; }
-  .counter-row { grid-template-columns: repeat(5, minmax(0, 1fr)); padding-top: 34px; }
+  .ring-wall::-webkit-scrollbar { display: none; }
+  .wall-poster { position: relative; left: auto !important; top: auto; width: clamp(140px, 38vw, 168px); flex: 0 0 auto; scroll-snap-align: start; }
+  .wall-line { max-width: 200px; font-size: 15px; }
+  .counter { margin-top: -40px; width: 100%; max-width: 560px; }
+}
+@media (max-width: 560px) {
+  .counter-scroll {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+  }
+  .counter-scroll::-webkit-scrollbar { display: none; }
+  .counter-row { grid-template-columns: repeat(5, 96px); width: max-content; justify-content: start; padding-inline: 10px; }
+  .counter-telegram { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fog, .neon, .neon-buzz { animation: none; }
-  .counter-ring path, .counter-note { transition: none; }
+  .counter-ring path, .counter-telegram span { transition: none; }
 }

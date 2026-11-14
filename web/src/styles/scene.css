@@ -11,7 +11,7 @@
   background-size: cover;
   background-position: 50% 40%;
   animation: drift 38s var(--ease-in-out) infinite alternate;
-  filter: saturate(0.92) contrast(1.04);
+  filter: saturate(0.55) contrast(1.04);
 }
 @keyframes drift {
   from { transform: scale(1.02) translate3d(-0.6%, 0, 0); }

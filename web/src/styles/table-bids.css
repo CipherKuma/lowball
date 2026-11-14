@@ -88,18 +88,24 @@
   font-size: 12px;
   color: var(--lamp-hot);
 }
-.bid-empty {
-  aspect-ratio: 7 / 4.4;
-  display: grid;
-  align-content: end;
-  gap: 1px;
-  padding: 6px 8px;
+/* not in yet: the buyer's envelope lies face down on the desk, unsealed, while they write */
+.bid-waiting { position: relative; rotate: var(--t, 0deg); }
+.bid-waiting .envelope { width: 100%; filter: saturate(0.7) brightness(0.78); box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.7); }
+.bid-waiting .envelope-seal { opacity: 0; }
+.bid-waiting .envelope-from { position: absolute; left: 8px; bottom: 5px; z-index: 3; font-size: 12px; color: #2a1b0b; }
+.bid-waiting-note {
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  z-index: 5;
+  translate: -50% 0;
+  padding: 1px 6px;
   font-size: 12px;
-  color: var(--faint);
-  border: 1px dashed rgba(239, 231, 212, 0.18);
-  border-radius: 2px;
+  white-space: nowrap;
+  color: var(--paper-ink);
+  background: var(--telegram);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
-.bid-empty span:first-child { color: var(--muted); }
 .bids-note {
   margin: 18px auto 0;
   max-width: 900px;
@@ -147,6 +153,10 @@
 @media (max-width: 860px) {
   .dispatch-pile { grid-template-columns: 1fr; gap: 8px; }
 }
+/* narrower desks: a smaller wax seal, so the buyer's name under it stays readable */
+@media (max-width: 1180px) {
+  .bid-env .envelope-seal { width: 18px; height: 18px; margin: -15px 0 0 -9px; }
+}
 @media (max-width: 760px) {
   .bids-row { gap: 6px; padding-top: 30px; }
   .bid-env .envelope-from { font-size: 10.5px; left: 4px; bottom: 3px; }
@@ -154,8 +164,10 @@
   .bid-card small { font-size: 10px; }
   .bid-env .envelope-seal { width: 18px; height: 18px; margin: -11px 0 0 -9px; }
   .bid-took { font-size: 11px; bottom: -18px; }
+  .bid-env .envelope[data-open] .envelope-card { transform: translateY(-70%); }
   .bids-note { font-size: 14px; margin-top: 22px; }
-  .bid-empty { font-size: 10.5px; padding: 4px; }
+  .bid-waiting .envelope-from { font-size: 10.5px; left: 4px; bottom: 3px; }
+  .bid-waiting-note { font-size: 10.5px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .bids[data-open] .bid-env { transition: none; }

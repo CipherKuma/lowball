@@ -247,3 +247,15 @@
 }
 .poster-said[data-mood='cracking'] { background-color: #f1d7a8; }
 .poster-said[data-mood='cold'] { background-color: #d8d6c8; }
+
+/* phones: a buyer's line sits on the portrait, never over their name */
+@media (max-width: 760px) {
+  .poster-said { top: 30%; bottom: auto; min-height: 0; padding: 6px 8px 7px; font-size: 14.5px; }
+}
+/* the strip must fit 34vh on a laptop: a landscape crop of the portrait, tighter tallies */
+@media (min-width: 761px) {
+  .poster-slot .poster-photo { aspect-ratio: 4 / 3; }
+  .poster-slot .poster { padding: 20px 8px 9px; }
+  .poster-slot .poster-name { font-size: clamp(15px, 1.3vw, 19px); }
+  .poster-tallies > div { min-height: 15px; }
+}

@@ -153,14 +153,24 @@
 .action { display: grid; justify-items: start; min-width: 0; }
 .action .plaque-note { max-width: 32ch; }
 .action--leniency { margin-left: auto; justify-items: end; text-align: right; }
-.actions-hint,
 .actions-closed {
   flex-basis: 100%;
   margin: 0;
-  font-size: 13px;
-  color: var(--muted);
+  font-size: 15px;
+  color: var(--text);
 }
-.actions-closed { font-size: 15px; color: var(--text); }
+/* help on the desk is a telegram slip, readable: 14px paper ink */
+.actions-hint {
+  margin: 0;
+  padding: 5px 10px 4px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--paper-ink);
+  background-color: var(--telegram);
+  background-image: var(--fibres), var(--noise);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 3px 6px rgba(0, 0, 0, 0.45);
+  transform: rotate(-0.4deg);
+}
 .actions .plaque[disabled] + .plaque-note,
 .actions .ticket[disabled] + .plaque-note { color: var(--faint); }
 .actions .plaque[disabled] + .plaque-note { color: var(--muted); }
@@ -172,6 +182,5 @@
   .action--leniency { flex-basis: 100%; margin: 0; justify-items: stretch; text-align: left; }
   .actions .plaque { font-size: 17px; }
   .actions .plaque-note { font-size: 12px; }
-  .actions-hint { font-size: 12px; }
   .ledger { transform: none; margin: 0 0 24px; }
 }

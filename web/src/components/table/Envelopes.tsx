@@ -67,9 +67,11 @@ export function Envelopes({ buyers, view, pending }: { buyers: BuyerInfo[]; view
                     {winner === b.id && <span className="bid-took typed">took the lot</span>}
                   </motion.div>
                 ) : (
-                  <div className="bid-empty typed" key="empty" aria-label={`${b.name} has not bid yet`}>
-                    <span>{short(b.name)}</span>
-                    <span>{view.lot ? 'thinking' : ''}</span>
+                  <div className="bid-waiting" key="empty" style={{ ['--t' as string]: `${TILT[i]}deg` }} role="img" aria-label={`${b.name} has not bid yet`}>
+                    <Envelope open={false} from={short(b.name)}>
+                      <span />
+                    </Envelope>
+                    {view.lot && <span className="bid-waiting-note typed">writing…</span>}
                   </div>
                 )}
               </AnimatePresence>
