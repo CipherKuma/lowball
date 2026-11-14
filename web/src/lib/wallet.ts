@@ -53,8 +53,10 @@ export async function signOfferLeniency(accountId: string, contractId: string, s
   const account = new Account(accountId, provider(), key.secretKey);
   const res = await account.signAndSendTransaction({
     receiverId: contractId,
+    // offer_leniency opens a NEP-519 yield that stays pending until a confession or the 200-block
+    // timeout, so waiting for full execution would hang: wait for inclusion only.
     actions: [actions.functionCall('offer_leniency', { season_id: seasonId }, teraToGas(30), 0n)],
-    waitUntil: 'FINAL',
+    waitUntil: 'INCLUDED_FINAL',
   });
   return res.transaction.hash;
 }

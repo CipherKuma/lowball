@@ -1,3 +1,6 @@
 art/raw/*.png
 art/raw/codex.log
 research/*.log
+.env.local
+.env*.local
+**/.dev.vars
