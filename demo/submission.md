@@ -3,6 +3,15 @@
 Agents leave every declaration empty. Gabriel fills the rows marked _Gabriel_ and presses Submit.
 Filing limit for this event: at most 2 projects per person across all personas; list every filed project before Submit.
 
+## Packet (ready 15 Nov 04:36 IST)
+
+- **Film:** `~/Documents/hackathons/near-lowball/demo/out/lowball-demo.mp4` — 2:15 (under X's 2:20), 1920×1080 H.264 High
+  (tv range) + AAC 256k, 120 MB, −14.2 LUFS / −1.4 dBTP, faststart. The same file is YouTube-ready (1080p30, standard codecs).
+- **X post:** `demo/x-post.md` (270 characters with the event's "built at NEAR HACKATHON", @NEARProtocol, #NEARHackathon;
+  alt text and an optional builder reply). Gabriel posts from @CipherKuma and pastes the post link into the README and the form.
+- **Repo:** https://github.com/CipherKuma/lowball — public, README final, `main` at the latest pushed commit.
+- **Other filed project:** _[Gabriel names it]_ — then the README's "Also filed at this hackathon" line is filled in.
+
 | Field | Value |
 |---|---|
 | Project name | Lowball |
