@@ -106,6 +106,10 @@
   gap: 8px;
   align-items: center;
 }
+.mode-chip[data-mode='standard'] .dot {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+}
 .icon-btn {
   width: 34px;
   height: 34px;

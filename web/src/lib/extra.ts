@@ -29,21 +29,26 @@ export interface Interrogation {
 }
 
 export type ExtraEvent =
+  | { type: 'mode'; seq: number; mode: 'enclave' | 'standard'; reason: string }
   | { type: 'sea'; seq: number; waveM: number; swellM: number | null; port: string; source: string; at: string }
   | { type: 'interrogation'; seq: number; buyer: BuyerId; question: string; answer: string; mood: Mood; tell: string; pressure: number }
   | { type: 'recap'; seq: number; text: string };
 
 export interface ExtraView {
+  /** enclave = buyers' pact keys live in OutLayer TDX; standard = server-held keys (pool unhealthy) */
+  mode: { mode: 'enclave' | 'standard'; reason: string } | null;
   sea: Sea | null;
   interrogations: Interrogation[];
   pressure: Partial<Record<BuyerId, number>>;
   recaps: { seq: number; text: string }[];
 }
 
-export const initialExtra: ExtraView = { sea: null, interrogations: [], pressure: {}, recaps: [] };
+export const initialExtra: ExtraView = { mode: null, sea: null, interrogations: [], pressure: {}, recaps: [] };
 
 export function applyExtra<V extends ExtraView>(v: V, e: ExtraEvent): V {
   switch (e.type) {
+    case 'mode':
+      return { ...v, mode: { mode: e.mode, reason: e.reason } };
     case 'sea':
       return { ...v, sea: { waveM: e.waveM, swellM: e.swellM, port: e.port, source: e.source, at: e.at } };
     case 'interrogation':

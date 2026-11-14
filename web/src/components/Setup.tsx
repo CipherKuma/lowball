@@ -69,7 +69,7 @@ export function Setup({
             >
               <img src={`/art/${b.id}_calm.webp`} alt="" />
               <span>{b.name.split(' ')[0] === 'The' ? 'Deacon' : b.name.split(' ')[0]}</span>
-              {view.cartelForming || view.tee[b.id] ? (
+              {view.mode?.mode !== 'standard' && (view.cartelForming || view.tee[b.id]) ? (
                 view.tee[b.id] ? (
                   <motion.a
                     className="enclave-tick"
@@ -104,10 +104,17 @@ export function Setup({
               </span>
               <p>
                 Voices behind the warehouse door. The five of them are talking in private, and you are not invited.
-                <small>
-                  Each buyer decides whether to sign inside its own Intel TDX enclave on OutLayer; its pact key never
-                  leaves it. {Object.keys(view.tee).length}/5 signed.
-                </small>
+                {view.mode?.mode === 'standard' ? (
+                  <small>
+                    Standard mode this season: OutLayer's testnet enclaves are slow right now, so the buyers sign with
+                    keys our server holds. Every decision is still TEE inference with a verified signature.
+                  </small>
+                ) : (
+                  <small>
+                    Each buyer decides whether to sign inside its own Intel TDX enclave on OutLayer; its pact key never
+                    leaves it. {Object.keys(view.tee).length}/5 signed.
+                  </small>
+                )}
               </p>
             </motion.div>
           )}

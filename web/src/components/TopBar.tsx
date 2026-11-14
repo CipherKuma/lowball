@@ -4,7 +4,17 @@ import { audio } from '../lib/audio';
 import type { TxItem } from '../lib/state';
 import { accountUrl, txUrl } from '../lib/wallet';
 
-export function TopBar({ txs, player, seasonId }: { txs: TxItem[]; player: string | null; seasonId: number | null }) {
+export function TopBar({
+  txs,
+  player,
+  seasonId,
+  mode,
+}: {
+  txs: TxItem[];
+  player: string | null;
+  seasonId: number | null;
+  mode?: { mode: 'enclave' | 'standard'; reason: string } | null;
+}) {
   const [muted, setMuted] = useState(false);
   const [open, setOpen] = useState(false);
   return (
@@ -12,6 +22,19 @@ export function TopBar({ txs, player, seasonId }: { txs: TxItem[]; player: strin
       <span className="brand">Lowball</span>
       <div className="topbar-right">
         {seasonId != null && <span className="chip mono">Season #{seasonId}</span>}
+        {mode && (
+          <span
+            className="chip mode-chip"
+            data-mode={mode.mode}
+            title={
+              mode.mode === 'enclave'
+                ? "Each buyer's pact key lives in its own Intel TDX enclave on OutLayer"
+                : `Standard mode: buyers sign with server-held keys this season. ${mode.reason}`
+            }
+          >
+            <span className="dot" /> {mode.mode === 'enclave' ? 'Enclave mode' : 'Standard mode'}
+          </span>
+        )}
         <span className="chip">
           <span className="dot" /> NEAR testnet
         </span>

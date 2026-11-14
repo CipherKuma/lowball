@@ -35,7 +35,7 @@ export function App() {
     <>
       <Backdrop src={bg} dim={current === 'title' ? 0.25 : current === 'case' ? 0.35 : tense ? 0.35 : 0.12} tense={tense} />
       <div className="app">
-        {current !== 'title' && <TopBar txs={view.txs} player={view.playerAccountId} seasonId={view.seasonId} />}
+        {current !== 'title' && <TopBar txs={view.txs} player={view.playerAccountId} seasonId={view.seasonId} mode={view.mode} />}
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
