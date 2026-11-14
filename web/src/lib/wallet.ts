@@ -8,7 +8,8 @@ import type { KeyPairString } from 'near-api-js';
 const STORE = 'lowball.fisher.v1';
 
 // rpc.testnet.near.org was retired (-429 on every call, 14 Nov 2026).
-export const TESTNET_RPCS = ['https://rpc.testnet.fastnear.com', 'https://test.rpc.fastnear.com'];
+// drpc first: FastNEAR rate-limits busy client IPs (seen on 14 Nov from the owner's own browser); FastNEAR stays as fallback.
+export const TESTNET_RPCS = ['https://near-testnet.drpc.org', 'https://rpc.testnet.fastnear.com', 'https://test.rpc.fastnear.com'];
 export const EXPLORER = 'https://testnet.nearblocks.io';
 
 export interface FisherKey {
