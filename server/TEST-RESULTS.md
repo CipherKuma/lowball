@@ -1,34 +1,36 @@
 # Test results
 
-Command: `cd server && npm test` (vitest 3.2.4), latest run 2026-11-14 17:15 IST (after the RPC list change and the
-DeleteKey encoder test).
+Command: `cd server && npm test` (vitest 3.2.4), latest run 2026-11-15 01:10 IST (after NEP-413 and EIP-191 wallet sign-in,
+wallet seasons, the TOO_SHORT interrogation guard and the third-person tell). Under heavy machine load
+`test/d1.test.ts` failed once on timing and passed on the next three runs.
 
 ```
- ✓ test/real-chain.test.ts (12 tests)
  ✓ test/features-forge.test.ts (9 tests)
- ✓ test/features-interrogate.test.ts (13 tests)
- ✓ test/engine.test.ts (20 tests)
- ✓ test/tee.test.ts (10 tests)
+ ✓ test/auth.test.ts (24 tests)
  ✓ test/tee-mode.test.ts (11 tests)
- ✓ test/mock-upgrade.test.ts (14 tests)
+ ✓ test/engine.test.ts (21 tests)
+ ✓ test/tee.test.ts (10 tests)
  ✓ test/engine-upgrade.test.ts (20 tests)
- ✓ test/nearai.test.ts (16 tests | 1 skipped)
- ✓ test/attestation-flow.test.ts (18 tests)
- ✓ test/pact.test.ts (4 tests)
- ✓ test/chainsig-relay.test.ts (10 tests)
- ✓ test/features-data.test.ts (18 tests)
- ✓ test/features-wiretap.test.ts (6 tests)
- ✓ test/api.test.ts (53 tests)
+ ✓ test/features-interrogate.test.ts (22 tests)
+ ✓ test/tee-outlayer.test.ts (4 tests)
  ✓ test/attestation.test.ts (14 tests)
+ ✓ test/pact.test.ts (4 tests)
+ ✓ test/nearai.test.ts (16 tests | 1 skipped)
+ ✓ test/leniency-wallet.test.ts (6 tests)
+ ✓ test/real-chain.test.ts (12 tests)
+ ✓ test/features-wiretap.test.ts (6 tests)
+ ✓ test/features-data.test.ts (18 tests)
+ ✓ test/api.test.ts (53 tests)
+ ✓ test/mock-upgrade.test.ts (14 tests)
+ ✓ test/signer.test.ts (15 tests)
  ✓ test/chainsig.test.ts (13 tests)
+ ✓ test/chainsig-relay.test.ts (10 tests)
+ ✓ test/attestation-flow.test.ts (18 tests)
  ✓ test/api-payout.test.ts (10 tests)
  ✓ test/budget.test.ts (12 tests)
- ✓ test/tee-outlayer.test.ts (4 tests)
  ✓ test/d1.test.ts (7 tests)
- ✓ test/signer.test.ts (15 tests)
-
- Test Files  22 passed (22)
-      Tests  308 passed | 1 skipped (309)
+ Test Files  24 passed (24)
+      Tests  348 passed | 1 skipped (349)
 ```
 
 Earlier the same day (BRIEF-2 integration): 232 passed | 1 skipped across 15 files. The coverage sections below describe
