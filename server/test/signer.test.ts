@@ -174,3 +174,20 @@ describe('outcome parsing', () => {
     expect(new AppError('E_BAD_SIG').status).toBe(400);
   });
 });
+
+describe('transaction encoding', () => {
+  it('encodes DeleteKey as action 6 followed by the ed25519 public key', async () => {
+    const { encodeTransaction } = await import('../src/near/tx.js');
+    const { formatPublicKey } = await import('../src/near/keys.js');
+    const signer = generateKeyPair();
+    const victim = generateKeyPair();
+    const bytes = encodeTransaction(
+      { signerId: 'a.testnet', receiverId: 'a.testnet', nonce: 1n, blockHash: b58encode(new Uint8Array(32)), actions: [{ kind: 'deleteKey', publicKey: formatPublicKey(victim.publicKey) }] },
+      signer.publicKey,
+    );
+    // tail: vec len (u32 = 1), action tag 6, key type 0 (ed25519), 32 key bytes
+    const tail = bytes.slice(bytes.length - 38);
+    expect([...tail.slice(0, 6)]).toEqual([1, 0, 0, 0, 6, 0]);
+    expect([...tail.slice(6)]).toEqual([...victim.publicKey]);
+  });
+});

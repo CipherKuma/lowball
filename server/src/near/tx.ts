@@ -9,6 +9,7 @@ export type Action =
   | { kind: 'transfer'; deposit: bigint }
   | { kind: 'functionCall'; method: string; args: Uint8Array; gas: bigint; deposit: bigint }
   | { kind: 'addKeyFullAccess'; publicKey: string }
+  | { kind: 'deleteKey'; publicKey: string }
   | {
       kind: 'addKeyFunctionCall';
       publicKey: string;
@@ -44,6 +45,10 @@ function writeAction(w: BorshWriter, a: Action) {
       w.u8(5);
       writePublicKey(w, parsePublicKey(a.publicKey));
       w.u64(0).u8(1); // nonce 0, permission: FullAccess
+      break;
+    case 'deleteKey':
+      w.u8(6);
+      writePublicKey(w, parsePublicKey(a.publicKey));
       break;
     case 'addKeyFunctionCall':
       w.u8(5);

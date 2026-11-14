@@ -2,7 +2,8 @@ import { AppError } from '../errors.js';
 import { debug } from '../log.js';
 
 // drpc.org does not serve send_tx ("method is not available"): rpc.testnet.fastnear.com does, so it comes first.
-export const DEFAULT_RPC_URLS = ['https://rpc.testnet.near.org', 'https://rpc.testnet.fastnear.com', 'https://near-testnet.drpc.org', 'https://test.rpc.fastnear.com'];
+// rpc.testnet.near.org was retired (it answers every call with -429 "endpoint is deprecated", 14 Nov 2026).
+export const DEFAULT_RPC_URLS = ['https://rpc.testnet.fastnear.com', 'https://test.rpc.fastnear.com', 'https://near-testnet.drpc.org'];
 
 export class RpcError extends Error {
   constructor(

@@ -15,7 +15,7 @@ database_id = "7f265ec1-eaa9-4a8c-9041-4a963e98a91e"
 [vars]
 CONTRACT_ID = "lowball-ck.testnet"
 HOUSE_ID = "lowball-house-ck.testnet"
-RPC_URLS = "https://test.rpc.fastnear.com,https://near-testnet.drpc.org,https://rpc.testnet.near.org"
+RPC_URLS = "https://rpc.testnet.fastnear.com,https://test.rpc.fastnear.com,https://near-testnet.drpc.org"
 IDLE_MIN = "20"
 
 # Secret (wrangler secret put): HOUSE_PRIVATE_KEY
