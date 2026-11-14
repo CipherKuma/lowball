@@ -1,8 +1,8 @@
 # Test results
 
 Command: `cd server && npm test` (vitest 3.2.4), latest run 2026-11-15 01:10 IST (after NEP-413 and EIP-191 wallet sign-in,
-wallet seasons, the TOO_SHORT interrogation guard and the third-person tell). Under heavy machine load
-`test/d1.test.ts` failed once on timing and passed on the next three runs.
+wallet seasons, the TOO_SHORT interrogation guard and the third-person tell). Under heavy machine load one
+test failed once (which one was not captured; `test/d1.test.ts` is the known timing-sensitive one); the next three runs passed.
 
 ```
  ✓ test/features-forge.test.ts (9 tests)
