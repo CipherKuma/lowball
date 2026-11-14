@@ -1,0 +1,13 @@
+diff --git a/build/SandboxedWallet/executor.js b/build/SandboxedWallet/executor.js
+index 6e8bdc24a679cecb4ca23f0421ae9d50105b24d6..59bfcb0da77bc77c7c589d341c29cf99d4b5fec9 100644
+--- a/build/SandboxedWallet/executor.js
++++ b/build/SandboxedWallet/executor.js
+@@ -227,7 +227,7 @@ class SandboxExecutor {
+                 success(null);
+                 return;
+             }
+-            const panel = window.open(event.data.params.url, "_blank", event.data.params.features);
++            const panel = window.open(event.data.params.url, "_blank") /* lowball patch: no popup features, so web wallets open as a tab in the same window */;
+             const panelId = panel ? (0, uuid_1.uuid4)() : null;
+             const handler = (ev) => {
+                 const url = (0, url_1.parseUrl)(event.data.params.url);

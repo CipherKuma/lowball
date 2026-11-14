@@ -4,13 +4,16 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@hot-labs/near-connect@0.12.0': dda1bf20594c81dc6923d99de3787f1d86d4502c08b8a8f50f6931922dd9de4b
+
 importers:
 
   .:
     dependencies:
       '@hot-labs/near-connect':
         specifier: ^0.12.0
-        version: 0.12.0
+        version: 0.12.0(patch_hash=dda1bf20594c81dc6923d99de3787f1d86d4502c08b8a8f50f6931922dd9de4b)
       '@noble/curves':
         specifier: 1.9.7
         version: 1.9.7
@@ -825,7 +828,7 @@ snapshots:
       tslib: 2.9.1
     optional: true
 
-  '@hot-labs/near-connect@0.12.0': {}
+  '@hot-labs/near-connect@0.12.0(patch_hash=dda1bf20594c81dc6923d99de3787f1d86d4502c08b8a8f50f6931922dd9de4b)': {}
 
   '@napi-rs/wasm-runtime@1.2.6(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)':
     dependencies:
