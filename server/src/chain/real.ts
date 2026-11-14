@@ -14,6 +14,8 @@ const GAS_DEFAULT = 100n * TGAS;
 export const GAS_CONFESS_EVM = 250n * TGAS;
 /** plain confess uses about 5 Tgas */
 export const GAS_CONFESS = 30n * TGAS;
+/** offer_leniency only creates a yield: 30 Tgas keeps the throwaway drill player (0.05 NEAR, 0.04 key allowance) solvent */
+export const GAS_OFFER = 30n * TGAS;
 const PLAYER_FUNDING = nearToYocto('0.05');
 const PLAYER_ALLOWANCE = nearToYocto('0.04');
 const STORAGE_PRICE = 10n ** 19n;
@@ -180,7 +182,7 @@ export class RealChain implements Chain {
    */
   offerLeniencyAs(accountId: string, key: KeyPair, seasonId: number): Promise<TxResult> {
     const signer = new NearSigner({ accountId, keyPair: key, rpc: this.rpc });
-    return signer.send(this.contractId, [this.fn('offer_leniency', { season_id: seasonId })], 'INCLUDED');
+    return signer.send(this.contractId, [this.fn('offer_leniency', { season_id: seasonId }, 0n, GAS_OFFER)], 'INCLUDED');
   }
 
   async verifyLeniencyTx(txHash: string, player: string, seasonId: number): Promise<LeniencyCheck> {
