@@ -6,7 +6,7 @@
     "tier": "Confidential TEE (own fleet)",
     "source": "https://cloud-api.near.ai/v1/models"
   },
-  "checkedAt": "2026-11-14T07:06:06.314Z",
+  "checkedAt": "2026-11-14T12:27:51.959Z",
   "checker": "server/scripts/verify-attestation.ts (@phala/dcap-qvl 0.7.1; collateral https://pccs.phala.network; NVIDIA NRAS + JWKS)",
   "evidenceUrl": "server/evidence/attestation-qwen-qwen3.6-35b-a3b-fp8-2026-11-14.json",
   "policy": {
@@ -30,7 +30,7 @@
     "candidate": {
       "signing_algo": "ecdsa",
       "signing_address": "0xb98a789cdc4817275f5155593ba73ef2a957e779",
-      "instanceId": "22f3857ff4e4c4748c398ea830de110d231b8d73",
+      "instanceId": "cfcdc414558eaab0427c256af36e4004361654b2",
       "tcbStatus": "UpToDate",
       "advisoryIds": [],
       "checks": [
@@ -70,7 +70,7 @@
         "rtmr0": "d090162bff4b1d1dc74dc59dc548838efc4b811b173da8536efa8e2a9c045da70ee092301293ad90afebee448bcd0211",
         "rtmr1": "4ae609807c765916a31d724786ed74bcb97e168a9d937b04936aeef2015c907eba5ac352c6bcd749c246fd62ffb659ec",
         "rtmr2": "764489f277a8540189761e72b4238ba36d4d647e11bd958d8ab5522af2a4867b0ff63e06b0c4967f1857236244040a5d",
-        "rtmr3": "982e594f709b650fe6d582fadfb66253f2457a409aef96430230ef85b86309f8e05c092322c3ef42d245651426e8d9a4",
+        "rtmr3": "857cfdb7e763c49c351279b8d47e0dc69b7d6b556699bfe9854433ad3d761cddd871ecf93bd1b372cfb1d0aca4bf630a",
         "mrConfigId": "012643bc7ae47ecf4cf84509a647d2c2cc3bcacad95a87b8a73d543e6c48ad3b22000000000000000000000000000000",
         "composeHash": "2643bc7ae47ecf4cf84509a647d2c2cc3bcacad95a87b8a73d543e6c48ad3b22",
         "osImageHash": "8db40cb23008d6213668b5816702d100b37b859a8a5bfd18d938ae3a1b3715bd"

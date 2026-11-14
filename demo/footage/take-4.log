@@ -1,0 +1,23 @@
+17:34:22 guard ok pid=13512
+17:34:28 rec a start
+17:34:33 start
+17:34:52 day1 lot open
+17:34:52 session 5733d89a-2842-489c-b88f-45cc3d627031
+mode: Standard mode
+17:34:59 day1 sell
+17:35:10 day1 settled
+case: 1 of 2 evidence days
+17:35:18 day2 open
+17:35:20 actor mic seam installed
+17:35:22 lean on sully
+17:35:25 mic down
+17:35:33 mic up
+17:35:36 interrogation answered
+17:35:52 day2 sell
+17:37:28 day2 sell TIMEOUT
+case: 1 of 2 evidence days
+17:37:31 no control: Next day
+17:37:31 no control: Close the season
+17:37:31 no case built
+17:39:38 rec stop
+17:39:38 done

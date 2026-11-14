@@ -22,7 +22,7 @@ confession, a forged one, or a replayed one is refused on-chain.
    five buyers lock bonds in the contract and talk in private; each decides whether to sign the pact
    (`every member bids exactly N marks`) with its own ed25519 key. You only hear that talk at the end.
 2. **The market.** Each day's catch is minted as a NEP-245 `CATCH` token in escrow. Its board price is
-   the **real 2024 US ex-vessel price** for that species from NOAA Fisheries; the **live swell** off
+   the **real 2024 US ex-vessel price** for that species from NOAA Fisheries; the **live wave height** off
    New Bedford (Open-Meteo Marine) sets how much the boat brings in. Buyers commit sealed bids
    (sha256 commit-reveal), reveal, and the token moves to the winner on-chain.
 3. **The back room.** Once a day you can corner one buyer and **speak** to them. Your voice is

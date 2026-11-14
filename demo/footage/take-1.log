@@ -1,0 +1,23 @@
+17:11:26 guard ok pid=13512
+17:11:31 rec start
+17:11:37 start
+17:12:58 day1 lot open
+17:12:58 session 84be08e5-ebc8-4868-8368-0b1c2bebc7d7
+mode: Standard mode
+17:13:05 day1 sell
+17:13:16 day1 settled
+case: 1 of 2 evidence days
+17:13:24 day2 open
+17:13:28 lean on sully
+17:13:31 mic down
+17:13:39 mic up
+17:14:41 interrogation TIMEOUT
+17:14:50 no control: Back to the table
+17:14:55 day2 sell
+17:16:28 day2 sell TIMEOUT
+case: 1 of 2 evidence days
+17:16:32 no control: Next day
+17:16:32 no control: Close the season
+17:16:32 no case built
+17:18:46 rec stop
+17:18:46 done

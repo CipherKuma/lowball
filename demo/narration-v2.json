@@ -1,0 +1,91 @@
+{
+  "voice": "iP95p4xoKVk53GoZ742B",
+  "model": "eleven_v4",
+  "take": "take 2 · season 49 · session 547e3fe3-c385-41a4-b8d2-514a312285c7",
+  "lines": [
+    {
+      "id": "n01",
+      "at": 7.4,
+      "text": "This is Lowball: an auction game on NEAR where five AI buyers rig your sale, and you have to break them.",
+      "evidence": "the game's premise"
+    },
+    {
+      "id": "n02",
+      "at": 15.3,
+      "text": "In game economies, players get stuck selling low and buying high. Now the buyers can be AI agents, and reading their reasoning won't catch them colluding.",
+      "evidence": "Blizzard WoW forum 2025-08-29; arXiv 2609.18346"
+    },
+    {
+      "id": "n03",
+      "at": 26.3,
+      "text": "Before dawn, the five buyers meet in private. Each one signs a price-fixing pact with its own key, and locks a bond in our NEAR contract.",
+      "evidence": "season 49: 5 bonds posted, pact with 5 members"
+    },
+    {
+      "id": "n04",
+      "at": 36.3,
+      "text": "Every catch is minted as a NEP-245 token. Its board price is the real NOAA price for that fish, and the live wave height off New Bedford sets the haul.",
+      "evidence": "s49-d1 mt_mint; NOAA FOSS 2024 bluefin $4.8078/lb; Open-Meteo 0.38 m"
+    },
+    {
+      "id": "n05",
+      "at": 47.3,
+      "text": "The sealed bids come back identical. You take their price, and every identical day goes on the record.",
+      "evidence": "day 1: five bids of 60"
+    },
+    {
+      "id": "n06",
+      "at": 55.3,
+      "text": "Once a day, you can lean on one buyer. Out loud.",
+      "evidence": "interrogation seq 30"
+    },
+    {
+      "id": "n07",
+      "at": 77.3,
+      "text": "A second day of matching bids, and you have a case.",
+      "evidence": "day 2: four of five at 60"
+    },
+    {
+      "id": "n08",
+      "at": 83.6,
+      "text": "So you offer leniency. You sign it yourself, and the contract opens a window that closes after two hundred blocks.",
+      "evidence": "offer_leniency 8qt7a4o2…, deadline block 277653593"
+    },
+    {
+      "id": "n09",
+      "at": 95.1,
+      "text": "Sully talks first and walks free. Every signature checks out, four bonds are slashed and paid to you, and the late confessions are refused.",
+      "evidence": "confess 5Rgodoqx…; E_ALREADY_CONFESSED ×2; slashed 4; 0.20 NEAR"
+    },
+    {
+      "id": "n10",
+      "at": 104.5,
+      "text": "Then the case file. Every pact signature, re-checked in your own browser.",
+      "evidence": "case file: 5 × ed25519 re-checked in browser"
+    },
+    {
+      "id": "n11",
+      "at": 113.6,
+      "text": "Forged confessions? The contract refuses them.",
+      "evidence": "E_BAD_CONFESSION_SIG, E_SEASON_MISMATCH, E_CLOSED"
+    },
+    {
+      "id": "n12",
+      "at": 117.3,
+      "text": "Every buyer thinks on NEAR AI Cloud inside a TEE, and chain signatures can pay you out on Ethereum.",
+      "evidence": "26/26 receipts verified; Sepolia payout 0x92fbe20e…610c"
+    },
+    {
+      "id": "n13",
+      "at": 124.7,
+      "text": "Without leniency, the ring held. With it, a buyer cracked in nine seasons of ten.",
+      "evidence": "server/sim/RESULTS.md"
+    },
+    {
+      "id": "n14",
+      "at": 131.0,
+      "text": "That's Lowball. Make one of them talk.",
+      "evidence": "close"
+    }
+  ]
+}

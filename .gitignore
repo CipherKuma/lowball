@@ -6,3 +6,12 @@ research/*.log
 **/.dev.vars
 web/*.tsbuildinfo
 server/sim/*.log
+
+# Demo media: raw takes, stills and cut selects stay local / Dropbox (demo/footage/takes.md)
+demo/footage/raw/
+demo/footage/stills/
+demo/film/public/footage/
+demo/out/
+demo/vo2/*.json
+demo/actor/*.wav
+demo/*.log

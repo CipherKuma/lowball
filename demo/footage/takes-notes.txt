@@ -1,0 +1,1 @@
+take 1 (17:11 IST, session 84be08e5): unusable. File-backed fake mic delivered silence (Scribe heard nothing), the room's error state hid 'Back to the table', and the MP4 recorder stopped by itself ~5.5 min in without finalizing. File deleted. Fixed for take 2: page-level actor-mic seam, room fallback, segmented WebM.

@@ -75,7 +75,7 @@ export function Slab({
                   )}
                   {sea && (
                     <span title={`${sea.source}, ${sea.at}`}>
-                      · swell {sea.waveM.toFixed(1)} m off {sea.port.split(',')[0]} (live)
+                      · waves {sea.waveM.toFixed(1)} m off {sea.port.split(',')[0]} (live)
                     </span>
                   )}
                 </p>

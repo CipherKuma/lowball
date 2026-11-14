@@ -1,0 +1,27 @@
+{
+  "name": "lowball-film",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "NODE_OPTIONS=\"--require ./scripts/poll-watch.cjs\" remotion studio --port 3060 --no-open",
+    "typecheck": "tsc --noEmit",
+    "check": "tsx scripts/check.ts",
+    "check:delivery": "tsx scripts/check.ts --delivery",
+    "stills": "node scripts/stills.mjs",
+    "render": "npm run check:delivery && remotion render src/index.ts Lowball out/lowball-demo.mp4 --codec h264 --audio-codec aac"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "@remotion/google-fonts": "4.0.529",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.529",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/react": "19.2.7",
+    "tsx": "4.20.5",
+    "typescript": "5.9.3"
+  }
+}

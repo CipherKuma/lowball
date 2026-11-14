@@ -1,0 +1,26 @@
+17:22:25 guard ok pid=13512
+17:22:30 rec a start
+17:22:35 start
+17:22:56 day1 lot open
+17:22:56 session 547e3fe3-c385-41a4-b8d2-514a312285c7
+mode: Standard mode
+17:23:03 day1 sell
+17:23:13 day1 settled
+case: 1 of 2 evidence days
+17:23:20 day2 open
+17:23:22 actor mic seam installed
+17:23:25 lean on sully
+17:23:28 mic down
+17:23:36 mic up
+17:23:39 interrogation answered
+17:23:55 day2 sell
+17:24:04 day2 settled
+17:24:08 case built after day 2
+17:24:08 rec b start
+17:24:11 leniency clicked
+17:24:15 leniency open
+17:24:22 verdict: handed over the pact
+17:24:31 rec c start
+17:25:55 forgery refused
+17:26:02 rec stop
+17:26:04 done
