@@ -1,7 +1,8 @@
 import { AppError } from '../errors.js';
 import { debug } from '../log.js';
 
-export const DEFAULT_RPC_URLS = ['https://rpc.testnet.near.org', 'https://near-testnet.drpc.org', 'https://test.rpc.fastnear.com'];
+// drpc.org does not serve send_tx ("method is not available"): rpc.testnet.fastnear.com does, so it comes first.
+export const DEFAULT_RPC_URLS = ['https://rpc.testnet.near.org', 'https://rpc.testnet.fastnear.com', 'https://near-testnet.drpc.org', 'https://test.rpc.fastnear.com'];
 
 export class RpcError extends Error {
   constructor(
@@ -77,6 +78,8 @@ export class Rpc {
       const cause = json.error.cause?.name ?? json.error.name ?? 'UNKNOWN';
       // Free-tier providers answer HTTP 200 with a JSON-RPC rate-limit error: treat it like an outage.
       if (json.error.code === -429 || /rate limit/i.test(String(json.error.message))) throw new Error('rate limited');
+      // A provider that does not serve this method at all (e.g. send_tx on drpc) is not an answer about the tx: fail over.
+      if (json.error.code === -32601 || /method is not available|method not found/i.test(String(json.error.message))) throw new Error('method unsupported');
       // Transient node-side conditions: try the next provider.
       if (['TIMEOUT_ERROR', 'INTERNAL_ERROR', 'UNAVAILABLE_SHARD', 'NOT_SYNCED_YET'].includes(cause)) {
         throw new Error(`transient ${cause}`);
