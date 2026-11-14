@@ -1,0 +1,92 @@
+{
+  "Atlantic cod": {
+    "usdPerLb": 1.9853,
+    "year": 2024,
+    "pounds": 1426780,
+    "dollars": 2832592,
+    "topState": {
+      "state": "MASSACHUSETTS",
+      "usdPerLb": 1.9803,
+      "pounds": 1299179,
+      "dollars": 2572733
+    },
+    "sourceUrl": "https://apps-st.fisheries.noaa.gov/ods/foss/landings/",
+    "query": "{\"ts_afs_name\":\"COD, ATLANTIC\",\"collection\":\"Commercial\"} year=2024",
+    "fetchedAt": "2026-11-14T08:54:17.258Z"
+  },
+  "halibut": {
+    "usdPerLb": 6.2556,
+    "year": 2024,
+    "pounds": 77058,
+    "dollars": 482047,
+    "topState": {
+      "state": "MAINE",
+      "usdPerLb": 6.3202,
+      "pounds": 39911,
+      "dollars": 252245
+    },
+    "sourceUrl": "https://apps-st.fisheries.noaa.gov/ods/foss/landings/",
+    "query": "{\"ts_afs_name\":\"HALIBUT, ATLANTIC\",\"collection\":\"Commercial\"} year=2024",
+    "fetchedAt": "2026-11-14T08:54:17.258Z"
+  },
+  "monkfish": {
+    "usdPerLb": 0.6811,
+    "year": 2024,
+    "pounds": 13085522,
+    "dollars": 8911928,
+    "topState": {
+      "state": "MASSACHUSETTS",
+      "usdPerLb": 0.6549,
+      "pounds": 10057991,
+      "dollars": 6587230
+    },
+    "sourceUrl": "https://apps-st.fisheries.noaa.gov/ods/foss/landings/",
+    "query": "{\"ts_afs_name\":\"GOOSEFISH\",\"collection\":\"Commercial\"} year=2024",
+    "fetchedAt": "2026-11-14T08:54:17.258Z"
+  },
+  "bluefin tuna": {
+    "usdPerLb": 4.8078,
+    "year": 2024,
+    "pounds": 2424855,
+    "dollars": 11658222,
+    "topState": {
+      "state": "MASSACHUSETTS",
+      "usdPerLb": 4.6076,
+      "pounds": 1042928,
+      "dollars": 4805411
+    },
+    "sourceUrl": "https://apps-st.fisheries.noaa.gov/ods/foss/landings/",
+    "query": "{\"ts_afs_name\":\"TUNA, BLUEFIN\",\"collection\":\"Commercial\"} year=2024",
+    "fetchedAt": "2026-11-14T08:54:17.258Z"
+  },
+  "sea bass": {
+    "usdPerLb": 2.6142,
+    "year": 2024,
+    "pounds": 4842650,
+    "dollars": 12659879,
+    "topState": {
+      "state": "NEW JERSEY",
+      "usdPerLb": 2.4903,
+      "pounds": 1168555,
+      "dollars": 2910102
+    },
+    "sourceUrl": "https://apps-st.fisheries.noaa.gov/ods/foss/landings/",
+    "query": "{\"ts_afs_name\":\"BASS, BLACK SEA\",\"collection\":\"Commercial\"} year=2024",
+    "fetchedAt": "2026-11-14T08:54:17.258Z"
+  },
+  "lobster": {
+    "usdPerLb": 6.348,
+    "year": 2024,
+    "pounds": 113502141,
+    "dollars": 720510650,
+    "topState": {
+      "state": "MAINE",
+      "usdPerLb": 6.1493,
+      "pounds": 87551725,
+      "dollars": 538378737
+    },
+    "sourceUrl": "https://apps-st.fisheries.noaa.gov/ods/foss/landings/",
+    "query": "{\"ts_afs_name\":\"LOBSTER, AMERICAN\",\"collection\":\"Commercial\"} year=2024",
+    "fetchedAt": "2026-11-14T08:54:17.258Z"
+  }
+}

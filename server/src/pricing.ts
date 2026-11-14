@@ -22,7 +22,7 @@ export const FALLBACK_PRICE: TokenPrice = { in: 3, out: 15 };
 /** Default cap on cumulative NEAR AI spend across all sessions (USD). Override with NEARAI_BUDGET_USD. */
 export const DEFAULT_NEARAI_BUDGET_USD = 8;
 /** Default cap on upstream ElevenLabs calls per session. Override with TTS_MAX_PER_SESSION. */
-export const DEFAULT_TTS_MAX_PER_SESSION = 40;
+export const DEFAULT_TTS_MAX_PER_SESSION = 80;
 
 export function priceOf(model: string): TokenPrice {
   return NEARAI_PRICE_PER_M[model] ?? FALLBACK_PRICE;

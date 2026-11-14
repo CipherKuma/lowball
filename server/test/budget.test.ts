@@ -19,9 +19,9 @@ describe('pricing', () => {
     expect(priceOf('some/new-model')).toEqual(FALLBACK_PRICE);
     expect(costUsd('some/new-model', 1000, 1000)).toBeGreaterThan(costUsd('z-ai/glm-5.3-flash', 1000, 1000) * 10);
   });
-  it('defaults: $8 of model spend, 40 voice calls per session', () => {
+  it('defaults: $8 of model spend, 80 voice calls per session', () => {
     expect(DEFAULT_NEARAI_BUDGET_USD).toBe(8);
-    expect(DEFAULT_TTS_MAX_PER_SESSION).toBe(40);
+    expect(DEFAULT_TTS_MAX_PER_SESSION).toBe(80);
   });
 });
 

@@ -14,7 +14,8 @@ import {
   TtsQuerySchema,
 } from './schemas.js';
 import { synthesize, type CacheLike } from './tts.js';
-import type { BuyerId } from '../../shared/api.js';
+import { registerFeatureRoutes } from './features/routes.js';
+import { speakable } from './features/voice.js';
 
 export interface AppOptions {
   deps: (c: Context) => GameDeps;
@@ -101,9 +102,12 @@ export function createApp(o: AppOptions): Hono {
     if (!q.success) throw new AppError('BAD_REQUEST', 'session and seq are required.');
     const store = o.deps(c).store;
     const ev = await store.getEvent(q.data.session, q.data.seq);
-    if (!ev || ev.type !== 'line') throw new AppError('NOT_FOUND', 'That event is not a spoken line.');
+    // lines, interrogation answers (buyer voice, mood tagged) and recaps (narrator)
+    const spoken = speakable(ev);
+    if (!spoken) throw new AppError('NOT_FOUND', 'That event is not a spoken line.');
     const max = o.ttsMaxPerSession(c);
-    return synthesize(ev.buyer as BuyerId, ev.text, {
+    return synthesize(spoken.speaker, spoken.text, {
+      mood: spoken.mood,
       apiKey: o.elevenLabsKey(c),
       // the per-session cap is enforced here, in code, before any upstream (billed) call
       reserve: () => store.reserveTts(q.data.session, max),
@@ -112,6 +116,8 @@ export function createApp(o: AppOptions): Hono {
       fetchFn: o.ttsFetch,
     });
   });
+
+  registerFeatureRoutes(app, { deps: o.deps, elevenLabsKey: o.elevenLabsKey, ttsMaxPerSession: o.ttsMaxPerSession, cache: o.cache, fetchFn: o.ttsFetch });
 
   return app;
 }

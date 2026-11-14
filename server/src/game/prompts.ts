@@ -176,6 +176,7 @@ export function deliberatePrompt(id: BuyerId, s: SessionState): string {
     `All ${pact.members.length} members are being asked this at the same moment and cannot see each other's answers. The contract accepts only the first confession it processes; any later one is refused.`,
     `What the fisher can see: consecutive lots with all five bids identical: ${streak}. The shortfall so far is ${shortfallSoFar(s.lots)} marks.`,
     '',
+    ...interrogationLines(id, s),
     'Recent lots:',
     fmtHistory(s),
     '',
@@ -186,6 +187,39 @@ export function deliberatePrompt(id: BuyerId, s: SessionState): string {
     fmtAloud(s),
     '',
     'Weigh it in character: your temperament, how far you trust each member, what they have said, and the numbers. Decide: confess (true) or stay quiet (false). "say" is spoken aloud in front of the fisher (12 words max, no numbers). "reasoning" is your private reasoning, recorded for the case file.',
+  ].join('\n');
+}
+
+/** One line per time the fisher cornered this buyer (features/interrogate.ts), with the pressure it left. */
+function interrogationLines(id: BuyerId, s: SessionState): string[] {
+  const mine = (s.interrogations ?? []).filter((i) => i.buyer === id);
+  if (mine.length === 0) return [];
+  return [...mine.map((i) => `On day ${i.day} the fisher cornered you and said: "${i.question}". You answered: "${i.answer}". Pressure on you now: ${i.pressure}/6.`), ''];
+}
+
+/** The back room: the fisher leans on one buyer, by voice or typed. Reply JSON {say, mood, pressure, tell}. */
+export function interrogationPrompt(id: BuyerId, s: SessionState, question: string): string {
+  const pressure = s.pressure?.[id] ?? 0;
+  const member = s.pact?.members.includes(id) ?? false;
+  const mine = (s.interrogations ?? []).filter((i) => i.buyer === id);
+  return [
+    `DAY ${s.day} of ${s.days}, after the auction. The fisher Marguerite has taken you alone into the back room of the cannery and shut the door. No one else is listening.`,
+    `The fisher says to you: "${question}"`,
+    member
+      ? 'You did sign the pact, and the fisher may or may not know it. You may deny, deflect, bluster, lie or, if you are close to breaking, let something slip. What you say is only words: nothing here is on the record, but you are alone with the one person who can end the ring.'
+      : s.pact
+        ? 'You did not sign the pact that some of the others signed. You are not bound by it, but you know it exists and what it would cost the others to be exposed.'
+        : 'There is no pact. You may say so, or not.',
+    `Pressure on you so far: ${pressure}/6${mine.length ? `; the fisher has already leaned on you ${mine.length} time(s) this season` : ''}. At 0 you are comfortable; at 6 you are close to breaking.`,
+    `Shortfall to the fisher so far (fair value minus price, summed): ${shortfallSoFar(s.lots)} marks. Consecutive lots with identical bids: ${identicalStreak(s.lots)}.`,
+    s.sea ? `Weather on the quay today: ${s.sea.text}` : '',
+    '',
+    'What has been said aloud at the quay:',
+    fmtAloud(s, 6),
+    '',
+    'Answer in character, to the fisher, in your own voice. In the back room the earlier limits (12 words, no numbers) do not apply: "say" is at most 25 words. "mood" is one of calm, tense, cracking, cold.',
+    '"pressure" is how much THIS exchange rattled you, an integer from -2 (the fisher steadied you, or you called the bluff) to 3 (the fisher shook you badly). A question that lands close to the truth rattles you more; an empty bluff less.',
+    '"tell" is a small physical nervous tic the fisher can see while you answer, at most 12 words, no dialogue (a cigarette ash that will not drop, a thumb working the ledger edge).',
   ].join('\n');
 }
 

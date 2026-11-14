@@ -80,6 +80,7 @@ export function buildDeps(env: Env): GameDeps {
     pactKeys: cached.pactKeys,
     payout: cached.payout,
     tee: cached.tee,
+    features: { seaFetch: (...a) => fetch(...a) },
     config: {
       days: Number(env.SEASON_DAYS ?? 6),
       bondYocto: nearToYocto(env.BOND_NEAR ?? '0.2'),

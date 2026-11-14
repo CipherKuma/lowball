@@ -7,6 +7,7 @@
     "dev": "wrangler dev --local --persist-to .wrangler/state",
     "db:migrate": "wrangler d1 migrations apply lowball-game --local --persist-to .wrangler/state",
     "sync": "tsx scripts/sync-config.ts",
+    "prices": "tsx scripts/fetch-noaa-prices.ts",
     "setup-accounts": "tsx scripts/setup-accounts.ts",
     "e2e": "tsx scripts/e2e.ts",
     "verify-attestation": "tsx scripts/verify-attestation.ts",

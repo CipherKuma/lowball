@@ -70,6 +70,8 @@ export const SERVER_ERRORS: Record<string, ErrorInfo> = {
   BUDGET_EXHAUSTED: { message: 'The harbour has spent its buyer-model budget. No new seasons can start.', retryable: false, status: 402 },
   TTS_LIMIT: { message: 'This session has used its voice budget.', retryable: false, status: 429 },
   PAYOUT_EVM_FAILED: { message: 'The cross-chain payout did not complete.', retryable: true, status: 502 },
+  ALREADY_INTERROGATED: { message: 'You have already cornered a buyer today.', retryable: false, status: 409 },
+  STT_UNAVAILABLE: { message: 'Could not transcribe that recording. Try again or type it.', retryable: true, status: 502 },
   TEE_UNAVAILABLE: { message: "A buyer's enclave job did not complete. Try again.", retryable: true, status: 503 },
 };
 

@@ -19,7 +19,9 @@ src/near/*            tx builder, RPC failover,       src/chain/*  RealChain (te
 | `POST /api/session/:id/step {action}` | `begin` (season, bonds, private cartel talk, day 1), `sell`, `hold`, `next_day`. Resumable: a failed step can simply be repeated. |
 | `POST /api/session/:id/leniency {txHash}` | confirms the player's `offer_leniency` tx is INCLUDED and the window is open on-chain (it is a pending NEP-519 yield, so it never waits for execution), then runs the deliberation race. Returns within about 60 s; a holdout or payout still pending then keeps `status.finalizing` true and is finished by the events polls. |
 | `GET  /api/session/:id/casefile` | sealed (409 `BAD_PHASE`) until the season is `closed`. |
-| `GET  /api/tts?session=&seq=` | mp3 of a `line` event, buyer voice from `audio/voices.json`, cached in the Cache API. At most `TTS_MAX_PER_SESSION` (40) upstream ElevenLabs calls per session (cache hits are free); then `429 TTS_LIMIT`. |
+| `GET  /api/tts?session=&seq=` | mp3 of a `line`, `interrogation` (buyer voice, `eleven_v3`, mood audio tags) or `recap` (narrator) event, buyer voice from `audio/voices.json`, cached in the Cache API. At most `TTS_MAX_PER_SESSION` (80) upstream ElevenLabs calls per session (cache hits are free); then `429 TTS_LIMIT`. |
+| `POST /api/session/:id/interrogate` | multipart: `buyer` + either `audio` (webm/ogg/mp4, at most 15 s and 1.5 MB, transcribed by ElevenLabs `scribe_v1`) or `text` (at most 240 chars). One per day (409 `ALREADY_INTERROGATED`), in `lot_open`/`settled`, not after a confession. The buyer answers through the NEAR AI client; pressure (0..6) and the exchange persist and reach `deliberatePrompt`. Emits `interrogation`. |
+| `GET  /api/session/:id/wiretap` | 409 `BAD_PHASE` until the season closes; then the private channel as an `eleven_v3` Text-to-Dialogue mp3 (narrator intro, mood-tagged lines), cached per session. |
 
 Errors are always `{error, code}`. Contract refusals keep their stable `E_*` codes; server codes are in
 `ServerErrorCode`. Phases: `created -> lot_open <-> settled -> closed`. A step that is already running returns
@@ -113,3 +115,10 @@ Bond 0.2 NEAR per buyer (`BOND_NEAR`). Buyers are funded 0.6 NEAR each by setup 
 before each season (`ensureBuyerFunds`: bond + 0.15 NEAR gas reserve). Sessions refuse to start with
 `TREASURY_LOW` when the house holds under `MIN_TREASURY_NEAR` (1.5). Slashed bonds go to the player account
 (a house subaccount), so a confession season costs the house roughly 0.8 NEAR net.
+
+### BRIEF-3 data
+
+`src/generated/prices.json` is written by `npm run prices` from NOAA Fisheries FOSS commercial landings (national dollars / pounds,
+latest complete year); `lots.ts` prices a lot as kg x 2.20462 x USD per lb x `MARKS_PER_USD` (0.1) and reports it in `day_opened.market`.
+A species without a price falls back to the prior formula, flagged `marketFallback`. The live sea state (Open-Meteo Marine, New Bedford)
+is fetched once at season begin (3 s timeout; failure means no event and no multiplier). Real-API results: `FEATURES-RUN.md`.

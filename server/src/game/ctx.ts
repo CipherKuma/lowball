@@ -4,6 +4,7 @@ import type { Chain, TxResult } from '../chain/types.js';
 import type { KeyPair } from '../near/keys.js';
 import type { Llm } from '../llm/types.js';
 import type { Store } from '../store/types.js';
+import type { FeatureDeps } from '../features/types.js';
 import type { TeeActs } from '../tee/acts.js';
 import type { SessionState } from './state.js';
 
@@ -35,6 +36,8 @@ export interface GameDeps {
   payout?: PayoutRelay;
   /** TEE_BUYERS=1: pact and confession decisions and signatures come from the buyers' OutLayer enclaves */
   tee?: TeeActs;
+  /** BRIEF-3 optional capabilities (live sea state); absent in tests unless a test opts in */
+  features?: FeatureDeps;
   /** wait between chain polls (tests advance the mock chain here) */
   sleep?: (ms: number) => Promise<void>;
   pollMs?: number;

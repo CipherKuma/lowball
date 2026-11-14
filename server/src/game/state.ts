@@ -1,4 +1,4 @@
-import type { BuyerId, BuyerInfo, ChannelMessage, SessionPhase } from '../../../shared/api.js';
+import type { BuyerId, BuyerInfo, ChannelMessage, Mood, SeaState, SessionPhase } from '../../../shared/api.js';
 
 export interface LotMemory {
   day: number;
@@ -50,6 +50,18 @@ export type Finalize =
   | { kind: 'holdout'; day: number; deadlineBlock: number; checkedAt: number }
   | { kind: 'payout'; confessTx: string; startedAt: number; checkedAt: number };
 
+/** One back-room exchange (features/interrogate.ts). */
+export interface Interrogation {
+  day: number;
+  buyer: BuyerId;
+  question: string;
+  answer: string;
+  mood: Mood;
+  tell: string;
+  /** the buyer's pressure after this exchange */
+  pressure: number;
+}
+
 export interface SessionState {
   playerAccountId: string;
   playerPublicKey: string;
@@ -81,6 +93,12 @@ export interface SessionState {
   /** Sepolia address the season was created with (cross-chain payout), or null */
   payoutEvm: string | null;
   finalize: Finalize | null;
+  // ---- optional feature fields (BRIEF-3); absent on sessions written before them ----
+  /** live sea state, fetched once at season begin; null: the fetch was tried and failed (no multiplier) */
+  sea?: SeaState | null;
+  /** pressure on each buyer from interrogations, 0..6 */
+  pressure?: Partial<Record<BuyerId, number>>;
+  interrogations?: Interrogation[];
 }
 
 export function newState(init: {

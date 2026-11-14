@@ -8,6 +8,7 @@ import type { GameCtx } from './ctx.js';
 import { openNextLot } from './days.js';
 import { cartelPrompt, system } from './prompts.js';
 import { teeRoundTwo } from '../tee/cartel.js';
+import { ensureSea } from '../features/sea.js';
 
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
@@ -140,5 +141,6 @@ export async function beginSeason(ctx: GameCtx): Promise<void> {
   if (bad) throw bad.reason;
 
   if (!s.setup.cartelDone) await formCartel(ctx);
+  await ensureSea(ctx);
   await openNextLot(ctx);
 }

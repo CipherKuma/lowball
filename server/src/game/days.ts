@@ -7,6 +7,8 @@ import { concat, fromHex, toHex } from '../near/bytes.js';
 import { mintsOf, transfersOf } from '../near/events.js';
 import { newSalt } from '../near/signer.js';
 import type { GameCtx } from './ctx.js';
+import { emitRecap } from '../features/recap.js';
+import { seaMultiplier } from '../features/sea.js';
 import { lotFor } from './lots.js';
 import { bidPrompt, reactPrompt, system } from './prompts.js';
 import type { BidDecision } from './state.js';
@@ -33,14 +35,14 @@ export async function openNextLot(ctx: GameCtx): Promise<void> {
   const s = ctx.state;
   if (s.seasonId === null) throw new AppError('BAD_PHASE');
   const day = s.day + 1;
-  const lot = lotFor(s.seed, day);
+  const lot = lotFor(s.seed, day, seaMultiplier(s));
   const opened = await ctx.mustTx(`open_lot day ${day}`, ctx.chain.houseId, ctx.chain.openLot(s.seasonId, lot.species, lot.fairValue, lot.weightKg));
   const tx = opened.hash;
   s.day = day;
-  s.lots.push({ day, ...lot, reveals: [], identical: false, winner: null, price: 0, shortfall: 0, settled: false });
+  s.lots.push({ day, species: lot.species, weightKg: lot.weightKg, fairValue: lot.fairValue, reveals: [], identical: false, winner: null, price: 0, shortfall: 0, settled: false });
   s.phase = 'lot_open';
   s.auction = null;
-  await ctx.emit({ type: 'day_opened', day, species: lot.species, weightKg: lot.weightKg, fairValue: lot.fairValue, tx });
+  await ctx.emit({ type: 'day_opened', day, species: lot.species, weightKg: lot.weightKg, fairValue: lot.fairValue, tx, ...(lot.market ? { market: lot.market } : {}), ...(lot.marketFallback ? { marketFallback: true as const } : {}) });
   // The catch is a NEP-245 token minted into escrow by open_lot: report what the receipt says, never a guess.
   const mint = mintsOf(opened.logs)[0];
   if (mint) await ctx.emit({ type: 'lot_minted', tokenId: mint.tokenId, amount: mint.amount, tx });
@@ -159,6 +161,7 @@ export async function sell(ctx: GameCtx): Promise<void> {
     const buyer = BUYER_IDS.find((id) => s.buyers.find((b) => b.id === id)!.accountId === to) ?? null;
     await ctx.emit({ type: 'lot_transferred', tokenId: auction.transfer.tokenId, to, buyer, memo: auction.transfer.memo, tx: auction.settleTx });
   }
+  await emitRecap(ctx, { day: s.day, species: lot.species, fairValue: lot.fairValue, price: lv.price, winner, reveals: revealList });
   lot.reveals = revealList.map((r) => ({ buyer: r.buyer, amount: r.amount }));
   lot.identical = lv.identical;
   lot.winner = winner;

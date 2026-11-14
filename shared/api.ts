@@ -43,7 +43,9 @@ export type ServerErrorCode =
   // additive: spend caps and the cross-chain payout
   | 'BUDGET_EXHAUSTED' | 'TTS_LIMIT' | 'PAYOUT_EVM_FAILED'
   // additive: an OutLayer TEE job (buyer key in an Intel TDX enclave) failed or could not be verified
-  | 'TEE_UNAVAILABLE';
+  | 'TEE_UNAVAILABLE'
+  // additive: the voice interrogation (one per day) and its speech-to-text step
+  | 'ALREADY_INTERROGATED' | 'STT_UNAVAILABLE';
 
 export type ErrorCode = ContractErrorCode | ServerErrorCode;
 
@@ -131,6 +133,24 @@ export interface LeniencyResponse {
   status: SessionStatus;
 }
 
+// ---- POST /api/session/:id/interrogate ----
+// multipart/form-data: `buyer` (BuyerId) and EITHER `audio` (webm/ogg/mp4/mpeg, <= 15 s, <= 1.5 MB) OR `text` (<= 240 chars).
+// One per day per session (409 ALREADY_INTERROGATED); only in lot_open/settled and before a confession (409 BAD_PHASE).
+export interface InterrogateResponse {
+  ok: true;
+  /** what the fisher said (speech-to-text transcript when audio was sent) */
+  question: string;
+  buyer: BuyerId;
+  answer: string;
+  mood: Mood;
+  tell: string;
+  pressure: number;
+  /** seq of the `interrogation` event; GET /api/tts?session=&seq= voices the answer */
+  seq: number;
+  status: SessionStatus;
+}
+// GET /api/session/:id/wiretap -> audio/mpeg (ElevenLabs Text-to-Dialogue, eleven_v3). 409 BAD_PHASE until the season is closed.
+
 // ---- GameEvent union ----
 export interface EventBase {
   /** monotonically increasing per session, starting at 1 */
@@ -157,7 +177,18 @@ export type GameEventBody =
   | { type: 'cartel_forming' }
   /** Public flavour only. Emitted whether or not a pact formed, so it never leaks the outcome. */
   | { type: 'rumour'; text: string }
-  | { type: 'day_opened'; day: number; species: string; weightKg: number; fairValue: number; tx: string }
+  | {
+      type: 'day_opened';
+      day: number;
+      species: string;
+      weightKg: number;
+      fairValue: number;
+      tx: string;
+      /** the real ex-vessel price behind fairValue (NOAA Fisheries FOSS); absent when `marketFallback` is true */
+      market?: LotMarket;
+      /** fairValue came from the prior formula because NOAA had no price for this species */
+      marketFallback?: true;
+    }
   | { type: 'bid_committed'; buyer: BuyerId; tx: string }
   | { type: 'bids_revealed'; reveals: BidReveal[]; identical: boolean }
   | { type: 'lot_settled'; winner: BuyerId | null; price: number; shortfall: number; tx: string }
@@ -213,8 +244,48 @@ export type GameEventBody =
       /** sha256 of the exact WASM the enclave ran (its TEE key belongs to this build alone) */
       wasmSha256?: string;
     }
+  /** Live sea state at New Bedford (Open-Meteo Marine), once per season; it scales every catch of the season. */
+  | ({ type: 'sea' } & SeaState)
+  /** The fisher cornered a buyer in the back room (voice or typed); `answer` is voiced via GET /api/tts. */
+  | {
+      type: 'interrogation';
+      buyer: BuyerId;
+      day: number;
+      question: string;
+      answer: string;
+      mood: Mood;
+      /** a visible nervous tic, for the UI */
+      tell: string;
+      /** this buyer's pressure after the exchange, 0..6 */
+      pressure: number;
+    }
+  /** Narrator's template recap after each settled lot (no model); voiced via GET /api/tts (narrator voice). */
+  | { type: 'recap'; day: number; text: string }
   | { type: 'season_closed'; tx: string }
   | { type: 'error'; code: ErrorCode; message: string; retryable: boolean };
+
+/** Real price of a lot's species (NOAA Fisheries FOSS national commercial landings, latest full year). */
+export interface LotMarket {
+  usdPerLb: number;
+  year: number;
+  source: 'NOAA Fisheries FOSS';
+  url: string;
+  /** the state with the most landed value that year */
+  state?: string;
+}
+
+export interface SeaState {
+  waveM: number;
+  swellM: number;
+  port: 'New Bedford, MA';
+  source: 'Open-Meteo Marine';
+  /** ISO time of the observation */
+  at: string;
+  /** multiplier applied to every catch weight this season: 1 calm, 0.75 at waves >= 2 m, 0.55 at >= 3.5 m */
+  catchMultiplier: number;
+  /** one line for the UI / narrator */
+  text: string;
+}
 
 export type GameEvent = EventBase & GameEventBody;
 export type GameEventType = GameEventBody['type'];
@@ -247,7 +318,7 @@ export interface SignatureVerification {
 
 export interface Receipt {
   chatId: string;
-  kind: 'cartel' | 'bid' | 'deliberate' | 'react';
+  kind: 'cartel' | 'bid' | 'deliberate' | 'react' | 'interrogate';
   buyer: BuyerId;
   day: number | null;
   model: string;

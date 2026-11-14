@@ -1,0 +1,47 @@
+// F3: ElevenLabs Speech-to-Text (scribe_v1, language auto-detected).
+import { AppError } from '../errors.js';
+
+export const STT_MODEL = 'scribe_v1';
+export const STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text';
+export const MAX_AUDIO_BYTES = 1_572_864; // 1.5 MiB
+export const MAX_AUDIO_SECONDS = 15;
+export const AUDIO_TYPES = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/x-m4a', 'audio/aac', 'video/webm', 'video/mp4'];
+
+export interface Transcript {
+  text: string;
+  languageCode: string | null;
+  /** end of the last spoken word, seconds (null when the response had no word times) */
+  seconds: number | null;
+}
+
+/** Strips parameters ("audio/webm;codecs=opus" -> "audio/webm"). */
+export function baseType(t: string): string {
+  return t.split(';')[0]!.trim().toLowerCase();
+}
+
+export async function transcribe(audio: Blob, apiKey: string, fetchFn: typeof fetch = fetch): Promise<Transcript> {
+  const form = new FormData();
+  form.append('model_id', STT_MODEL);
+  form.append('tag_audio_events', 'false');
+  form.append('file', audio, 'question.webm');
+  let res: Response;
+  try {
+    res = await fetchFn(STT_URL, { method: 'POST', headers: { 'xi-api-key': apiKey }, body: form });
+  } catch {
+    throw new AppError('STT_UNAVAILABLE');
+  }
+  if (!res.ok) throw new AppError('STT_UNAVAILABLE');
+  let j: { text?: unknown; language_code?: unknown; words?: { end?: unknown }[] };
+  try {
+    j = (await res.json()) as typeof j;
+  } catch {
+    throw new AppError('STT_UNAVAILABLE');
+  }
+  const text = typeof j.text === 'string' ? j.text.replace(/\s+/g, ' ').trim() : '';
+  const ends = (j.words ?? []).map((w) => (typeof w.end === 'number' ? w.end : 0));
+  return {
+    text,
+    languageCode: typeof j.language_code === 'string' ? j.language_code : null,
+    seconds: ends.length ? Math.max(...ends) : null,
+  };
+}
