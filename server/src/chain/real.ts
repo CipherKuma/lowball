@@ -136,7 +136,7 @@ export class RealChain implements Chain {
   confess(buyer: BuyerId, seasonId: number, pact: PactJson, signatures: PactSigJson[], opts: ConfessOptions = {}) {
     // The race is real: every confessing buyer submits at once and the contract picks the first.
     return this.buyers[buyer].send(this.contractId, [
-      this.fn('confess', { season_id: seasonId, pact, signatures }, 0n, opts.payoutEvm ? GAS_CONFESS_EVM : GAS_CONFESS),
+      this.fn('confess', { season_id: seasonId, pact, signatures, confession_sig: opts.confessionSig ?? '' }, 0n, opts.payoutEvm ? GAS_CONFESS_EVM : GAS_CONFESS),
     ]);
   }
   closeSeason(seasonId: number) {

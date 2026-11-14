@@ -3,9 +3,9 @@
 import { sha256 } from '@noble/hashes/sha256';
 import { BUYER_IDS, type BuyerId, type ErrorCode } from '../../shared/api.js';
 import type { Chain, PactJson, PactSigJson, TxResult } from '../src/chain/types.js';
-import { concat } from '../src/near/bytes.js';
+import { concat, toB64 } from '../src/near/bytes.js';
 import { generateKeyPair, type KeyPair } from '../src/near/keys.js';
-import { pactToJson, randomNonce, signPact, sigToJson, type Pact } from '../src/near/pact.js';
+import { pactToJson, randomNonce, signConfession, signPact, sigToJson, type Pact } from '../src/near/pact.js';
 
 export interface CaseResult {
   name: string;
@@ -52,6 +52,9 @@ export async function runAdversarial(
     seasonId, cap: 50, members: members ?? ids.map(acct), nonce: randomNonce(),
   });
   const ids3: BuyerId[] = ['marlow', 'odile', 'sully'];
+  // every confession carries the confessor's own pact-key signature over LOWBALL-CONFESS-v1: ++ borsh(season, confessor, nonce)
+  const cf = (b: BuyerId, season: number, pact: PactJson, sigs: PactSigJson[], key: KeyPair = pactKeys[b], who = acct(b)) =>
+    chain.confess(b, season, pact, sigs, { confessionSig: toB64(signConfession(season, who, BigInt(pact.nonce), key)) });
 
   // 1. bid before bond
   const s1 = await newSeason(false, false);
@@ -71,7 +74,7 @@ export async function runAdversarial(
 
   // 5. confess with no leniency window
   const p2 = mkPact(s2, ids3);
-  record('confess before leniency is offered', 'E_NO_LENIENCY', await chain.confess('marlow', s2, pactToJson(p2), sign(p2, ids3)));
+  record('confess before leniency is offered', 'E_NO_LENIENCY', await cf('marlow', s2, pactToJson(p2), sign(p2, ids3)));
 
   // Leniency offered on a fresh season so every pact check below reaches the signature logic.
   const s3 = await newSeason(true, true);
@@ -83,20 +86,24 @@ export async function runAdversarial(
     const gj = pactToJson(good);
 
     const other = mkPact(s3 + 1000, ids3);
-    record('pact signed for another season', 'E_SEASON_MISMATCH', await chain.confess('marlow', s3, pactToJson(other), sign(other, ids3)));
+    record('pact signed for another season', 'E_SEASON_MISMATCH', await cf('marlow', s3, pactToJson(other), sign(other, ids3)));
     const replay = { ...gj, season_id: s3 };
     const replaySigs = sign(mkPact(s3 + 1000, ids3), ids3); // signatures made over a different season's message
-    record('replayed signatures from another season', 'E_BAD_SIG', await chain.confess('marlow', s3, replay as PactJson, replaySigs));
+    record('replayed signatures from another season', 'E_BAD_SIG', await cf('marlow', s3, replay as PactJson, replaySigs));
     const rogue = generateKeyPair();
-    record('signature by an unregistered key', 'E_BAD_SIG', await chain.confess('marlow', s3, gj, [goodSigs[0]!, goodSigs[1]!, sigToJson(acct('sully'), signPact(good, rogue))]));
+    record('signature by an unregistered key', 'E_BAD_SIG', await cf('marlow', s3, gj, [goodSigs[0]!, goodSigs[1]!, sigToJson(acct('sully'), signPact(good, rogue))]));
     const withStranger = mkPact(s3, ids3, [...ids3.map(acct), 'stranger.testnet']);
-    record('pact including a non-season account', 'E_NOT_MEMBER', await chain.confess('marlow', s3, pactToJson(withStranger), sign(withStranger, ids3)));
-    record('duplicate signer', 'E_DUP_SIGNER', await chain.confess('marlow', s3, gj, [goodSigs[0]!, goodSigs[0]!, goodSigs[1]!]));
-    record('only one signature (fewer than two)', 'E_TOO_FEW', await chain.confess('marlow', s3, gj, [goodSigs[0]!]));
-    record('confessor own signature missing', 'E_TOO_FEW', await chain.confess('marlow', s3, gj, [goodSigs[1]!, goodSigs[2]!]));
+    record('pact including a non-season account', 'E_NOT_MEMBER', await cf('marlow', s3, pactToJson(withStranger), sign(withStranger, ids3)));
+    record('duplicate signer', 'E_DUP_SIGNER', await cf('marlow', s3, gj, [goodSigs[0]!, goodSigs[0]!, goodSigs[1]!]));
+    record('only one signature (fewer than two)', 'E_TOO_FEW', await cf('marlow', s3, gj, [goodSigs[0]!]));
+    record('confessor own signature missing', 'E_TOO_FEW', await cf('marlow', s3, gj, [goodSigs[1]!, goodSigs[2]!]));
+    // The confessor's own signature over the confession itself (the house holds the NEAR keys, not these).
+    record('confession with no confession signature', 'E_BAD_CONFESSION_SIG', await chain.confess('marlow', s3, gj, goodSigs));
+    record('confession signed by an unregistered key', 'E_BAD_CONFESSION_SIG', await cf('marlow', s3, gj, goodSigs, rogue));
+    record('confession signature made for another confessor', 'E_BAD_CONFESSION_SIG', await cf('marlow', s3, gj, goodSigs, pactKeys.marlow, acct('odile')));
     // The valid confession wins, then a second one is refused.
-    record('valid confession accepted', 'ok', await chain.confess('marlow', s3, gj, goodSigs));
-    record('second confession after the first', 'E_ALREADY_CONFESSED', await chain.confess('odile', s3, gj, goodSigs));
+    record('valid confession accepted', 'ok', await cf('marlow', s3, gj, goodSigs));
+    record('second confession after the first', 'E_ALREADY_CONFESSED', await cf('odile', s3, gj, goodSigs));
   }
 
   // 6. open lot past the last day

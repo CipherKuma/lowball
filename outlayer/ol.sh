@@ -20,4 +20,4 @@ if [ "${1:-}" = "login-from-near-credentials" ]; then
   echo "credentials written to $OL_HOME/.outlayer/testnet (account $acct)"
   exit 0
 fi
-HOME="$OL_HOME" OUTLAYER_NETWORK=testnet OUTLAYER_RPC_URL="${OUTLAYER_RPC_URL:-https://archival-rpc.testnet.near.org}" exec "${OUTLAYER_BIN:-outlayer}" "$@"
+HOME="$OL_HOME" OUTLAYER_NETWORK=testnet OUTLAYER_RPC_URL="${OUTLAYER_RPC_URL:-https://rpc.testnet.fastnear.com}" exec "${OUTLAYER_BIN:-outlayer}" "$@"

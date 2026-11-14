@@ -9,6 +9,7 @@ import type {
   SessionStatus,
   StepAction,
   StepResponse,
+  TeeActRecord,
   TxRecord,
 } from '../../../shared/api.js';
 import { AppError } from '../errors.js';
@@ -185,7 +186,7 @@ export async function step(deps: GameDeps, id: string, action: StepAction): Prom
 export async function leniency(deps: GameDeps, id: string, txHash: string): Promise<LeniencyResponse> {
   const { ctx, out } = await locked(deps, id, (c) => {
     // Backstop for the UI gate: leniency needs a case on the record first.
-    if (caseDays(c.state.lots) < CASE_DAYS) {
+    if (caseDays(c.state.lots) < (c.deps.config.minCaseDays ?? CASE_DAYS)) {
       throw new AppError('BAD_PHASE', `You need a case first: ${CASE_DAYS} days of identical bids on the record.`);
     }
     return runLeniency(c, txHash);
@@ -198,6 +199,7 @@ export async function casefile(deps: GameDeps, id: string): Promise<CasefileResp
   if (s.phase !== 'closed') throw new AppError('BAD_PHASE', 'The case file is sealed until the season closes.');
   const receipts = await deps.store.listArtifacts<Receipt>(id, 'receipt');
   const txs = await deps.store.listArtifacts<TxRecord>(id, 'tx');
+  const tee = deps.tee ? await deps.store.listArtifacts<TeeActRecord>(id, 'tee') : undefined;
   let pact: PactRecord | null = null;
   if (s.pact && s.seasonId !== null) {
     pact = {
@@ -222,6 +224,7 @@ export async function casefile(deps: GameDeps, id: string): Promise<CasefileResp
     contractId: s.contractId,
     playerAccountId: s.playerAccountId,
     model: deps.llm.model,
+    ...(tee ? { tee } : {}),
     ...(deps.llm.attestation ? { attestation: await deps.llm.attestation().catch(() => undefined) } : {}),
     channel: s.channel,
     pact,

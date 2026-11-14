@@ -7,6 +7,7 @@ import { pickRumour } from './cast.js';
 import type { GameCtx } from './ctx.js';
 import { openNextLot } from './days.js';
 import { cartelPrompt, system } from './prompts.js';
+import { teeRoundTwo } from '../tee/cartel.js';
 
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
@@ -53,8 +54,23 @@ async function formCartel(ctx: GameCtx): Promise<void> {
   const s = ctx.state;
   if (s.seasonId === null) throw new AppError('BAD_PHASE');
   await ctx.emit({ type: 'cartel_forming' });
-  const r1 = await cartelRound(ctx, 1);
-  s.channel.push(...r1);
+  const tee = ctx.deps.tee;
+  // a retry after a failed enclave job keeps the round-1 talk it already has
+  const kept = tee ? s.channel.filter((m) => m.round === 1) : [];
+  const r1 = kept.length === BUYER_IDS.length ? kept : await cartelRound(ctx, 1);
+  if (kept.length !== BUYER_IDS.length) {
+    s.channel = s.channel.filter((m) => m.round !== 1 && m.round !== 2);
+    s.channel.push(...r1);
+  }
+  if (tee) {
+    // TEE_BUYERS=1: round 2 is five enclave jobs; they decide sign yes/no and sign the pact themselves.
+    s.channel = s.channel.filter((m) => m.round !== 2);
+    s.channel.push(...(await teeRoundTwo(ctx, tee, r1)));
+    await ctx.emit({ type: 'rumour', text: pickRumour(s.seed) });
+    s.setup.cartelDone = true;
+    await ctx.save();
+    return;
+  }
   const r2 = await cartelRound(ctx, 2);
   s.channel.push(...r2);
   const signers = r2.filter((m) => m.sign);

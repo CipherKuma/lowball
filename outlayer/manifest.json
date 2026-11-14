@@ -2,7 +2,7 @@
   "display": {
     "name": "Lowball buyer (TEE pact signer)"
   },
-  "operations": ["probe", "decide"],
+  "operations": ["probe", "sign_pact", "deliberate"],
   "capabilities": {
     "network": [{"host": "cloud-api.near.ai", "timeout_secs": 60}]
   },

@@ -69,7 +69,7 @@ export interface Rig {
   llm: ScriptedLlm;
 }
 
-export const TEST_CONFIG: GameConfig = { days: 3, bondYocto: 200_000_000_000_000_000_000_000n, minTreasuryYocto: 1n };
+export const TEST_CONFIG: GameConfig = { days: 3, bondYocto: 200_000_000_000_000_000_000_000n, minTreasuryYocto: 1n, minCaseDays: 0 };
 
 export function makeRig(policy: Partial<Policy> = {}, config: Partial<GameConfig> = {}): Rig {
   const pactKeys = {} as Record<BuyerId, KeyPair>;

@@ -5,7 +5,7 @@ import { BUYER_IDS, type BuyerId, type ErrorCode } from '../../../shared/api.js'
 import { b58encode } from '../near/base58.js';
 import { concat, fromB64, utf8 } from '../near/bytes.js';
 import { verify } from '../near/keys.js';
-import { PACT_PREFIX, encodePact } from '../near/pact.js';
+import { PACT_PREFIX, encodePact, verifyConfessionSig } from '../near/pact.js';
 import { mockEvent } from './mock-events.js';
 import { ensure, Panic, type Lot, type Season } from './mock-state.js';
 import type { Chain, ConfessOptions, LeniencyCheck, PactJson, PactSigJson, SeasonView, TxResult } from './types.js';
@@ -282,6 +282,9 @@ export class MockChain implements Chain {
         ensure(verify(sig, msg, s.pk[i]!), 'E_BAD_SIG');
         signers.push(i);
       }
+      // the confessor's own pact key must have authorised this very confession (E_BAD_CONFESSION_SIG precedes E_TOO_FEW)
+      const csig = opts.confessionSig ? fromB64(opts.confessionSig) : new Uint8Array(0);
+      ensure(csig.length === 64 && verifyConfessionSig(id, caller, pact.nonce, csig, s.pk[ci]!), 'E_BAD_CONFESSION_SIG');
       ensure(signers.length >= 2 && signers.includes(ci), 'E_TOO_FEW');
       // desk.pay_evm needs the 250 Tgas attach: with less the success path runs out of gas and reverts
       ensure(!s.payoutEvm || !!opts.payoutEvm, 'TX_FAILED');

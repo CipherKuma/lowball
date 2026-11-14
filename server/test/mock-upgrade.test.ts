@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { BUYER_IDS, type BuyerId } from '../../shared/api.js';
 import { YIELD_BLOCKS } from '../src/chain/mock.js';
 import { mintsOf, parseEventLogs, transfersOf } from '../src/near/events.js';
-import { pactToJson, randomNonce, signPact, sigToJson } from '../src/near/pact.js';
+import { toB64 } from '../src/near/bytes.js';
+import { pactToJson, randomNonce, signConfession, signPact, sigToJson } from '../src/near/pact.js';
 import { makeRig } from './helpers.js';
 
 const BOND = 200_000_000_000_000_000_000_000n;
@@ -24,7 +25,8 @@ async function season(opts: { payoutEvm?: string; days?: number } = {}) {
     const members: BuyerId[] = ['marlow', 'odile', 'sully'];
     const pact = { seasonId: id, cap: 50, members: members.map((m) => `${m}.${chain.houseId}`), nonce: randomNonce() };
     const sigs = members.map((m) => sigToJson(`${m}.${chain.houseId}`, signPact(pact, deps.pactKeys[m])));
-    return chain.confess(b, id, pactToJson(pact), sigs, o);
+    const confessionSig = toB64(signConfession(id, `${b}.${chain.houseId}`, pact.nonce, deps.pactKeys[b]));
+    return chain.confess(b, id, pactToJson(pact), sigs, { ...o, confessionSig });
   };
   return { rig, chain, id, player, confess };
 }

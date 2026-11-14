@@ -72,6 +72,8 @@ export interface LeniencyCheck {
 }
 
 export interface ConfessOptions {
+  /** base64 ed25519 signature by the confessor's own pact key over LOWBALL-CONFESS-v1: ++ borsh(season, confessor, nonce) */
+  confessionSig?: string;
   /** the season has payout_evm: the confess call forwards to the desk and needs 250 Tgas (else 30) */
   payoutEvm?: boolean;
 }

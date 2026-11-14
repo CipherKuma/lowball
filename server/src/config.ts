@@ -11,6 +11,12 @@ import { setDebug } from './log.js';
 import { D1Store } from './store/d1.js';
 import type { Env } from './env.js';
 import generated from './generated/config.json';
+import deployedTee from '../../outlayer/deployed.json';
+import { NearSigner } from './near/signer.js';
+import { parseSecretKey } from './near/keys.js';
+import { TeeActs } from './tee/acts.js';
+import { OutlayerTransport } from './tee/outlayer.js';
+import type { TeeDeployment } from './tee/types.js';
 
 export interface Resolved {
   contractId: string;
@@ -24,7 +30,7 @@ export function resolveIds(env: Env): Resolved {
   return { contractId, houseId };
 }
 
-let cached: { key: string; chain: RealChain; llm: NearAiLlm; pactKeys: GameDeps['pactKeys']; payout: PayoutRelay } | null = null;
+let cached: { key: string; chain: RealChain; llm: NearAiLlm; pactKeys: GameDeps['pactKeys']; payout: PayoutRelay; tee?: TeeActs } | null = null;
 /** the spend ledger the cached LLM client writes to (D1 binding of the current request) */
 let ledger: Store | null = null;
 
@@ -37,7 +43,7 @@ export function ttsMaxPerSession(env: Env): number {
 export function buildDeps(env: Env): GameDeps {
   setDebug(env.DEBUG);
   const { contractId, houseId } = resolveIds(env);
-  const key = [contractId, houseId, env.NEARAI_MODEL, env.RPC_URLS, env.DESK_ACCOUNT_ID, env.SEPOLIA_RPC_URLS].join('|');
+  const key = [contractId, houseId, env.NEARAI_MODEL, env.RPC_URLS, env.DESK_ACCOUNT_ID, env.SEPOLIA_RPC_URLS, env.TEE_BUYERS].join('|');
   const store = new D1Store(env.DB);
   ledger = store;
   if (!cached || cached.key !== key) {
@@ -58,7 +64,14 @@ export function buildDeps(env: Env): GameDeps {
     };
     const pactKeys = {} as Record<BuyerId, (typeof buyerKeys)[BuyerId]['pact']>;
     for (const id of BUYER_IDS) pactKeys[id] = buyerKeys[id].pact;
-    cached = { key, chain, llm, pactKeys, payout };
+    // TEE_BUYERS=1: the registered pact keys are enclave keys, so the server holds none and never signs a pact itself.
+    let tee: TeeActs | undefined;
+    if (env.TEE_BUYERS === '1') {
+      const deployment = deployedTee as unknown as TeeDeployment;
+      const signer = new NearSigner({ accountId: houseId, keyPair: parseSecretKey(env.HOUSE_PRIVATE_KEY), rpc });
+      tee = new TeeActs(deployment, new OutlayerTransport({ deployment, signer, rpc }));
+    }
+    cached = { key, chain, llm, pactKeys, payout, tee };
   }
   return {
     store,
@@ -66,6 +79,7 @@ export function buildDeps(env: Env): GameDeps {
     llm: cached.llm,
     pactKeys: cached.pactKeys,
     payout: cached.payout,
+    tee: cached.tee,
     config: {
       days: Number(env.SEASON_DAYS ?? 6),
       bondYocto: nearToYocto(env.BOND_NEAR ?? '0.2'),

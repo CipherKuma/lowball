@@ -31,7 +31,9 @@ export type ContractErrorCode =
   | 'E_SLASHED' | 'E_ALREADY_WITHDRAWN'
   // contract upgrade (BRIEF-2 U1/U2/U3)
   | 'E_LENIENCY_OPEN' | 'E_BAD_EVM' | 'E_NO_TOKEN' | 'E_NOT_TOKEN_OWNER' | 'E_MT_PARTIAL'
-  | 'E_NEED_1_YOCTO' | 'E_SELF_TRANSFER' | 'E_NOT_CONTRACT';
+  | 'E_NEED_1_YOCTO' | 'E_SELF_TRANSFER' | 'E_NOT_CONTRACT'
+  // confession now needs the confessor's own pact-key signature
+  | 'E_BAD_CONFESSION_SIG';
 
 /** Server-side error codes (HTTP error bodies and `error` events). */
 export type ServerErrorCode =
@@ -39,7 +41,9 @@ export type ServerErrorCode =
   | 'RPC_UNAVAILABLE' | 'TX_FAILED' | 'TX_NOT_FOUND' | 'TX_MISMATCH' | 'MODEL_UNAVAILABLE'
   | 'MODEL_BAD_OUTPUT' | 'TTS_UNAVAILABLE' | 'INTERNAL'
   // additive: spend caps and the cross-chain payout
-  | 'BUDGET_EXHAUSTED' | 'TTS_LIMIT' | 'PAYOUT_EVM_FAILED';
+  | 'BUDGET_EXHAUSTED' | 'TTS_LIMIT' | 'PAYOUT_EVM_FAILED'
+  // additive: an OutLayer TEE job (buyer key in an Intel TDX enclave) failed or could not be verified
+  | 'TEE_UNAVAILABLE';
 
 export type ErrorCode = ContractErrorCode | ServerErrorCode;
 
@@ -190,8 +194,25 @@ export type GameEventBody =
       /** receipt state at emit time; a broadcast tx that is not yet mined is 'pending' */
       status?: 'success' | 'reverted' | 'pending';
     }
-  /** Reserved for the OutLayer TEE buyer keys (emitted by that integration, not by the core server). */
-  | { type: 'tee_signed'; buyer: BuyerId; jobId: string; attestationUrl: string }
+  /**
+   * A buyer's act was decided and signed inside an OutLayer Intel TDX enclave (TEE_BUYERS=1).
+   * jobId: OutLayer request id; attestationUrl: GET returns the TDX quote record for the job's transaction.
+   * The optional fields are additive.
+   */
+  | {
+      type: 'tee_signed';
+      buyer: BuyerId;
+      jobId: string;
+      attestationUrl: string;
+      /** 'pact': decided and signed the pact; 'confession': decided and signed the confession */
+      act?: 'pact' | 'confession';
+      /** what the enclave decided: sign | refuse (pact), confess | stay_quiet (confession) */
+      decision?: string;
+      /** the request_execution transaction on outlayer.testnet */
+      tx?: string;
+      /** sha256 of the exact WASM the enclave ran (its TEE key belongs to this build alone) */
+      wasmSha256?: string;
+    }
   | { type: 'season_closed'; tx: string }
   | { type: 'error'; code: ErrorCode; message: string; retryable: boolean };
 
@@ -279,6 +300,42 @@ export interface AttestationSummary {
   reason?: string;
 }
 
+/** One act signed inside an OutLayer TDX enclave. Re-check with `outlayer-verify tx <txHash> --network testnet`. */
+export interface TeeActRecord {
+  buyer: BuyerId;
+  act: 'pact' | 'confession';
+  decision: string;
+  /** OutLayer request id */
+  jobId: string;
+  /** the request_execution transaction (signed by the house, runs the job) */
+  txHash: string;
+  attestationUrl: string;
+  wasmSha256: string;
+  /** the buyer's TEE-derived ed25519 key, base64 (the key registered on the contract) */
+  publicKeyB64: string;
+  /** base64 signature the contract verifies (pact or confession signature); null when the buyer declined */
+  signatureB64: string | null;
+  /** the enclave's own signed record of the decision (message and ed25519 signature, base64) */
+  receipt: { message: string; signature: string };
+  /** NEAR AI Cloud completion made inside the enclave, with the provider's response signature when fetched */
+  nearAi: {
+    chatId: string;
+    requestSha256: string;
+    responseSha256: string;
+    signatureKind: string | null;
+    signingAddress: string | null;
+    /** the provider signature's text equals model:requestSha256:responseSha256 */
+    textMatches: boolean | null;
+    /** the provider's ECDSA signature recovers to its signing address */
+    signatureValid: boolean | null;
+  } | null;
+  /** ms from sending the job to reading its result */
+  ms: number;
+  /** the server checked the signature and the receipt against the registered TEE key */
+  signatureVerified: boolean;
+  at: number;
+}
+
 export interface CasefileResponse {
   sessionId: string;
   seasonId: number | null;
@@ -292,6 +349,8 @@ export interface CasefileResponse {
   pact: PactRecord | null;
   receipts: Receipt[];
   txs: TxRecord[];
+  /** acts signed inside OutLayer TDX enclaves; absent when TEE_BUYERS is off */
+  tee?: TeeActRecord[];
   /** on-chain season view at the time of the request (null before the season exists) */
   chain: unknown | null;
   status: SessionStatus;

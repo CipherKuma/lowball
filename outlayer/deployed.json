@@ -1,0 +1,41 @@
+{
+  "network": "testnet",
+  "outlayerContract": "outlayer.testnet",
+  "secretsOwner": "outlayer.lowball-house-ck.testnet",
+  "secretsProfile": "default",
+  "attestationBase": "https://testnet-api.outlayer.ai",
+  "callerAllowed": "lowball-house-ck.testnet",
+  "model": "Qwen/Qwen3.6-35B-A3B-FP8",
+  "buyers": {
+    "marlow": {
+      "wasmSha256": "de5e64d6f9993d49c6a23d576eefe1c1684bd155651a00375c57f29ba95f2728",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/de5e64d6f9993d49c6a23d576eefe1c1684bd155651a00375c57f29ba95f2728.wasm",
+      "publicKeyB64": "QFx+7q30zxIpPzbfPygKdVzQEb8xmQekg/5Ll77j1Qc=",
+      "publicKeyHex": "405c7eeeadf4cf12293f36df3f280a755cd011bf319907a483fe4b97bee3d507"
+    },
+    "odile": {
+      "wasmSha256": "ffb9d7e0e1f99c668b958fb2412560fa4be3ab597db08ffd931dea91455dd0c2",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/ffb9d7e0e1f99c668b958fb2412560fa4be3ab597db08ffd931dea91455dd0c2.wasm",
+      "publicKeyB64": "WuLYlx8ClyQUtqSeq6mIUXoPPrhMAuHuX+8w2/tGCWM=",
+      "publicKeyHex": "5ae2d8971f02972414b6a49eaba988517a0f3eb84c02e1ee5fef30dbfb460963"
+    },
+    "sully": {
+      "wasmSha256": "1687fe9d7cd4e23e045b84d58711be3df7bc1325e409a749cb1695458c8915f3",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/1687fe9d7cd4e23e045b84d58711be3df7bc1325e409a749cb1695458c8915f3.wasm",
+      "publicKeyB64": "COsKR7Bo2+nyUbb+cE94lQ8QOFNcTMze1JyVyutnqlE=",
+      "publicKeyHex": "08eb0a47b068dbe9f251b6fe704f78950f1038535c4cccded49c95caeb67aa51"
+    },
+    "ines": {
+      "wasmSha256": "7594d195c0799121b03777e92d33f8383785b369c36d38c3deee73f2d72362c9",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/7594d195c0799121b03777e92d33f8383785b369c36d38c3deee73f2d72362c9.wasm",
+      "publicKeyB64": "nk2lZSv2jqDpRRlIGcPSgTxPDRNtO3XmE4DRhQhTXvg=",
+      "publicKeyHex": "9e4da5652bf68ea0e945194819c3d2813c4f0d136d3b75e61380d18508535ef8"
+    },
+    "deacon": {
+      "wasmSha256": "d728b0d0e048a9ba605b6bb72610a65cbb63bdbfcf96f1a16c186401b8676a27",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/d728b0d0e048a9ba605b6bb72610a65cbb63bdbfcf96f1a16c186401b8676a27.wasm",
+      "publicKeyB64": "e7e4zpKbChZufTwgZQHcftUC/P2ZgIwpnhXob3uKp8g=",
+      "publicKeyHex": "7bb7b8ce929b0a166e7d3c206501dc7ed502fcfd99808c299e15e86f7b8aa7c8"
+    }
+  }
+}

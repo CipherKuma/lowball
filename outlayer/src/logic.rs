@@ -1,14 +1,15 @@
-//! Pure logic: pact encoding (byte for byte the contract's `LOWBALL-PACT-v1:` ++ borsh(Pact),
-//! see contract/PACT_ENCODING.md), input validation, prompt building and reply parsing.
-//! No host calls here, so `cargo test` runs it natively.
+//! Pure logic: pact and confession encodings (byte for byte the contract's, see
+//! contract/PACT_ENCODING.md), input validation, reply parsing. No host calls, so `cargo test` runs it natively.
 
 use serde::{Deserialize, Deserializer};
 use sha2::{Digest, Sha256};
 
 pub const PACT_PREFIX: &[u8] = b"LOWBALL-PACT-v1:";
+pub const CONFESS_PREFIX: &[u8] = b"LOWBALL-CONFESS-v1:";
 pub const DECISION_PREFIX: &str = "LOWBALL-DECISION-v1:";
 pub const CANARY_PREFIX: &str = "LOWBALL-TEE-CANARY-v1:";
-pub const MAX_CONTEXT_BYTES: usize = 8 * 1024;
+pub const MAX_SYSTEM_BYTES: usize = 8 * 1024;
+pub const MAX_USER_BYTES: usize = 16 * 1024;
 
 fn u64_flex<'de, D: Deserializer<'de>>(d: D) -> Result<u64, D::Error> {
     #[derive(Deserialize)]
@@ -33,15 +34,19 @@ pub struct Pact {
     pub nonce: u64,
 }
 
-/// borsh(Pact): u64 LE, u32 LE, Vec<String> (u32 LE count, each u32 LE len + bytes), u64 LE.
+fn put_string(out: &mut Vec<u8>, s: &str) {
+    out.extend_from_slice(&(s.len() as u32).to_le_bytes());
+    out.extend_from_slice(s.as_bytes());
+}
+
+/// borsh(Pact): u64 LE, u32 LE, Vec<String>, u64 LE.
 pub fn borsh_pact(p: &Pact) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(&p.season_id.to_le_bytes());
     out.extend_from_slice(&p.cap.to_le_bytes());
     out.extend_from_slice(&(p.members.len() as u32).to_le_bytes());
     for m in &p.members {
-        out.extend_from_slice(&(m.len() as u32).to_le_bytes());
-        out.extend_from_slice(m.as_bytes());
+        put_string(&mut out, m);
     }
     out.extend_from_slice(&p.nonce.to_le_bytes());
     out
@@ -51,6 +56,15 @@ pub fn borsh_pact(p: &Pact) -> Vec<u8> {
 pub fn pact_message(p: &Pact) -> Vec<u8> {
     let mut m = PACT_PREFIX.to_vec();
     m.extend(borsh_pact(p));
+    m
+}
+
+/// `b"LOWBALL-CONFESS-v1:" ++ borsh(ConfessionMsg{season_id: u64, confessor: String, pact_nonce: u64})`.
+pub fn confession_message(season_id: u64, confessor: &str, pact_nonce: u64) -> Vec<u8> {
+    let mut m = CONFESS_PREFIX.to_vec();
+    m.extend_from_slice(&season_id.to_le_bytes());
+    put_string(&mut m, confessor);
+    m.extend_from_slice(&pact_nonce.to_le_bytes());
     m
 }
 
@@ -85,8 +99,7 @@ pub fn validate(p: &Pact, season_id: u64, buyer_account: &str) -> Result<(), Str
 }
 
 /// Only these accounts (comma-separated, compiled in) may ask this buyer to decide. The caller is
-/// read from the host (`NEAR_USER_ACCOUNT_ID`), never from the input, so a third party cannot
-/// collect a signed pact from the buyer by composing a pact of their own.
+/// read from the host (`NEAR_USER_ACCOUNT_ID`), never from the input.
 pub fn caller_allowed(who: &str, allowed: &str) -> Result<(), String> {
     if !who.is_empty() && allowed.split(',').any(|a| a.trim() == who) {
         Ok(())
@@ -99,67 +112,75 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
 }
 
-pub fn persona(buyer: &str) -> &'static str {
+pub fn display_name(buyer: &str) -> &'static str {
     match buyer {
-        "sully" => "You are Sully Brack, a young, anxious dock buyer who is loss-averse and sweats over every \
-                    risk. You already face a possible leniency penalty if the fisher offers a clemency window.",
-        "marlow" => "You are Marlow Teague, a proud old harbour boss and the ringleader of the buyers' ring.",
-        "odile" => "You are Odile Fenn, a cannery accountant who decides purely on expected value.",
-        "ines" => "You are Ines Varga, a charming restaurateur who will sell out partners for a better deal.",
-        "deacon" => "You are The Deacon, a silent middleman loyal to the ring.",
-        _ => "You are a fish buyer.",
+        "sully" => "Sully Brack",
+        "marlow" => "Marlow Teague",
+        "odile" => "Odile Fenn",
+        "ines" => "Ines Varga",
+        "deacon" => "The Deacon",
+        _ => "a fish buyer",
     }
 }
 
-pub fn system_prompt(buyer: &str) -> String {
-    format!(
-        "{} Five buyers decide whether to SIGN a pact that caps their bids at a low price (a cartel against a fisher), \
-         or REFUSE it. Weigh the payoffs in the context honestly. Reply with ONLY a JSON object: \
-         {{\"decision\":\"sign\"|\"refuse\",\"reason\":\"<one short sentence in character>\"}}.",
-        persona(buyer)
-    )
-}
-
-pub fn user_prompt(pact: &Pact, context: &str, round: u64) -> String {
-    format!(
-        "Round {}. Proposed pact: season {}, bid cap {} marks, members {}. Pact nonce {}.\nContext (payoffs, history):\n{}",
-        round,
-        pact.season_id,
-        pact.cap,
-        pact.members.join(", "),
-        pact.nonce,
-        context
-    )
-}
-
-/// Extract {"decision": ...} from model text (tolerates prose or code fences around the JSON).
-pub fn parse_decision(text: &str) -> Result<(String, String), String> {
+fn extract_object(text: &str) -> Result<serde_json::Value, String> {
     let (a, b) = (text.find('{'), text.rfind('}'));
-    let (a, b) = match (a, b) {
-        (Some(a), Some(b)) if b > a => (a, b),
-        _ => return Err("model reply has no JSON object".into()),
-    };
-    let v: serde_json::Value = serde_json::from_str(&text[a..=b]).map_err(|e| format!("model JSON: {e}"))?;
-    let d = v["decision"].as_str().unwrap_or("").trim().to_lowercase();
-    if d != "sign" && d != "refuse" {
-        return Err(format!("decision must be sign or refuse, got {d:?}"));
+    match (a, b) {
+        (Some(a), Some(b)) if b > a => serde_json::from_str(&text[a..=b]).map_err(|e| format!("model JSON: {e}")),
+        _ => Err("model reply has no JSON object".into()),
     }
-    let reason: String = v["reason"].as_str().unwrap_or("").chars().take(280).collect();
-    Ok((d, reason))
+}
+
+fn mood_of(v: &serde_json::Value) -> String {
+    let m = v["mood"].as_str().unwrap_or("calm");
+    if ["calm", "tense", "cracking", "cold"].contains(&m) { m.to_string() } else { "calm".into() }
+}
+
+fn clip(v: &serde_json::Value, key: &str, max: usize) -> String {
+    v[key].as_str().unwrap_or("").chars().take(max).collect()
+}
+
+/// The pact vote: {say, sign, mood}.
+pub struct Vote {
+    pub sign: bool,
+    pub say: String,
+    pub mood: String,
+}
+
+pub fn parse_vote(text: &str) -> Result<Vote, String> {
+    let v = extract_object(text)?;
+    let sign = v["sign"].as_bool().ok_or("sign must be a boolean")?;
+    Ok(Vote { sign, say: clip(&v, "say", 400), mood: mood_of(&v) })
+}
+
+/// The deliberation: {confess, say, reasoning, mood}.
+pub struct Deliberation {
+    pub confess: bool,
+    pub say: String,
+    pub reasoning: String,
+    pub mood: String,
+}
+
+pub fn parse_deliberation(text: &str) -> Result<Deliberation, String> {
+    let v = extract_object(text)?;
+    let confess = v["confess"].as_bool().ok_or("confess must be a boolean")?;
+    Ok(Deliberation { confess, say: clip(&v, "say", 400), reasoning: clip(&v, "reasoning", 1500), mood: mood_of(&v) })
 }
 
 /// What the decision receipt signs: a fixed-prefix line the module composes from checked fields.
 pub fn receipt_message(
+    op: &str,
     buyer: &str,
     season_id: u64,
-    round: u64,
     decision: &str,
     context_sha: &str,
-    completion_id: &str,
-    pact_msg_sha: &str,
+    request_sha: &str,
+    response_sha: &str,
+    chat_id: &str,
+    signed_msg_sha: &str,
 ) -> String {
     format!(
-        "{DECISION_PREFIX}{buyer}|{season_id}|{round}|{decision}|{context_sha}|{completion_id}|{pact_msg_sha}"
+        "{DECISION_PREFIX}{op}|{buyer}|{season_id}|{decision}|{context_sha}|{request_sha}|{response_sha}|{chat_id}|{signed_msg_sha}"
     )
 }
 
@@ -175,6 +196,29 @@ mod tests {
     fn pact_message_matches_contract_vector() {
         let p: Pact = serde_json::from_str(PACT_JSON).unwrap();
         assert_eq!(hex::encode(pact_message(&p)), MESSAGE_HEX);
+    }
+
+    #[test]
+    fn confession_message_layout() {
+        let m = confession_message(7, "sully.lowball-ck.testnet", 1234567890123456789);
+        let mut want = b"LOWBALL-CONFESS-v1:".to_vec();
+        want.extend_from_slice(&7u64.to_le_bytes());
+        want.extend_from_slice(&24u32.to_le_bytes());
+        want.extend_from_slice(b"sully.lowball-ck.testnet");
+        want.extend_from_slice(&1234567890123456789u64.to_le_bytes());
+        assert_eq!(m, want);
+        // same tail as the pact vector's nonce
+        assert!(hex::encode(&m).ends_with("1581e97df4102211"));
+    }
+
+    #[test]
+    fn confession_message_matches_contract_vector() {
+        // confession-vector in contract/PACT_ENCODING.md
+        let m = confession_message(7, "marlow.lowball-ck.testnet", 1234567890123456789);
+        assert_eq!(
+            hex::encode(m),
+            "4c4f5742414c4c2d434f4e464553532d76313a0700000000000000190000006d61726c6f772e6c6f7762616c6c2d636b2e746573746e65741581e97df4102211"
+        );
     }
 
     #[test]
@@ -196,10 +240,12 @@ mod tests {
     }
 
     #[test]
-    fn decision_parsing() {
-        let (d, r) = parse_decision("```json\n{\"decision\":\"Sign\",\"reason\":\"fear\"}\n```").unwrap();
-        assert_eq!((d.as_str(), r.as_str()), ("sign", "fear"));
-        assert!(parse_decision("{\"decision\":\"maybe\"}").is_err());
-        assert!(parse_decision("no json").is_err());
+    fn reply_parsing() {
+        let v = parse_vote("```json\n{\"sign\":true,\"say\":\"fine\",\"mood\":\"tense\"}\n```").unwrap();
+        assert!(v.sign && v.say == "fine" && v.mood == "tense");
+        assert!(parse_vote("{\"sign\":\"yes\"}").is_err());
+        let d = parse_deliberation("{\"confess\":false,\"say\":\"no\",\"reasoning\":\"r\",\"mood\":\"weird\"}").unwrap();
+        assert!(!d.confess && d.mood == "calm");
+        assert!(parse_deliberation("no json").is_err());
     }
 }

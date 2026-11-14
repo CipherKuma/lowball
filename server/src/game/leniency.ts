@@ -5,6 +5,8 @@ import type { PactJson, PactSigJson } from '../chain/types.js';
 import type { GameCtx } from './ctx.js';
 import { startHoldoutWait, startPayout } from './finalize.js';
 import { deliberatePrompt, system } from './prompts.js';
+import { signConfession } from '../near/pact.js';
+import { toB64 } from '../near/bytes.js';
 
 /** Default wall-clock one /leniency request may spend waiting on the chain (the proxy cuts at 100 s). */
 export const DEFAULT_WAIT_MS = 40_000;
@@ -62,35 +64,54 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
 
   const attempts: Attempt[] = [];
   let modelFailed = false;
+  const tee = ctx.deps.tee;
   const jobs = members.map(async (id) => {
-    let decision;
+    const acct = s.buyers.find((b) => b.id === id)!.accountId;
+    let decision: { confess: boolean; say: string; mood: string };
+    let confessionSig: string | null = null;
     try {
-      const r = await ctx.deps.llm.complete({
-        buyer: id,
-        kind: 'deliberate',
-        day: s.day,
-        system: system(id, s),
-        user: deliberatePrompt(id, s),
-        schema: DeliberateOut,
-        jsonSchema: JSON_SCHEMAS.deliberate,
-        schemaName: 'deliberate',
-      });
-      ctx.track(r.receipt);
-      decision = r.value;
+      if (tee) {
+        // TEE_BUYERS=1: the buyer's enclave decides and signs the confession (sealed key, attested job).
+        const mine = s.pact!.signatures.find((x) => x.buyer === id)!;
+        const d = await tee.deliberate(ctx, id, {
+          seasonId: s.seasonId!,
+          buyerAccount: acct,
+          pact,
+          myPactSignature: mine.signatureB64,
+          system: system(id, s),
+          user: deliberatePrompt(id, s),
+        });
+        decision = d;
+        confessionSig = d.confessionSigB64;
+      } else {
+        const r = await ctx.deps.llm.complete({
+          buyer: id,
+          kind: 'deliberate',
+          day: s.day,
+          system: system(id, s),
+          user: deliberatePrompt(id, s),
+          schema: DeliberateOut,
+          jsonSchema: JSON_SCHEMAS.deliberate,
+          schemaName: 'deliberate',
+        });
+        ctx.track(r.receipt);
+        decision = r.value;
+        // the contract wants the confessor's own pact key to have authorised this confession
+        confessionSig = toB64(signConfession(s.seasonId!, acct, BigInt(pact.nonce), ctx.deps.pactKeys[id]));
+      }
     } catch (e) {
       modelFailed = true;
-      const code = e instanceof AppError ? e.code : 'MODEL_UNAVAILABLE';
+      const code = e instanceof AppError ? e.code : tee ? 'TEE_UNAVAILABLE' : 'MODEL_UNAVAILABLE';
       await ctx.emit({ type: 'error', code, message: `${id} could not answer`, retryable: true });
       return;
     }
     await ctx.say(id, decision.say, decision.mood);
     if (!decision.confess) return;
-    const acct = s.buyers.find((b) => b.id === id)!.accountId;
     let ok = false;
     let errorCode: ErrorCode | undefined;
     let hash = '';
     try {
-      const r = await ctx.chain.confess(id, s.seasonId!, pact, sigs, { payoutEvm: s.payoutEvm !== null });
+      const r = await ctx.chain.confess(id, s.seasonId!, pact, sigs, { payoutEvm: s.payoutEvm !== null, confessionSig: confessionSig ?? undefined });
       await ctx.recordTx(`confess ${id}`, acct, r);
       ok = r.ok;
       errorCode = r.errorCode;
@@ -108,7 +129,7 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
     if (modelFailed) {
       s.deliberatedDays = s.deliberatedDays.filter((d) => d !== s.day); // safe to retry
       await ctx.save();
-      throw new AppError('MODEL_UNAVAILABLE', 'A buyer could not answer; offer leniency again.');
+      throw new AppError(tee ? 'TEE_UNAVAILABLE' : 'MODEL_UNAVAILABLE', 'A buyer could not answer; offer leniency again.');
     }
     // Nobody confessed. The contract, not this server, decides the holdout: the NEP-519 yield has to time out
     // (200 blocks). Wait for it within this request's budget; if it is not over yet, event polls resume it.

@@ -50,3 +50,22 @@ export function randomNonce(): bigint {
   crypto.getRandomValues(b);
   return (BigInt(b[0]! & 0xfffff) << 32n) | BigInt(b[1]!);
 }
+
+export const CONFESS_PREFIX = 'LOWBALL-CONFESS-v1:';
+
+/**
+ * The exact bytes a buyer's own pact key signs to authorise its confession:
+ * b"LOWBALL-CONFESS-v1:" ++ borsh({season_id: u64, confessor: String, pact_nonce: u64}) (contract/PACT_ENCODING.md).
+ */
+export function confessionMessage(seasonId: number | bigint, confessor: string, pactNonce: bigint | string): Uint8Array {
+  const w = new BorshWriter().u64(seasonId).string(confessor).u64(BigInt(pactNonce));
+  return concat(utf8(CONFESS_PREFIX), w.done());
+}
+
+export function signConfession(seasonId: number | bigint, confessor: string, pactNonce: bigint | string, key: KeyPair): Uint8Array {
+  return sign(key, confessionMessage(seasonId, confessor, pactNonce));
+}
+
+export function verifyConfessionSig(seasonId: number | bigint, confessor: string, pactNonce: bigint | string, sig: Uint8Array, publicKey: Uint8Array): boolean {
+  return verify(sig, confessionMessage(seasonId, confessor, pactNonce), publicKey);
+}

@@ -23,5 +23,7 @@ export interface Env {
   /** payout desk account (default desk.<contract>) and Sepolia RPC urls, comma separated */
   DESK_ACCOUNT_ID?: string;
   SEPOLIA_RPC_URLS?: string;
+  /** "1": each buyer's pact key lives in an OutLayer TDX enclave (outlayer/deployed.json); default off */
+  TEE_BUYERS?: string;
   DEBUG?: string;
 }

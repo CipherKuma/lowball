@@ -49,6 +49,7 @@ export const CONTRACT_ERRORS: Record<ContractErrorCode, ErrorInfo> = {
   E_NEED_1_YOCTO: { message: 'The transfer needs exactly 1 yoctoNEAR attached.', retryable: false, status: 400 },
   E_SELF_TRANSFER: { message: 'A lot cannot be transferred to its own holder.', retryable: false, status: 400 },
   E_NOT_CONTRACT: { message: 'Only the contract account may do that.', retryable: false, status: 403 },
+  E_BAD_CONFESSION_SIG: { message: "The confession was not signed by the buyer's own pact key.", retryable: false, status: 400 },
 };
 
 export const SERVER_ERRORS: Record<string, ErrorInfo> = {
@@ -69,6 +70,7 @@ export const SERVER_ERRORS: Record<string, ErrorInfo> = {
   BUDGET_EXHAUSTED: { message: 'The harbour has spent its buyer-model budget. No new seasons can start.', retryable: false, status: 402 },
   TTS_LIMIT: { message: 'This session has used its voice budget.', retryable: false, status: 429 },
   PAYOUT_EVM_FAILED: { message: 'The cross-chain payout did not complete.', retryable: true, status: 502 },
+  TEE_UNAVAILABLE: { message: "A buyer's enclave job did not complete. Try again.", retryable: true, status: 503 },
 };
 
 export class AppError extends Error {

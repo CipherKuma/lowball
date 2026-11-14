@@ -4,6 +4,7 @@ import type { Chain, TxResult } from '../chain/types.js';
 import type { KeyPair } from '../near/keys.js';
 import type { Llm } from '../llm/types.js';
 import type { Store } from '../store/types.js';
+import type { TeeActs } from '../tee/acts.js';
 import type { SessionState } from './state.js';
 
 export interface GameConfig {
@@ -12,6 +13,8 @@ export interface GameConfig {
   minTreasuryYocto: bigint;
   /** refuse new sessions once cumulative NEAR AI spend reaches this many USD (undefined: no cap) */
   nearAiBudgetUsd?: number;
+  /** identical-bid days the fisher needs on record before leniency (default CASE_DAYS; tests set 0) */
+  minCaseDays?: number;
 }
 
 /** Cross-chain payout relayer (server/src/chainsig). Absent when the Worker has none configured. */
@@ -30,6 +33,8 @@ export interface GameDeps {
   config: GameConfig;
   now?: () => number;
   payout?: PayoutRelay;
+  /** TEE_BUYERS=1: pact and confession decisions and signatures come from the buyers' OutLayer enclaves */
+  tee?: TeeActs;
   /** wait between chain polls (tests advance the mock chain here) */
   sleep?: (ms: number) => Promise<void>;
   pollMs?: number;
