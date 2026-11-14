@@ -87,10 +87,12 @@ export async function interrogate(deps: GameDeps, id: string, input: Interrogate
     ctx.track(r.receipt);
     const pressure = clampPressure((s.pressure?.[input.buyer] ?? 0) + r.value.pressure);
     s.pressure = { ...(s.pressure ?? {}), [input.buyer]: pressure };
-    (s.interrogations ??= []).push({ day: s.day, buyer: input.buyer, question, answer: r.value.say, mood: r.value.mood, tell: r.value.tell, pressure });
-    const ev = await ctx.emit({ type: 'interrogation', buyer: input.buyer, day: s.day, question, answer: r.value.say, mood: r.value.mood, tell: r.value.tell, pressure });
+    // The tell is the fisher's observation; a first-person one ("my nose") reads as the buyer narrating, so drop it.
+    const tell = /\b(i|me|my|mine|myself)\b/i.test(r.value.tell) ? '' : r.value.tell;
+    (s.interrogations ??= []).push({ day: s.day, buyer: input.buyer, question, answer: r.value.say, mood: r.value.mood, tell, pressure });
+    const ev = await ctx.emit({ type: 'interrogation', buyer: input.buyer, day: s.day, question, answer: r.value.say, mood: r.value.mood, tell, pressure });
     await ctx.save();
-    return { ok: true, question, buyer: input.buyer, answer: r.value.say, mood: r.value.mood, tell: r.value.tell, pressure, seq: ev.seq, status: statusOf(s, false) };
+    return { ok: true, question, buyer: input.buyer, answer: r.value.say, mood: r.value.mood, tell, pressure, seq: ev.seq, status: statusOf(s, false) };
   } finally {
     await ctx?.flushReceipts().catch(() => undefined);
     await store.unlock(id);

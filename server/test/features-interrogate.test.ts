@@ -68,6 +68,16 @@ describe('F3 interrogation: the exchange', () => {
     expect((await r.store.listArtifacts<{ kind: string }>(id, 'receipt')).some((x) => x.kind === 'interrogate')).toBe(true);
   });
 
+  it('a first-person tell ("my nose") is dropped: the tell is the fisher observing, not the buyer narrating', async () => {
+    const r = rig();
+    (r.deps.llm as unknown as { next: { tell: string } }).next.tell = 'Sweat drips from my nose onto the concrete.';
+    const id = await begun(r);
+    const j = await body(await post(r, id, form({ buyer: 'sully', text: 'Who told you to write it?' })));
+    expect(j.ok).toBe(true);
+    expect(j.tell).toBe('');
+    expect((await r.store.loadState(id))!.interrogations?.[0]?.tell).toBe('');
+  });
+
   it('voice question: transcribed by scribe_v3 with the game keyterms, then answered', async () => {
     const r = rig();
     const id = await begun(r);

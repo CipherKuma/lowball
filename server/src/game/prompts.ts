@@ -219,7 +219,7 @@ export function interrogationPrompt(id: BuyerId, s: SessionState, question: stri
     '',
     'Answer in character, to the fisher, in your own voice. In the back room the earlier limits (12 words, no numbers) do not apply: "say" is at most 25 words. "mood" is one of calm, tense, cracking, cold.',
     '"pressure" is how much THIS exchange rattled you, an integer from -2 (the fisher steadied you, or you called the bluff) to 3 (the fisher shook you badly). A question that lands close to the truth rattles you more; an empty bluff less.',
-    '"tell" is a small physical nervous tic the fisher can see while you answer, at most 12 words, no dialogue (a cigarette ash that will not drop, a thumb working the ledger edge).',
+    '"tell" is a small physical nervous tic the fisher can see while you answer, written as an outside observer in the third person, never "I", "me" or "my", at most 12 words, no dialogue (a cigarette ash that will not drop, a thumb working the ledger edge).',
   ].join('\n');
 }
 
