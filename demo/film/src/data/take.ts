@@ -132,7 +132,7 @@ export const take = {
   // frames either side of all 11 cuts, by Claude; nobody has watched it at full speed with sound yet (Gabriel's call).
   // Master: demo/out/lowball-demo.mp4 decoded end to end with 0 errors; ebur128 on the final file. voiceLufs is the
   // narration windows inside the master (-13.3 to -14.2): a narration-led film cannot hold VO at -16 under a -14 master.
-  // 15 Nov 01:25 IST, take 10. Causal order checked against take-10.log; 24 frames across all cuts checked by Claude; a
+  // 15 Nov 03:29 IST, take 10 v2 (continuous, Meteor zoomed). Causal order checked against take-10.log; frames at every cut checked; a
   // Whisper transcript of the master hears every narration line and take voice in order. Nobody has watched it at full
   // speed with sound yet (Gabriel's call). Master decoded end to end with 0 errors; ebur128 on the final file. voiceLufs is
   // the narration windows inside the master (-13.5 to -14.2): a narration-led film cannot hold VO at -16 under a -14 master.
