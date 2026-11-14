@@ -2,6 +2,7 @@ name = "lowball-server"
 main = "src/index.ts"
 compatibility_date = "2025-08-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = false
 
 # D1: `wrangler dev` uses a local sqlite copy. The integrator creates the real database and
 # replaces database_id before deploying (`wrangler d1 create lowball`).

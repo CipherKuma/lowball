@@ -19,6 +19,7 @@ import { GameCtx, type GameDeps } from './ctx.js';
 import { hold, nextDay, sell } from './days.js';
 import { resolveFinalize } from './finalize.js';
 import { runLeniency } from './leniency.js';
+import { CASE_DAYS, caseDays } from './prompts.js';
 import { beginSeason } from './setup.js';
 import { newState, type SessionState } from './state.js';
 
@@ -32,7 +33,11 @@ export function statusOf(s: SessionState, busy: boolean): SessionStatus {
     days: s.days,
     seasonId: s.seasonId,
     leniencyAvailable:
-      !s.confessed && !s.finalize && (s.phase === 'lot_open' || s.phase === 'settled') && !s.deliberatedDays.includes(s.day),
+      !s.confessed &&
+      !s.finalize &&
+      (s.phase === 'lot_open' || s.phase === 'settled') &&
+      !s.deliberatedDays.includes(s.day) &&
+      caseDays(s.lots) >= CASE_DAYS,
     confessed: s.confessed,
     finalizing: s.finalize !== null,
     lastSeq: s.seq,
@@ -178,7 +183,13 @@ export async function step(deps: GameDeps, id: string, action: StepAction): Prom
 }
 
 export async function leniency(deps: GameDeps, id: string, txHash: string): Promise<LeniencyResponse> {
-  const { ctx, out } = await locked(deps, id, (c) => runLeniency(c, txHash));
+  const { ctx, out } = await locked(deps, id, (c) => {
+    // Backstop for the UI gate: leniency needs a case on the record first.
+    if (caseDays(c.state.lots) < CASE_DAYS) {
+      throw new AppError('BAD_PHASE', `You need a case first: ${CASE_DAYS} days of identical bids on the record.`);
+    }
+    return runLeniency(c, txHash);
+  });
   return { ok: true, confessor: out.confessor, status: statusOf(ctx.state, false) };
 }
 

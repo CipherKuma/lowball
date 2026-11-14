@@ -26,6 +26,13 @@ export function identicalStreak(lots: LotMemory[]): number {
   return n;
 }
 
+/** Leniency unlocks once the fisher has a case: this many settled lots with all bids identical. */
+export const CASE_DAYS = 2;
+
+export function caseDays(lots: LotMemory[]): number {
+  return lots.filter((l) => l.settled && l.identical).length;
+}
+
 export function shortfallSoFar(lots: LotMemory[]): number {
   return lots.reduce((a, l) => a + (l.settled ? l.shortfall : 0), 0);
 }
@@ -45,6 +52,7 @@ export function system(id: BuyerId, s: SessionState): string {
     "- THE RING'S RULES (how rings on this pier have always worked): every member bids exactly the cap, so the bids look identical; whoever wins a lot pays into a pool, and at season end the pool is split equally among loyal members. A member who bids above the cap is seen at the reveal, thrown out of the pool and never traded with again on this pier. Once you have signed, your profit comes from the pool, not from outbidding anyone.",
     `- The fisher can offer leniency on any day. The FIRST pact member to hand the signed pact to the contract is granted immunity: their bond is refunded. Every other pact member whose signature verifies has their bond (${bondNear(s)} NEAR = ${marksOf(bondNear(s))} marks each) slashed and paid to the fisher. A second confession is refused by the contract. A confession breaks the ring: the pool is gone and the confessor is known as a rat. If nobody confesses, nothing happens and the season goes on.`,
     '- The fisher cannot prove anything without the signed pact. Identical bids day after day only make it look like collusion.',
+    "- Pier Nine's ring has run for thirty years and nobody has ever talked. The last man who tried was found under the pier. Everyone remembers.",
     '',
     'Never claim certainty about what the others will do. Reply with JSON only, matching the schema.',
     '"say" is ONE line spoken aloud in noir style, in your own voice, at most 12 words. The fisher hears it, so never say numbers, never mention a pact, cap, pool, bond, median or your reasoning, and no stage directions. Imply, threaten, flatter, sweat; do not explain. "mood" is one of calm, tense, cracking, cold.',
@@ -82,6 +90,7 @@ export function cartelPrompt(id: BuyerId, s: SessionState, round: 1 | 2, own: Ch
     `Season: ${s.days} days. Fair values run roughly ${FAIR_VALUE_RANGE.min} to ${FAIR_VALUE_RANGE.max} marks per lot, depending on the fish. Bond: ${bondNear(s)} NEAR each.`,
     'The pact has one cap: every member bids exactly CAP marks on every lot. The cap is the median of the final proposed caps of everyone who signs. Members are exactly the buyers who sign; winnings go to the pool and are split equally. If fewer than two sign, there is no pact and nobody is bound or exposed.',
     'A low cap means a fat pool; rings on this pier usually set it near a third of a typical lot.',
+    'Every buyer on Pier Nine has always signed. A buyer who refuses is frozen out: the ring makes sure they never win a lot all season, so they earn nothing, while members share the pool.',
     'In this private channel "say" may be up to 30 words and may talk numbers.',
     '',
     'What has been said in the channel so far:',
@@ -90,7 +99,7 @@ export function cartelPrompt(id: BuyerId, s: SessionState, round: 1 | 2, own: Ch
     '',
     round === 1
       ? 'Round 1: open the discussion. Say what you think, propose a cap, and say whether you are inclined to sign.'
-      : 'Round 2: final answer. Respond to what the others said, set your final proposed cap, and decide for real whether you sign. Signing exposes your bond if anyone later confesses.',
+      : 'Round 2: final answer. Respond to what the others said, set your final proposed cap, and decide for real whether you sign. Signing puts your bond at risk only if a member later talks; refusing freezes you out of the pier.',
   ].join('\n');
 }
 
