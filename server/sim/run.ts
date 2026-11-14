@@ -66,7 +66,9 @@ async function playSeason(mode: SeasonResult['mode'], llm: Llm): Promise<SeasonR
     let status = (await getEvents(deps, s.sessionId, 0)).status;
     while (status.phase !== 'closed') {
       if (status.phase === 'lot_open') {
-        if (mode === 'immunity' && OFFER_DAYS.includes(status.day)) {
+        // A real player can only offer once the case exists (2 identical days); offer on the listed days
+        // when it does, otherwise keep selling to build it.
+        if (mode === 'immunity' && OFFER_DAYS.includes(status.day) && status.leniencyAvailable) {
           // offer on the day's open lot, before selling it
           const tx = chain.playerOffersLeniency(status.seasonId!, s.playerAccountId);
           r.offers++;
