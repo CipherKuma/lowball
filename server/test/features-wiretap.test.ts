@@ -1,7 +1,7 @@
 // BRIEF-3 F4 (wiretap) and the voicing of the new events through GET /api/tts.
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
-import { wiretapInputs } from '../src/features/wiretap.js';
+import { fitDialogue, wiretapInputs } from '../src/features/wiretap.js';
 import { step } from '../src/game/engine.js';
 import { begun, body, form, post, rig, type Rig } from './features-rig.js';
 
@@ -25,7 +25,7 @@ describe('F4 wiretap', () => {
     expect((await r.app.request('/api/session/00000000-0000-4000-8000-000000000000/wiretap')).status).toBe(404);
   });
 
-  it('renders the channel as one eleven_v3 dialogue with a narrator intro and mood tags, and caches it', async () => {
+  it('renders the channel as one eleven_v4 dialogue with a recovered-recording audio_effects scene, a narrator intro and mood tags, and caches it', async () => {
     const r = rig();
     const id = await closed(r);
     const a = await r.app.request(`/api/session/${id}/wiretap`);
@@ -34,7 +34,8 @@ describe('F4 wiretap', () => {
     expect(a.headers.get('x-wiretap-cache')).toBe('miss');
     expect(new Uint8Array(await a.arrayBuffer())).toEqual(new Uint8Array([9, 9, 9]));
     const sent = r.up.lastDialogue!;
-    expect(sent.model_id).toBe('eleven_v3');
+    expect(sent.model_id).toBe('eleven_v4');
+    expect(sent.audio_effects).toEqual({ filter_preset_id: 'low_quality_phone', environment_id: 'small_room', send_level: 0.3 });
     const s = (await r.store.loadState(id))!;
     expect(sent.inputs).toHaveLength(1 + s.channel.length);
     expect(sent.inputs[0]).toEqual({ text: `Recording recovered from the warehouse, season ${s.seasonId}.`, voice_id: '1pSjK1R2NZAimD0fb85p' });
@@ -52,8 +53,8 @@ describe('F4 wiretap', () => {
     ] as const;
     const inputs = wiretapInputs([...ch], 7, { narrator: 'N', marlow: 'M', sully: 'S' });
     expect(inputs.map((i) => i.voice_id)).toEqual(['N', 'M', 'S']);
-    expect(inputs[1]!.text).toBe('[cold] Quiet, all of you.');
-    expect(inputs[2]!.text).toMatch(/^\[(nervous|shaky)\] I cannot sleep\.$/);
+    expect(inputs[1]!.text).toBe('[gravelly, cold, precise] Quiet, all of you.');
+    expect(inputs[2]!.text).toMatch(/^\[nervous, (breathless|panicked)\] I cannot sleep\.$|^\[nervous, shaky, panicked\] I cannot sleep\.$/);
   });
 
   it('an ElevenLabs failure is TTS_UNAVAILABLE and returns the slot', async () => {
@@ -74,6 +75,19 @@ describe('F4 wiretap', () => {
   });
 });
 
+describe('wiretap fits the 2,000-character dialogue cap', () => {
+  it('leaves a short scene alone and shortens every line of a long one at a word boundary', () => {
+    const short = [{ text: 'Recording recovered.', voice_id: 'N' }, { text: '[cold] Quiet.', voice_id: 'M' }];
+    expect(fitDialogue(short)).toBe(short);
+    const long = [{ text: 'Intro.', voice_id: 'N' }, ...Array.from({ length: 12 }, (_, i) => ({ text: `[cold] ${'word '.repeat(60)}end${i}`, voice_id: 'M' }))];
+    const fit = fitDialogue(long);
+    expect(fit.reduce((n, i) => n + i.text.length, 0)).toBeLessThanOrEqual(2000);
+    expect(fit[0]!.text).toBe('Intro.');
+    expect(fit[1]!.text.startsWith('[cold] word word')).toBe(true);
+    expect(fit[1]!.text.endsWith('...')).toBe(true);
+  });
+});
+
 describe('voicing the new events with GET /api/tts', () => {
   it('voices an interrogation answer in the buyer voice with its mood tag, and a recap in the narrator voice', async () => {
     const r = rig();
@@ -81,8 +95,9 @@ describe('voicing the new events with GET /api/tts', () => {
     const j = await body(await post(r, id, form({ buyer: 'marlow', text: 'Talk.' })));
     const a = await r.app.request(`/api/tts?session=${id}&seq=${j.seq}`);
     expect(a.status).toBe(200);
-    expect(r.up.lastTts!.model_id).toBe('eleven_v3');
-    expect(r.up.lastTts!.text).toBe('[tense] You are barking at the wrong dog, fisher.');
+    expect(r.up.lastTts!.model_id).toBe('eleven_v4_turbo'); // buyer voice: low-latency model
+    expect(r.up.lastTts!.voice_settings!.stability).toBe(0.4);
+    expect(r.up.lastTts!.text).toBe('[gravelly, tense, low voice] You are barking at the wrong dog, fisher.');
 
     await step(r.deps, id, 'sell');
     const evs = await body(await r.app.request(`/api/session/${id}/events?after=0`));
@@ -92,6 +107,7 @@ describe('voicing the new events with GET /api/tts', () => {
     expect(rr.status).toBe(200);
     expect(r.up.tts).toBe(before + 1);
     expect(r.up.lastTts!.text).toBe(recap.text); // the narrator reads plain copy, no tags
+    expect(r.up.lastTts!.model_id).toBe('eleven_v4'); // recap narration: full-quality model
     expect((await r.app.request(`/api/tts?session=${id}&seq=${recap.seq}`)).headers.get('x-tts-cache')).toBe('hit');
   });
 });

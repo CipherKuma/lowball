@@ -15,3 +15,13 @@ model (Qwen TEE, thinking off, 26 completions) and real ElevenLabs / Open-Meteo 
 
 Day-opened samples (real price drives the marks): Atlantic cod 307 kg -> 134 marks at $1.99/lb; bluefin tuna 194 kg ->
 206 marks at $4.81/lb; monkfish 1055 kg -> 158 marks at $0.68/lb.
+
+## v4 upgrade (2026-11-14)
+
+Runtime models now: buyer lines and interrogation answers `eleven_v4_turbo`; recap narrator `eleven_v4`; STT `scribe_v3` with 13 keyterms (Marlow, Odile, Sully, Ines, Deacon, Marguerite, Pier Nine, leniency, cartel, pact, bond, envelope, immunity); wiretap Text-to-Dialogue on `eleven_v4` with `audio_effects` `{filter_preset_id: low_quality_phone, environment_id: small_room, send_level: 0.3}` (the effects do not change request cost). Mood tags are descriptive v4 tags, e.g. `[gravelly, tense, low voice]`; a long line gets one ellipsis instead of `[pause]`; per-voice stability matches the pre-rendered VO. The wiretap text is shortened to fit Text-to-Dialogue's 2,000-character cap. `npx tsx scripts/v4-run.ts <outDir>` runs the checks below through the shipped code paths (real key, nothing printed or stored).
+
+| check | result |
+|---|---|
+| live STT, 5.6 s webm/opus clip (macOS `say` -> ffmpeg, 18.8 KB), "Odile, Sully and Deacon signed the pact on the Marguerite. Who gets leniency, Marlow?" | with keyterms (766 ms): "Odile, Sully, and Deacon signed the pact on the Marguerite. Who gets leniency? Marlow." Without keyterms (874 ms): "Oh, deal. Sully and Deacon signed the pact on the Marguerite. Who gets leniency? Marlo." Keyterms fixed both names. The v1 run on 14 Nov had turned "Marlow" into "Marlo". |
+| wiretap render, 7 inputs / 549 chars, v4 + effects | 9.0 s to render, 36.9 s stereo mp3 at 64 kbps, 296 KB (v3 run: 77.8 s clip, 622 KB, 26.8 s render for 11 inputs). scribe_v3 read it back word for word, so the lo-fi phone filter stays intelligible. Four effect presets compared (none, old_radio + small_room, phone, low_quality_phone + small_room): all transcribed identically; low_quality_phone has the strongest narrow-band tap character. |
+| `eleven_v4_turbo` buyer line latency (full mp3 returned, uncached, 3 lines) | 624, 568, 539 ms (22 to 28 KB). `eleven_v4` narrator recap line for comparison: 2,042 ms (48.5 KB). |

@@ -1,6 +1,6 @@
 # Voices
 
-Created with ElevenLabs Voice Design (`POST /v1/text-to-voice/design`, model `eleven_ttv_v3`, 3 previews per cast member), saved with `POST /v1/text-to-voice`. TTS model for lines: `eleven_v3`.
+Created with ElevenLabs Voice Design (`POST /v1/text-to-voice/design`, model `eleven_ttv_v3`, 3 previews per cast member), saved with `POST /v1/text-to-voice`. TTS model for lines: `eleven_v4` (pre-rendered VO), `eleven_v4_turbo` (live buyer lines).
 
 Selection note: candidates were chosen by measurable proxies (autocorrelation pitch estimate, sample duration as pace, STT intelligibility), not by human listening. The pitch estimator is noisy on gravelly voices. A human listen is still worth doing; swap ids in `voices.json` if a voice misses.
 

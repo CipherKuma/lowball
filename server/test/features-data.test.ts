@@ -172,22 +172,29 @@ describe('F2 sea state', () => {
   });
 });
 
-describe('F5 expressive tts tags', () => {
-  it('maps mood to a v3 audio tag', () => {
+describe('F5 expressive tts tags (eleven_v4)', () => {
+  it('maps mood to descriptive v4 voice-quality tags', () => {
     expect(moodTag('calm')).toBe('');
     expect(moodTag(undefined)).toBe('');
-    expect(moodTag('tense')).toBe('[tense]');
-    expect(moodTag('cold')).toBe('[cold]');
-    expect(['[nervous]', '[shaky]']).toContain(moodTag('cracking', 'abc'));
-    expect(new Set(['a', 'ab'].map((t) => moodTag('cracking', t)))).toEqual(new Set(['[nervous]', '[shaky]']));
+    expect(moodTag('tense')).toBe('[tense, low voice]');
+    expect(moodTag('cold')).toBe('[cold, precise]');
+    expect(['[nervous, breathless]', '[shaky, panicked]']).toContain(moodTag('cracking', 'abc'));
+    expect(new Set(['a', 'ab'].map((t) => moodTag('cracking', t)))).toEqual(new Set(['[nervous, breathless]', '[shaky, panicked]']));
   });
 
-  it('tags the line, adds one light [pause] only to longer lines, and strips tags the model wrote itself', () => {
+  it('adds the buyer\'s voice quality, without repeating a word', () => {
+    expect(moodTag('calm', '', 'marlow')).toBe('[gravelly]');
+    expect(moodTag('tense', '', 'deacon')).toBe('[low voice, tense]');
+    expect(moodTag('cold', '', 'odile')).toBe('[precise, cold]');
+    expect(moodTag('cracking', 'ab', 'sully')).toBe('[nervous, breathless]');
+  });
+
+  it('tags the line, puts one ellipsis (no SSML or [pause] in v4) in longer lines, and strips tags the model wrote itself', () => {
     expect(expressive('Sixty is generous.', 'calm')).toBe('Sixty is generous.');
-    expect(expressive('Quiet now.', 'cold')).toBe('[cold] Quiet now.');
+    expect(expressive('Quiet now.', 'cold')).toBe('[cold, precise] Quiet now.');
     const long = expressive('You walk in here, you lean on me, and you think I will sing for you?', 'tense');
-    expect(long).toBe('[tense] You walk in here, [pause] you lean on me, and you think I will sing for you?');
-    expect(long.match(/\[pause\]/g)).toHaveLength(1);
+    expect(long).toBe('[tense, low voice] You walk in here... you lean on me, and you think I will sing for you?');
+    expect(long).not.toContain('[pause]');
     expect(expressive('[whispers] Keep your voice down, the walls here listen to everyone.', 'cold')).not.toContain('[whispers]');
   });
 });

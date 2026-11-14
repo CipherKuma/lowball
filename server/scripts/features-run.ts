@@ -1,5 +1,5 @@
 // Real-API run of BRIEF-3 features against the in-memory chain: Open-Meteo sea, NOAA prices (from prices.json),
-// ElevenLabs Speech-to-Text + Text-to-Dialogue + eleven_v3 TTS, and NEAR AI (Qwen TEE) buyers.
+// ElevenLabs Speech-to-Text + Text-to-Dialogue + v4 TTS, and NEAR AI (Qwen TEE) buyers.
 // Usage: npx tsx scripts/features-run.ts <outDir>      Keys are read from .dev.vars into process.env, never printed.
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';

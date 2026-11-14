@@ -1,7 +1,9 @@
-// F3: ElevenLabs Speech-to-Text (scribe_v1, language auto-detected).
+// F3: ElevenLabs Speech-to-Text (scribe_v3 with keyterm prompting, language auto-detected).
 import { AppError } from '../errors.js';
 
-export const STT_MODEL = 'scribe_v1';
+export const STT_MODEL = 'scribe_v3';
+/** Names and game words the transcriber is primed to hear correctly (keyterm prompting, up to 1,000 allowed). */
+export const STT_KEYTERMS = ['Marlow', 'Odile', 'Sully', 'Ines', 'Deacon', 'Marguerite', 'Pier Nine', 'leniency', 'cartel', 'pact', 'bond', 'envelope', 'immunity'] as const;
 export const STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text';
 export const MAX_AUDIO_BYTES = 1_572_864; // 1.5 MiB
 export const MAX_AUDIO_SECONDS = 15;
@@ -23,6 +25,7 @@ export async function transcribe(audio: Blob, apiKey: string, fetchFn: typeof fe
   const form = new FormData();
   form.append('model_id', STT_MODEL);
   form.append('tag_audio_events', 'false');
+  for (const k of STT_KEYTERMS) form.append('keyterms', k);
   form.append('file', audio, 'question.webm');
   let res: Response;
   try {

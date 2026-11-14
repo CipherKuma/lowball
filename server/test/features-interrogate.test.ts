@@ -70,13 +70,14 @@ describe('F3 interrogation: the exchange', () => {
     expect((await r.store.listArtifacts<{ kind: string }>(id, 'receipt')).some((x) => x.kind === 'interrogate')).toBe(true);
   });
 
-  it('voice question: transcribed by scribe_v1, then answered', async () => {
+  it('voice question: transcribed by scribe_v3 with the game keyterms, then answered', async () => {
     const r = rig();
     const id = await begun(r);
     const res = await post(r, id, form({ buyer: 'odile', audio: audio() }));
     expect(res.status).toBe(200);
     expect((await body(res)).question).toBe('Where were you on Tuesday night, Marlow?');
     expect(r.up.stt).toBe(1);
+    expect(r.up.sttKeyterms).toEqual(['Marlow', 'Odile', 'Sully', 'Ines', 'Deacon', 'Marguerite', 'Pier Nine', 'leniency', 'cartel', 'pact', 'bond', 'envelope', 'immunity']);
   });
 
   it('one per day: the second is ALREADY_INTERROGATED (even for another buyer); the next day allows another', async () => {
