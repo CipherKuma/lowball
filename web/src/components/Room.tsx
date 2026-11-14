@@ -94,6 +94,7 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase }: Prop
               line={lastLineOf(view, b.id)}
               deliberating={deliberatingSet.has(b.id)}
               outcome={outcomeOf(view, b.id)}
+              teeUrl={view.tee[b.id]?.at(-1)?.attestationUrl}
             />
           ))}
         </div>

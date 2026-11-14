@@ -63,6 +63,31 @@
   100% { clip-path: inset(0 0 0 0); }
 }
 
+.tee-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(8, 13, 15, 0.82);
+  border: 1px solid rgba(127, 181, 154, 0.55);
+  color: var(--ok);
+  font: 600 10px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: border-color 160ms ease, transform 140ms var(--ease-out);
+}
+.tee-badge:hover {
+  border-color: var(--ok);
+  text-decoration: none;
+}
+.tee-badge:active {
+  transform: scale(0.96);
+}
 .stamp {
   position: absolute;
   left: 50%;

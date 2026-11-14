@@ -73,6 +73,8 @@ export interface BuyerCardProps {
   deliberating: boolean;
   outcome: Outcome;
   index: number;
+  /** latest OutLayer TDX attestation for an act this buyer signed inside the enclave */
+  teeUrl?: string;
 }
 
 export function BuyerCard(p: BuyerCardProps) {
@@ -100,6 +102,21 @@ export function BuyerCard(p: BuyerCardProps) {
           style={{ opacity: cracked ? 1 : 0 }}
         />
         {p.deliberating && <div className="think" aria-label="Deliberating" />}
+        {p.teeUrl && (
+          <a
+            className="tee-badge"
+            href={p.teeUrl}
+            target="_blank"
+            rel="noreferrer"
+            title="This buyer's last signature was made inside an Intel TDX enclave on OutLayer. Open the attestation."
+          >
+            <svg width="10" height="12" viewBox="0 0 10 12" aria-hidden>
+              <rect x="1" y="5" width="8" height="6.5" rx="1.2" fill="currentColor" />
+              <path d="M3 5V3.6a2 2 0 014 0V5" fill="none" stroke="currentColor" strokeWidth="1.3" />
+            </svg>
+            TEE
+          </a>
+        )}
         <AnimatePresence>
           {p.outcome?.kind === 'confessed' && (
             <motion.div

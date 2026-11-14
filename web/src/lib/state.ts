@@ -68,6 +68,8 @@ export interface View {
   /** NEP-245 token for today's lot, and who holds it */
   token: { id: string; amount: number; mintTx: string; owner: string | null; ownerBuyer: BuyerId | null; transferTx: string | null } | null;
   deadlineBlock: number | null;
+  /** acts signed inside an OutLayer TDX enclave, per buyer (latest last) */
+  tee: Partial<Record<BuyerId, { jobId: string; attestationUrl: string; seq: number }[]>>;
   holdoutReason: 'timeout' | 'no_pact' | null;
   payoutEvm: { to: string; amountWei: string; sepoliaTx: string; nearTx: string; status?: string } | null;
   error:{ code: ErrorCode; message: string; retryable: boolean; seq: number } | null;
@@ -99,6 +101,7 @@ export const initialView: View = {
   closed: false,
   token: null,
   deadlineBlock: null,
+  tee: {},
   holdoutReason: null,
   payoutEvm: null,
   error: null,
@@ -148,6 +151,14 @@ export function apply(v: View, e: GameEvent): View {
         ...n,
         token: v.token && v.token.id === e.tokenId ? { ...v.token, owner: e.to, ownerBuyer: e.buyer ?? null, transferTx: e.tx } : v.token,
         txs: tx(v, e.seq, `Token ${e.tokenId} sent to ${e.buyer ?? e.to}`, e.tx),
+      };
+    case 'tee_signed':
+      return {
+        ...n,
+        tee: {
+          ...v.tee,
+          [e.buyer]: [...(v.tee[e.buyer] ?? []), { jobId: e.jobId, attestationUrl: e.attestationUrl, seq: e.seq }],
+        },
       };
     case 'payout_evm':
       return {
