@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "contractId": "lowball-ck.testnet",
+  "houseId": "lowball-house-ck.testnet",
+  "codeHash": "HKqqmQmprcxBVk8wWhDADZyUtzm8tr7tWzwtYobFBV9R",
+  "deployTx": "9KZZhkDXPNZpjnGJ7motvKwde1XsxkFmhMHjZWxAbqTQ",
+  "deployedAt": "2026-11-14T06:36:03+00:00",
+  "rpc": "https://archival-rpc.testnet.near.org",
+  "explorer": {
+    "contract": "https://testnet.nearblocks.io/address/lowball-ck.testnet",
+    "house": "https://testnet.nearblocks.io/address/lowball-house-ck.testnet",
+    "deployTx": "https://testnet.nearblocks.io/txns/9KZZhkDXPNZpjnGJ7motvKwde1XsxkFmhMHjZWxAbqTQ"
+  },
+  "pactPrefix": "LOWBALL-PACT-v1:",
+  "deskAccountId": "desk.lowball-ck.testnet",
+  "standards": [
+    "NEP-245 (mt-1.0.0, indivisible lots)",
+    "NEP-519 yield/resume",
+    "NEP-297 events"
+  ]
+}

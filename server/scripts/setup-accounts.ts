@@ -7,7 +7,6 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BUYER_IDS, type BuyerId } from '../../shared/api.js';
-import { RealChain } from '../src/chain/real.js';
 import { nearToYocto, yoctoToNear, type BuyerKeys } from '../src/near/accounts.js';
 import { toB64 } from '../src/near/bytes.js';
 import { formatPublicKey, formatSecretKey, generateKeyPair, parseSecretKey } from '../src/near/keys.js';
@@ -40,7 +39,9 @@ async function main() {
     ? JSON.parse(readFileSync(file, 'utf8'))
     : {};
 
-  const bal = await new RealChain({ rpc, contractId, houseId, houseKey: formatSecretKey(houseKey), buyerKeys: {} as Record<BuyerId, BuyerKeys> }).houseBalance();
+  // Read the balance directly: RealChain expects every buyer's keys, which don't exist yet here.
+  const acct: any = await rpc.call('query', { request_type: 'view_account', finality: 'final', account_id: houseId });
+  const bal = BigInt(acct.amount);
   out(`house ${houseId} balance: ${yoctoToNear(bal)} NEAR; contract ${contractId}`);
 
   for (const id of BUYER_IDS) {

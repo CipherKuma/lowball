@@ -1,5 +1,5 @@
 {
-  "contractId": "",
-  "houseAccountId": "",
+  "contractId": "lowball-ck.testnet",
+  "houseAccountId": "lowball-house-ck.testnet",
   "networkId": "testnet"
 }

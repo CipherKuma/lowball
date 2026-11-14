@@ -4,3 +4,5 @@ research/*.log
 .env.local
 .env*.local
 **/.dev.vars
+web/*.tsbuildinfo
+server/sim/*.log
