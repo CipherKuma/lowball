@@ -37,6 +37,19 @@ balance covers value + max fee, so the headroom per tx is the max fee (30 gwei d
 
 Faucets that need no sign-in exist (for example a proof-of-work faucet); none was used here.
 
+## Live status (testnet, 2026-11-14)
+
+- Deployed at `desk.lowball-ck.testnet` (`deployed.json`; init `owner=lowball-house-ck.testnet game=lowball-ck.testnet
+  signer=v1.signer-prod.testnet`). `get_derived_address` returns the address above and equals the offline derivation.
+- Desk Sepolia address holds about 0.05 ETH (funded by the integrator); nonce and fees synced with `--sync`.
+- Real end-to-end run: `pay_evm(9000001, <desk's own address>, 0.01 NEAR)` called from `lowball-ck.testnet`
+  (the game account, so the caller check passed) -> MPC signed in about 8 blocks, record `Signed`, `verified: true`
+  (on-chain `ecrecover` matched the derived address) -> `desk-payout.ts 9000001` broadcast it ->
+  Sepolia tx `0x92fbe20ea23866a2bec120eb8864da5205918b690f594f71c662c4c9c999610c`, block 12131378, status success
+  (checked on two providers). It was a 0.00001 ETH self-transfer, nonce 0. Season id 9000001 is a test record; real
+  seasons are never that high.
+- Recorded real MPC response (and its recovery to the derived key) are in `server/test/fixtures/chainsig-payout.json`.
+
 ## Interface
 
 | method | who | notes |
@@ -105,9 +118,9 @@ it/             near-workspaces sandbox tests    build.sh      Rust 1.86 + --cfg
 ```
 
 ```
-cd contracts/payout-desk && cargo +1.86.0 test            # 14 unit tests (oracle: viem 2.21 + @noble)
+cd contracts/payout-desk && cargo +1.86.0 test            # 15 unit tests (oracle: viem 2.21 + @noble; one uses a recorded live MPC response)
 BUILD_MOCK=1 ./build.sh && cd it && cargo test            # 3 sandbox tests against the mock signer
-cd server && npx vitest run test/chainsig                 # relayer: 22 tests
+cd server && npx vitest run test/chainsig                 # relayer: 23 tests
 ```
 
 Relayer usage: `cd server && npx tsx scripts/desk-payout.ts <season_id>` (also `--address`, `--sync`, `--show N`).

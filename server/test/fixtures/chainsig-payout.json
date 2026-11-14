@@ -24,7 +24,21 @@
     "error": null
   },
   "mpcLive": {
-    "_note": "replaced by a recorded v1.signer-prod.testnet response when one is captured",
-    "response": null
+    "_note": "Real response recorded 2026-11-14 from v1.signer-prod.testnet 3.19.0: predecessor lowball-ck.testnet called sign with path lowball-desk-v1 and the sha256 of 'lowball chain signatures spike' as the Ecdsa payload (not a transaction).",
+    "predecessor": "lowball-ck.testnet",
+    "path": "lowball-desk-v1",
+    "payload": "6c83751d0c9b323e3b1676832b64d13ec719369dff5ad9aa4ef7df47e6bc1656",
+    "derivedPublicKey": "secp256k1:66aVZtBqUk3aNkbZP7M5BaVmvcPJhkgfFo63YppKHJna5bZDWKCBCW6nnB7Cgvz97EZ6msvU4KBeUyBqnue4qotn",
+    "derivedAddress": "0x26f5De6d3FBF78378c51965F0ca67E40462b92ab",
+    "response": {
+      "big_r": {
+        "affine_point": "03579defaacbc0707cbce016720974612f69cb4ddd5aba5462c4cc7dc1005c939d"
+      },
+      "recovery_id": 1,
+      "s": {
+        "scalar": "2adb7d8db3fb00ad9e81cc400ce52953719a97a1142867beffb3455ff8e4520f"
+      },
+      "scheme": "Secp256k1"
+    }
   }
 }

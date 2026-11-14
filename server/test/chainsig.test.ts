@@ -61,6 +61,19 @@ describe('address derivation', () => {
   });
 });
 
+describe('recorded live MPC response', () => {
+  const live = fixture.mpcLive;
+  it('recovers to the key derived for that predecessor and path (recovery_id semantics, low-s)', () => {
+    const r = BigInt(`0x${live.response.big_r.affine_point.slice(2)}`);
+    const s = BigInt(`0x${live.response.s.scalar}`);
+    expect(s <= secp256k1.CURVE.n / 2n).toBe(true);
+    const pub = new secp256k1.Signature(r, s).addRecoveryBit(live.response.recovery_id as 0 | 1).recoverPublicKey(fromHex(live.payload)).toRawBytes(false).slice(1);
+    expect(Array.from(pub)).toEqual(Array.from(parseNearSecp256k1(live.derivedPublicKey)));
+    expect(addressFromPubkey64(pub)).toBe(live.derivedAddress);
+    expect(deriveDeskAddress(ROOT, live.predecessor, live.path)).toBe(live.derivedAddress);
+  });
+});
+
 describe('assembleSigned', () => {
   it('reproduces the oracle signed transaction byte for byte', () => {
     const a = assembleSigned(payout, fixture.deskAddress);

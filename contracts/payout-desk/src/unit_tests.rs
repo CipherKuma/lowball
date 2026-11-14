@@ -208,3 +208,22 @@ fn derived_key_callback_sets_the_checksum_address() {
     assert_eq!(d.on_derived_key(Ok(key)).unwrap(), ADDR);
     assert_eq!(d.get_derived_address().unwrap(), ADDR);
 }
+
+// Real v1.signer-prod.testnet response (2026-11-14): predecessor lowball-ck.testnet, path lowball-desk-v1,
+// payload sha256("lowball chain signatures spike"). Proves ecrecover(recovery_id) matches the derived key.
+#[test]
+fn live_mpc_response_verifies_with_env_ecrecover() {
+    let json = serde_json::json!({
+        "big_r": {"affine_point": "03579defaacbc0707cbce016720974612f69cb4ddd5aba5462c4cc7dc1005c939d"},
+        "recovery_id": 1,
+        "s": {"scalar": "2adb7d8db3fb00ad9e81cc400ce52953719a97a1142867beffb3455ff8e4520f"},
+        "scheme": "Secp256k1"
+    });
+    let sig = payout::parse_signature(&json).unwrap();
+    let mut rs = [0u8; 64];
+    rs[..32].copy_from_slice(&sig.big_r[1..33]);
+    rs[32..].copy_from_slice(&sig.s);
+    let digest = hex::decode("6c83751d0c9b323e3b1676832b64d13ec719369dff5ad9aa4ef7df47e6bc1656").unwrap();
+    let pk = env::ecrecover(&digest, &rs, sig.recovery_id, true).expect("recovers (low-s accepted with the malleability check on)");
+    assert_eq!(eip55(&eth_address_from_pubkey(&pk)), "0x26f5De6d3FBF78378c51965F0ca67E40462b92ab");
+}
