@@ -1,4 +1,4 @@
-import type { BuyerId, BuyerInfo, ChannelMessage, Mood, SeaState, SessionPhase } from '../../../shared/api.js';
+import type { BuyerId, BuyerInfo, ChannelMessage, ForgeAttempt, ForgeKind, Mood, SeaState, SessionPhase } from '../../../shared/api.js';
 
 export interface LotMemory {
   day: number;
@@ -99,6 +99,8 @@ export interface SessionState {
   /** pressure on each buyer from interrogations, 0..6 */
   pressure?: Partial<Record<BuyerId, number>>;
   interrogations?: Interrogation[];
+  /** the Case File forgery drill result; present once it ran (one per session) */
+  forgery?: { attempts: ForgeAttempt[]; drillSeasonId: number; cleanupTx?: string; skipped?: { kind: ForgeKind; reason: string }[] };
 }
 
 export function newState(init: {

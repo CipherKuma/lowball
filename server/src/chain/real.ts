@@ -178,6 +178,11 @@ export class RealChain implements Chain {
    * client (or this server) that waits for EXECUTED hangs. Confirm INCLUSION of the signed tx, check what it
    * is, then read the window from get_season (the function receipt lands a block or two later).
    */
+  offerLeniencyAs(accountId: string, key: KeyPair, seasonId: number): Promise<TxResult> {
+    const signer = new NearSigner({ accountId, keyPair: key, rpc: this.rpc });
+    return signer.send(this.contractId, [this.fn('offer_leniency', { season_id: seasonId })], 'INCLUDED');
+  }
+
   async verifyLeniencyTx(txHash: string, player: string, seasonId: number): Promise<LeniencyCheck> {
     let res: any = null;
     for (let i = 0; i < 12 && !res; i++) {

@@ -4,7 +4,7 @@ import { createApp } from '../src/app.js';
 import { AppError } from '../src/errors.js';
 import { createSession, step } from '../src/game/engine.js';
 import type { CompleteRequest, CompleteResult } from '../src/llm/types.js';
-import { makeRig, PLAYER_PK, ScriptedLlm } from './helpers.js';
+import { DEFAULT_POLICY, makeRig, PLAYER_PK, ScriptedLlm } from './helpers.js';
 
 
 /** The scripted buyer model plus an `interrogate` answer (the shared helper predates that call kind). */
@@ -33,9 +33,9 @@ export interface Upstream {
   words?: { end: number }[];
 }
 
-export function rig() {
-  const r = makeRig();
-  const llm = new FeatureLlm();
+export function rig(policy: Parameters<typeof makeRig>[0] = {}) {
+  const r = makeRig(policy);
+  const llm = new FeatureLlm({ ...DEFAULT_POLICY, ...policy });
   r.deps.llm = llm;
   const up: Upstream = { stt: 0, dialogue: 0, tts: 0, lastDialogue: null, lastTts: null, sttText: 'Where were you on Tuesday night, Marlow?' };
   const store: Record<string, Response> = {};

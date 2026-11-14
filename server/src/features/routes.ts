@@ -4,8 +4,9 @@ import { AppError } from '../errors.js';
 import type { GameDeps } from '../game/ctx.js';
 import { SessionIdSchema } from '../schemas.js';
 import type { CacheLike } from '../tts.js';
+import { forge } from './forge.js';
 import { interrogate } from './interrogate.js';
-import { InterrogateFormSchema } from './schemas.js';
+import { ForgeBodySchema, InterrogateFormSchema } from './schemas.js';
 import { AUDIO_TYPES, baseType, MAX_AUDIO_BYTES } from './stt.js';
 import { renderWiretap, wiretapInputs } from './wiretap.js';
 
@@ -61,6 +62,22 @@ export function registerFeatureRoutes(app: Hono, o: FeatureRouteOptions): void {
       { apiKey: o.elevenLabsKey(c), fetchFn: o.fetchFn, reserve: () => deps.store.reserveTts(id, max), release: () => deps.store.releaseTts(id) },
     );
     return c.json(out);
+  });
+
+  // Case File: real confessions the contract refuses. No input: the body, if any, must be an empty object.
+  app.post('/api/session/:id/forge', async (c) => {
+    const id = sid(c);
+    const raw = await c.req.text();
+    if (raw.trim() !== '') {
+      let json: unknown;
+      try {
+        json = JSON.parse(raw);
+      } catch {
+        throw new AppError('BAD_REQUEST', 'Body must be JSON.');
+      }
+      if (!ForgeBodySchema.safeParse(json).success) throw new AppError('BAD_REQUEST', 'This endpoint takes no input.');
+    }
+    return c.json(await forge(o.deps(c), id));
   });
 
   app.get('/api/session/:id/wiretap', async (c) => {

@@ -253,6 +253,10 @@ export class MockChain implements Chain {
     return { ok: true, openBlock: s.win!.openBlock, deadlineBlock: s.win!.openBlock + YIELD_BLOCKS };
   }
 
+  async offerLeniencyAs(accountId: string, _key: unknown, seasonId: number): Promise<TxResult> {
+    return this.playerOffersLeniency(seasonId, accountId);
+  }
+
   async confess(b: BuyerId, id: number, pact: PactJson, sigs: PactSigJson[], opts: ConfessOptions = {}) {
     // yield so concurrent confessions interleave like separate transactions
     await Promise.resolve();

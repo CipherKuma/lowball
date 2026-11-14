@@ -1,5 +1,6 @@
 import type { BuyerId, ErrorCode } from '../../../shared/api.js';
 import type { TxResult } from '../near/signer.js';
+import type { KeyPair } from '../near/keys.js';
 
 export type { TxResult };
 
@@ -100,6 +101,11 @@ export interface Chain {
   getSeason(seasonId: number): Promise<SeasonView>;
   /** current block height (the leniency window is measured in blocks) */
   blockHeight(): Promise<number>;
+  /**
+   * offer_leniency signed by a player account whose key the server holds (the forgery drill's own throwaway
+   * player; real players sign in the browser). Returns once the tx is included, like the browser path.
+   */
+  offerLeniencyAs(accountId: string, key: KeyPair, seasonId: number): Promise<TxResult>;
   /**
    * Verify that txHash is the player's offer_leniency for this season. offer_leniency is a pending NEP-519
    * yield, so this confirms inclusion and that the window is open on-chain; it never waits for execution.

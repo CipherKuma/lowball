@@ -45,7 +45,9 @@ export type ServerErrorCode =
   // additive: an OutLayer TEE job (buyer key in an Intel TDX enclave) failed or could not be verified
   | 'TEE_UNAVAILABLE'
   // additive: the voice interrogation (one per day) and its speech-to-text step
-  | 'ALREADY_INTERROGATED' | 'STT_UNAVAILABLE';
+  | 'ALREADY_INTERROGATED' | 'STT_UNAVAILABLE'
+  // additive: the Case File forgery drill (one per session)
+  | 'ALREADY_FORGED';
 
 export type ErrorCode = ContractErrorCode | ServerErrorCode;
 
@@ -259,6 +261,8 @@ export type GameEventBody =
       /** this buyer's pressure after the exchange, 0..6 */
       pressure: number;
     }
+  /** The Case File forgery drill: real testnet confessions the contract refused (POST /api/session/:id/forge). */
+  | { type: 'forgery'; attempts: ForgeAttempt[]; drillSeasonId: number; cleanupTx?: string; skipped?: { kind: ForgeKind; reason: string }[] }
   /** Narrator's template recap after each settled lot (no model); voiced via GET /api/tts (narrator voice). */
   | { type: 'recap'; day: number; text: string }
   | { type: 'season_closed'; tx: string }
@@ -272,6 +276,32 @@ export interface LotMarket {
   url: string;
   /** the state with the most landed value that year */
   state?: string;
+}
+
+export type ForgeKind = 'forge' | 'replay' | 'late';
+
+/** One confess the server really submitted to the contract. `tx` is the on-chain hash ('' only when it could not be sent). */
+export interface ForgeAttempt {
+  kind: ForgeKind;
+  buyer: BuyerId;
+  /** the season the tx targeted (the drill season for forge and replay, the real one for late) */
+  seasonId: number;
+  tx: string;
+  /** the contract's own refusal code (E_BAD_CONFESSION_SIG, E_SEASON_MISMATCH, E_CLOSED) */
+  errorCode?: ErrorCode;
+  /** false for every attempt the contract refused. true would mean the contract ACCEPTED a forgery. */
+  ok: boolean;
+  note: string;
+}
+
+export interface ForgeResponse {
+  ok: true;
+  attempts: ForgeAttempt[];
+  drillSeasonId: number;
+  cleanupTx?: string;
+  skipped?: { kind: ForgeKind; reason: string }[];
+  /** seq of the `forgery` event */
+  seq: number;
 }
 
 export interface SeaState {
