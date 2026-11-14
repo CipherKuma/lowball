@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { BuyerId } from '../../../shared/api';
 import type { Interrogation as Exchange } from '../lib/extra';
 import { useRecorder } from '../lib/useRecorder';
@@ -18,15 +18,39 @@ interface Props {
 
 /** The back room: corner one buyer, speak (or type), and hear them answer in their own voice. */
 export function InterrogationRoom({ buyer, exchange, pending, error, onAsk, onClose }: Props) {
-  const rec = useRecorder(12_000);
-  const [typing, setTyping] = useState(false);
+  const rec = useRecorder(20_000);
   const [text, setText] = useState('');
+  const [hint, setHint] = useState<string | null>(null);
+  const pressAt = useRef(0);
   const canMic = rec.state !== 'unsupported' && rec.state !== 'denied';
   const left = Math.max(0, Math.ceil((rec.maxMs - rec.elapsed) / 1000));
+  const live = rec.state === 'recording' || rec.state === 'starting';
 
-  const release = async () => {
-    const blob = await rec.stop();
-    if (blob && blob.size > 2000) onAsk({ audio: blob });
+  // Tap once to start and again to finish, or hold and let go. Leaving the button never cuts you off.
+  const finish = async () => {
+    const { blob, ms } = await rec.stop();
+    if (!blob || ms < 1200 || blob.size < 4000) {
+      setHint("That was too short to hear. Tap the mic, say your piece, then tap again.");
+      return;
+    }
+    setHint(null);
+    onAsk({ audio: blob });
+  };
+  const press = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (live) {
+      void finish();
+      return;
+    }
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    pressAt.current = performance.now();
+    setHint(null);
+    void rec.start();
+  };
+  const lift = () => {
+    const held = pressAt.current ? performance.now() - pressAt.current : 0;
+    pressAt.current = 0;
+    if (held > 700 && rec.state === 'recording') void finish();
   };
 
   return (
@@ -55,20 +79,23 @@ export function InterrogationRoom({ buyer, exchange, pending, error, onAsk, onCl
                   Lean on them. Say what you know, what you'll do, what they stand to lose. They answer in their own voice, and
                   what you say stays with them when you offer leniency.
                 </p>
-                {canMic && !typing ? (
+                {canMic && (
                   <>
                     <button
+                      type="button"
                       className="mic"
                       data-rec={rec.state === 'recording' || undefined}
-                      onPointerDown={(e) => {
-                        e.preventDefault();
-                        void rec.start();
+                      onPointerDown={press}
+                      onPointerUp={lift}
+                      onKeyDown={(e) => {
+                        if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
+                          e.preventDefault();
+                          if (live) void finish();
+                          else void rec.start();
+                        }
                       }}
-                      onPointerUp={() => void release()}
-                      onPointerLeave={() => rec.state === 'recording' && void release()}
-                      onKeyDown={(e) => (e.key === ' ' || e.key === 'Enter') && !e.repeat && void rec.start()}
-                      onKeyUp={(e) => (e.key === ' ' || e.key === 'Enter') && void release()}
-                      aria-label="Hold to speak"
+                      aria-pressed={live}
+                      aria-label={live ? 'Stop and send' : 'Start speaking'}
                     >
                       <span className="mic-ring" style={{ ['--p' as string]: `${(rec.elapsed / rec.maxMs) * 100}%` }} />
                       <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden>
@@ -76,29 +103,40 @@ export function InterrogationRoom({ buyer, exchange, pending, error, onAsk, onCl
                         <path d="M5 11a7 7 0 0014 0M12 18v3" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
                       </svg>
                     </button>
-                    <p className="mic-label">{rec.state === 'recording' ? `Speaking… ${left}s` : 'Hold to speak'}</p>
-                    <button className="link-btn" onClick={() => setTyping(true)}>Type instead</button>
+                    <p className="mic-label" aria-live="polite">
+                      {rec.state === 'starting'
+                        ? 'Allow the microphone…'
+                        : rec.state === 'recording'
+                          ? `Listening · tap again when you're done · ${left}s`
+                          : 'Tap to speak'}
+                    </p>
+                    {hint && <p className="interro-note" role="status">{hint}</p>}
                   </>
-                ) : (
-                  <form
-                    className="interro-type"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (text.trim()) onAsk({ text: text.trim().slice(0, 240) });
-                    }}
-                  >
-                    <input
-                      value={text}
-                      maxLength={240}
-                      onChange={(e) => setText(e.target.value)}
-                      placeholder="I've got four envelopes with the same number on them…"
-                      aria-label="What you say"
-                      autoFocus
-                    />
-                    <button className="btn btn-amber" disabled={!text.trim()}>Say it</button>
-                    {rec.state === 'denied' && <p className="interro-note">Microphone blocked, so you'll have to type it.</p>}
-                  </form>
                 )}
+                <form
+                  className="interro-type"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const t = text.trim();
+                    if (t.split(/\s+/).length < 3) {
+                      setHint('Give them a full question, at least a few words.');
+                      return;
+                    }
+                    onAsk({ text: t.slice(0, 240) });
+                  }}
+                >
+                  <input
+                    value={text}
+                    maxLength={240}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder={canMic ? '…or type it: four envelopes said the same number. Who wrote it?' : 'Four envelopes said the same number. Who wrote it?'}
+                    aria-label="What you say"
+                    autoFocus={!canMic}
+                  />
+                  <button className="btn btn-amber" disabled={!text.trim() || live}>Say it</button>
+                  {rec.state === 'denied' && <p className="interro-note">Microphone blocked, so type your question instead.</p>}
+                  {rec.state === 'unsupported' && <p className="interro-note">This browser can't record, so type your question instead.</p>}
+                </form>
               </motion.div>
             )}
             {pending && !exchange && (
