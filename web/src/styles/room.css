@@ -254,6 +254,12 @@
   font-size: 26px;
   font-weight: 650;
 }
+.leniency-source {
+  font-size: 12px;
+  color: #ffd9cf;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .leniency-clock {
   font: 500 12px var(--font-mono);
   color: #f6dcd4;

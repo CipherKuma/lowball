@@ -81,6 +81,14 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase, interr
             >
               <strong className="display">Leniency is on the table.</strong>
               <span>The first buyer to hand the contract a signed pact walks free. Everyone else loses their bond.</span>
+              <a
+                className="leniency-source"
+                href="https://www.justice.gov/atr/leniency-policy"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Modelled on the US DOJ Antitrust Division Leniency Policy, Justice Manual 7-3.300 ↗
+              </a>
               <span className="leniency-clock">
                 {view.deadlineBlock && height
                   ? `On-chain window · ${Math.max(0, view.deadlineBlock - height)} blocks left · closes itself at block ${view.deadlineBlock.toLocaleString()}`
