@@ -22,7 +22,7 @@ async fn full_season_storage_and_gas() -> anyhow::Result<()> {
     assert_eq!(s["lots"].as_array().unwrap().len(), 20);
 
     // gas of the heaviest call: confession with five verified signatures
-    e.ok(&e.player, "offer_leniency", json!({"season_id": sid})).await;
+    e.offer(sid).await;
     let p = e.pact(sid, &[0, 1, 2, 3, 4]);
     let r = e.confess(sid, 2, &p, &[0, 1, 2, 3, 4]).await;
     assert!(r.is_success(), "{:?}", r.failures());

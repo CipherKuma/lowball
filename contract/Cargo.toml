@@ -19,7 +19,7 @@ base64 = "0.22"
 
 [workspace]
 members = [".", "pactsign"]
-exclude = ["it"]
+exclude = ["it", "mock-desk"]
 
 [profile.release]
 codegen-units = 1

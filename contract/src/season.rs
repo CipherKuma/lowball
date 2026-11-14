@@ -1,7 +1,7 @@
 //! Season state and pure game logic (no promises here; lib.rs moves money).
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::{env, AccountId};
+use near_sdk::{env, AccountId, YieldId};
 
 use crate::errors::*;
 
@@ -45,6 +45,10 @@ pub struct Lot {
     pub day: u8,
     pub species: String,
     pub fair_value: u32,
+    pub weight_kg: u32,
+    /// NEP-245 holder of the whole token: the contract (escrow) until settlement.
+    pub owner: AccountId,
+    pub opened_ns: u64,
     /// (buyer index, sha256 commitment). Cleared at settlement.
     pub commits: Vec<(u8, [u8; 32])>,
     /// (buyer index, amount) in reveal order.
@@ -75,6 +79,40 @@ pub struct Season {
     pub pact_nonce: Option<u64>,
     pub confessed_day: Option<u8>,
     pub last_activity_ns: u64,
+    /// Windows opened so far (also the id the yield callback carries).
+    pub leniency_window: u32,
+    /// Resumption token of the live leniency yield; `None` once confessed / timed out.
+    pub leniency_yield: Option<YieldId>,
+    pub leniency_open_block: u64,
+    /// Windows that ended with nobody confessing (yield timeout).
+    pub holdouts: u32,
+    /// Optional 0x EVM address; when set the slashed sum is paid cross-chain via the payout desk.
+    pub payout_evm: Option<String>,
+    pub payout_route: PayoutRoute,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
+#[borsh(crate = "near_sdk::borsh")]
+pub enum PayoutRoute {
+    None,
+    Near,
+    /// desk.pay_evm called; waiting for its result.
+    EvmPending,
+    Evm,
+    /// desk call failed; the slashed NEAR was paid to the player directly instead.
+    EvmFailedNear,
+}
+
+impl PayoutRoute {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            PayoutRoute::None => "none",
+            PayoutRoute::Near => "near",
+            PayoutRoute::EvmPending => "evm_pending",
+            PayoutRoute::Evm => "evm",
+            PayoutRoute::EvmFailedNear => "evm_failed_near",
+        }
+    }
 }
 
 impl Season {
@@ -102,6 +140,13 @@ impl Season {
         }
     }
 
+    /// A leniency window a confession can still land in: yielded, today's, inside the timeout.
+    pub fn window_live(&self) -> bool {
+        self.leniency_yield.is_some()
+            && self.leniency_day == Some(self.day)
+            && env::block_height() <= self.leniency_open_block + crate::YIELD_TIMEOUT_BLOCKS
+    }
+
     pub fn ensure_open(&self) {
         match self.status {
             Status::Open => {}
@@ -114,9 +159,10 @@ impl Season {
         self.day == self.days && self.lots.last().map(|l| l.settled).unwrap_or(false)
     }
 
-    pub fn open_lot(&mut self, species: String, fair_value: u32) {
+    /// Opens the next day's lot (escrow-owned by the contract; `lib.rs` mints the NEP-245 token).
+    pub fn open_lot(&mut self, species: String, fair_value: u32, weight_kg: u32) {
         self.ensure_open();
-        ensure(!species.is_empty() && species.len() <= 64 && fair_value > 0, E_BAD_ARGS);
+        ensure(!species.is_empty() && species.len() <= 64 && fair_value > 0 && weight_kg > 0, E_BAD_ARGS);
         ensure(self.all_bonds_posted(), E_BONDS_MISSING);
         ensure(self.lots.last().map(|l| l.settled).unwrap_or(true), E_LOT_OPEN);
         ensure(self.day < self.days, E_PAST_DAYS);
@@ -125,6 +171,9 @@ impl Season {
             day: self.day,
             species,
             fair_value,
+            weight_kg,
+            owner: env::current_account_id(),
+            opened_ns: env::block_timestamp(),
             commits: vec![],
             reveals: vec![],
             settled: false,

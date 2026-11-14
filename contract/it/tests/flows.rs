@@ -24,8 +24,10 @@ async fn confession_exact_accounting() -> anyhow::Result<()> {
     assert!(r.is_success(), "{:?}", r.failures());
     assert_eq!(yocto(&serde_json::from_slice::<serde_json::Value>(&r.raw_bytes()?)?), 3 * BOND);
 
-    // player receives EXACTLY the slashed sum (they paid no gas on this call)
-    assert_eq!(e.balance(&e.player).await - before_player, 3 * BOND);
+    // player receives the slashed sum (they paid no gas on this call), plus the unused gas of the
+    // resolved yield callback that their offer_leniency tx prepaid (about 0.011 NEAR, refunded to them)
+    let got = e.balance(&e.player).await - before_player;
+    assert!(got >= 3 * BOND && got - 3 * BOND < GAS_SLACK, "player delta {got}");
     let after = futures_balances(&e).await;
     for i in [0, 1, 2, 4] {
         assert_eq!(after[i], before[i], "buyer {i} must be untouched until close");
@@ -50,7 +52,7 @@ async fn confession_exact_accounting() -> anyhow::Result<()> {
     // second confession (even by a slashed buyer with a valid pact) is refused
     assert_code(e.confess(sid, 0, &p, &[0, 1, 2, 3]).await, "E_ALREADY_CONFESSED");
     // nothing more opens once confessed
-    let r = e.call(&e.house, "open_lot", json!({"season_id": sid, "species": "Cod", "fair_value": 90})).await;
+    let r = e.call(&e.house, "open_lot", json!({"season_id": sid, "species": "Cod", "fair_value": 90, "weight_kg": 40})).await;
     assert_code(r, "E_SEASON_OVER");
     // withdraw: slashed refused, confessor already refunded
     assert_code(e.call(&e.buyers[0], "withdraw_bond", json!({"season_id": sid})).await, "E_SLASHED");
@@ -148,7 +150,7 @@ async fn honest_season_refunds_everyone_exactly() -> anyhow::Result<()> {
     assert_eq!(s["lots"][0]["identical"], false);
     assert_eq!(s["shortfall"], 40);
     // day budget exhausted
-    assert_code(e.call(&e.house, "open_lot", json!({"season_id": sid, "species": "Cod", "fair_value": 90})).await, "E_PAST_DAYS");
+    assert_code(e.call(&e.house, "open_lot", json!({"season_id": sid, "species": "Cod", "fair_value": 90, "weight_kg": 40})).await, "E_PAST_DAYS");
     let before = futures_balances(&e).await;
     // anyone (the player) may close once the last lot is settled
     e.ok(&e.player, "close_season", json!({"season_id": sid})).await;
@@ -168,10 +170,10 @@ async fn permissions_and_bid_rules_on_chain() -> anyhow::Result<()> {
     assert_code(e.call(&e.buyers[0], "create_season", args.clone()).await, "E_NOT_HOUSE");
     assert_code(e.call(&e.player, "create_season", args).await, "E_NOT_HOUSE");
     let sid = e.create_season(1).await;
-    assert_code(e.call(&e.buyers[0], "open_lot", json!({"season_id": sid, "species": "Hake", "fair_value": 100})).await, "E_NOT_HOUSE");
+    assert_code(e.call(&e.buyers[0], "open_lot", json!({"season_id": sid, "species": "Hake", "fair_value": 100, "weight_kg": 40})).await, "E_NOT_HOUSE");
     // bid before bond / lot before bonds
     assert_code(e.call(&e.buyers[0], "commit_bid", json!({"season_id": sid, "hash": b64(&[1; 32])})).await, "E_NO_BOND");
-    assert_code(e.call(&e.house, "open_lot", json!({"season_id": sid, "species": "Hake", "fair_value": 100})).await, "E_BONDS_MISSING");
+    assert_code(e.call(&e.house, "open_lot", json!({"season_id": sid, "species": "Hake", "fair_value": 100, "weight_kg": 40})).await, "E_BONDS_MISSING");
     // wrong deposit
     let r = e.buyers[0]
         .call(e.contract.id(), "post_bond")
@@ -187,8 +189,8 @@ async fn permissions_and_bid_rules_on_chain() -> anyhow::Result<()> {
     assert_code(e.call(&e.house, "offer_leniency", json!({"season_id": sid})).await, "E_NOT_PLAYER");
     assert_code(e.call(&e.player, "offer_leniency", json!({"season_id": sid})).await, "E_NO_DAY");
     // commit / reveal rules
-    e.ok(&e.house, "open_lot", json!({"season_id": sid, "species": "Hake", "fair_value": 100})).await;
-    assert_code(e.call(&e.house, "open_lot", json!({"season_id": sid, "species": "Cod", "fair_value": 90})).await, "E_LOT_OPEN");
+    e.ok(&e.house, "open_lot", json!({"season_id": sid, "species": "Hake", "fair_value": 100, "weight_kg": 40})).await;
+    assert_code(e.call(&e.house, "open_lot", json!({"season_id": sid, "species": "Cod", "fair_value": 90, "weight_kg": 40})).await, "E_LOT_OPEN");
     let salt = [3u8; 32];
     e.ok(&e.buyers[0], "commit_bid", json!({"season_id": sid, "hash": commit_hash(40, &salt)})).await;
     assert_code(e.call(&e.buyers[0], "commit_bid", json!({"season_id": sid, "hash": commit_hash(41, &salt)})).await, "E_ALREADY_COMMITTED");

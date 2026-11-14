@@ -1,80 +1,103 @@
-# Contract test results (real output, 2026-11-13/14)
+# Contract test results (real output, 2026-11-14, after BRIEF-2 U1/U2/U3-game-half)
 
-Wasm under test: `contract/target/near/lowball.wasm`, sha256 `95431c2e623fcc6a7933533da121f6ca39c33d4d09c228eb2a2d325c443200c6`
-(`contract/build.sh`: Rust 1.86 + `--cfg near`, wasm-opt -Oz). Sandbox: near-sandbox 2.13.4 via near-workspaces 0.23.
+Wasm under test: `contract/target/near/lowball.wasm` (288 KB), sha256
+`f28eab7a9da10a03f72fc197fd95907bdca06c866a825aa8f5b50b3f0fe6dd88` (`contract/build.sh`: Rust 1.86 + `--cfg near`).
+Mock desk for the payout tests: `contract/mock-desk/build.sh` (test double only, never deployed). Sandbox: near-sandbox
+2.13.4 via near-workspaces 0.23.
+
+Totals: **59 unit + 24 sandbox = 83 passed, 0 failed.** (Previous version: 44 + 11 = 55.)
 
 ## Unit tests: `cd contract && cargo test`
 
 ```
-running 44 tests
-test result: ok. 44 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.22s
+running 59 tests
+test result: ok. 59 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.06s
 ```
 
-(44 = 38 error-code/rule tests + settle/tie/shortfall/leniency-window/stale-close/views + 3 pact-vector tests including
-`ed25519_verify` of the documented signature.)
+New in `src/unit_tests/u123.rs`: `E_LENIENCY_OPEN`, zero-weight lot (`E_BAD_ARGS`), `E_BAD_EVM` (length and non-hex),
+`reset` by a stranger (`E_NOT_CONTRACT`), token minted into escrow then sold to the highest bidder (balances, batch
+balances, supply, `mt_token` title, `mt_tokens_for_owner`, `mt_tokens`, contract metadata), unsold lot returned to the player
+on close, whole-lot `mt_transfer` plus `E_MT_PARTIAL`, `E_NOT_TOKEN_OWNER`, `E_NEED_1_YOCTO`, `E_NO_TOKEN`,
+`E_SELF_TRANSFER`, token-id round trip. The old idempotent-leniency test became "window closes on the next day and reopens".
 
-## Sandbox integration tests: `cd contract/it && cargo test -- --test-threads=2`
-
-```
-     Running tests/confess_errors.rs
-running 2 tests
-test key_rotation_does_not_affect_running_season ... ok
-test confess_error_matrix ... ok
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 34.84s
-     Running tests/cost.rs
-test full_season_storage_and_gas ... ok
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 101.56s
-     Running tests/flows.rs
-running 7 tests
-test confession_race_three_concurrent_txs ... ok
-test confession_exact_accounting ... ok
-test confession_race_two_concurrent_txs ... ok
-test get_config_and_unknown_season ... ok
-test non_signer_can_withdraw_after_confession ... ok
-test honest_season_refunds_everyone_exactly ... ok
-test permissions_and_bid_rules_on_chain ... ok
-test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 63.70s
-     Running tests/vector.rs
-test pact_encoding_vector_matches ... ok
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-```
-
-Totals: 44 unit + 11 sandbox = 55 passed, 0 failed.
-
-## What the sandbox tests cover
-
-- `confess_error_matrix`: E_NO_LENIENCY, E_NOT_BUYER, E_SEASON_MISMATCH, replay of a pact signed for another season
-  (E_SEASON_MISMATCH, and E_BAD_SIG once season_id is rewritten), E_NOT_MEMBER (non-season account in members, caller not
-  in members, signer not in members, signature from a non-season account), E_DUP_SIGNER (signature and member), E_BAD_SIG
-  (tampered cap, unregistered key, 63-byte signature, swapped key), E_TOO_FEW (caller only, caller missing, none).
-- `confession_exact_accounting`: player balance rises by exactly 3 bonds (slashed sum); slashed buyers and the non-signer
-  untouched until close; confessor refunded one bond minus its own gas; at close the non-signer gets exactly one bond and
-  slashed buyers nothing; E_ALREADY_CONFESSED, E_SEASON_OVER, E_SLASHED, E_ALREADY_WITHDRAWN, E_CLOSED.
-- `confession_race_two/three_concurrent_txs`: concurrent `confess` txs submitted with `transact_async`; exactly one
-  succeeds, the rest fail with E_ALREADY_CONFESSED, state shows the winner. (The sandbox may place them in adjacent
-  blocks rather than literally the same block; the contract-level guarantee is serial execution per account state.)
-- `honest_season_refunds_everyone_exactly`: E_SEASON_OPEN on withdraw while open, E_PAST_DAYS, anyone closes after the
-  last lot, every buyer refunded exactly one bond.
-- `permissions_and_bid_rules_on_chain`: E_NOT_HOUSE (create_season/open_lot), E_NO_BOND, E_BONDS_MISSING, E_BAD_DEPOSIT,
-  E_NOT_PLAYER (buyer and house), E_NO_DAY, E_LOT_OPEN, E_ALREADY_COMMITTED, E_NO_COMMIT, E_BAD_REVEAL (amount and salt),
-  E_ALREADY_REVEALED, E_NOT_READY, E_NOT_FINISHED, house force-settle with a partial reveal set.
-- `key_rotation_does_not_affect_running_season`: keys are snapshotted at `create_season`.
-- `pact_encoding_vector_matches` and unit `pact_message_matches_documented_vector`: `PACT_ENCODING.md` vector (borsh
-  bytes, message, signature) recomputed from the secret key; also confirmed independently with Node `crypto`.
-- Error codes only reachable in unit tests (also asserted there): E_BAD_ARGS, E_NO_SEASON, E_NO_KEY, E_BAD_KEY,
-  E_BOND_POSTED, E_NO_LOT.
-
-## Storage and gas (cost.rs, 20-day season, sandbox ids)
+## Sandbox integration tests: `cd contract/it && cargo test -- --test-threads=4`
 
 ```
-season_create_bytes=424 season_create_near=0.0042 full_20_day_bytes=1504 full_20_day_near=0.0150 confess_5_sigs_tgas=4.6
+tests/admin.rs         1 passed   reset_is_contract_only_and_wipes_state
+tests/confess_errors.rs 2 passed  confess_error_matrix, key_rotation_does_not_affect_running_season
+tests/cost.rs          1 passed   full_season_storage_and_gas
+tests/flows.rs         7 passed   (race x2, exact accounting, non-signer withdraw, honest season, permissions, config)
+tests/leniency.rs      4 passed   (U1)
+tests/payout.rs        4 passed   (U3 game half, mock desk)
+tests/tokens.rs        4 passed   (U2)
+tests/vector.rs        1 passed   pact_encoding_vector_matches
 ```
 
-Roughly 0.015 to 0.04 NEAR of storage staking per 20-day season (longer testnet account ids add a little); the contract
-account (house-funded) holds it. Confession with five verified ed25519 signatures burns about 4.6 TGas.
+### U1 (leniency clock, real blocks): `tests/leniency.rs`
+
+- `offer_exposes_deadline_and_blocks_a_second_window`: `leniency_open_block`, `leniency_deadline_block = open + 200`,
+  second offer while open fails `E_LENIENCY_OPEN`.
+- `timeout_records_holdout_then_confession_is_refused`: `fast_forward(220)` -> yield timeout callback ran, `holdouts == 1`,
+  window cleared, `confess` -> `E_NO_LENIENCY`; the offer tx result then carries the `leniency_open` and `holdout` events
+  (`reason: "timeout"`); a second window the same day opens and a confession inside it succeeds.
+- `confession_resumes_the_yield_and_no_holdout_follows`: confess inside the window -> `confession` + `slash` events, window
+  cleared by the resume callback within a few blocks (no 200-block wait), second confession `E_ALREADY_CONFESSED`, and after
+  another 220 blocks `holdouts` is still 0 (double resume / late timeout is harmless).
+- `next_day_supersedes_old_window_and_close_cancels_pending`: day 2 opens with day 1's yield pending: confess
+  `E_NO_LENIENCY`, fresh window allowed; closing the season then fast-forwarding past both timeouts counts no holdout.
+
+Finding recorded in INTERFACE.md: the `offer_leniency` transaction is not final until the yield resolves, so a blocking
+`broadcast_tx_commit` / wait-until-`EXECUTED` hangs; near-workspaces timed out after ~30 s and retried with a new nonce
+(`E_LENIENCY_OPEN`). Tests use `transact_async` and read the view. Clients must wait for `INCLUDED_FINAL` or poll
+`get_season`.
+
+### U2 (NEP-245): `tests/tokens.rs`
+
+- Exact event JSON: `mt_mint` (owner = contract, memo `escrow for <player>`, amounts `["42"]`) on `open_lot`;
+  `mt_transfer` (escrow -> winner, memo `sold at 90 marks`) on `settle_lot`; user `mt_transfer` with 1 yocto and its memo.
+- Balances/views after mint and transfer (`mt_balance_of`, `mt_batch_balance_of`, `mt_supply`, `mt_token`,
+  `mt_tokens_for_owner`, `mt_metadata_contract` = "Lowball Catch"/"CATCH", title "42 kg Atlantic cod — season N, day 1").
+- Return-to-player: unsold open lot at `close_season` and at a confession (`returned unsold`).
+- Errors: `E_NOT_TOKEN_OWNER`, `E_MT_PARTIAL`, `E_NEED_1_YOCTO`; zero weight `E_BAD_ARGS`; missing `weight_kg` rejected.
+
+### U3 game half: `tests/payout.rs` (mock desk deployed at `desk.<contract>`)
+
+- Confession in a `payout_evm` season: desk receives exactly the slashed sum (2 bonds) with the `pay_evm` args recorded
+  (`to`, `amount_yocto`, caller = game contract); player receives no NEAR; `payout_route = "evm"`; `slash` and
+  `payout_route` events.
+- Desk panics: slashed NEAR comes back and is paid to the player, `payout_route = "evm_failed_near"`.
+- No desk account at all: same fallback.
+- `E_BAD_EVM` for short, over-long and non-hex addresses; default (no `payout_evm`) still pays the player in NEAR;
+  `set_desk` house-only.
+- Balance deltas allow up to 0.03 NEAR: the player is also refunded the unused 10 Tgas of the resolved yield callback
+  (about 0.011 NEAR) that their `offer_leniency` prepaid.
+
+### Carried over (all still green)
+
+Every error code of BRIEF.md in the sandbox matrix, forged/replayed/unregistered-key/duplicate-signer pacts, exact balance
+accounting, confession races (2 and 3 concurrent txs: one wins, the rest `E_ALREADY_CONFESSED`), commit/reveal rules,
+non-house and non-player calls, the PACT_ENCODING vector (encoding unchanged).
+
+## Storage and gas (cost.rs, 20-day season)
+
+```
+season_create_bytes=443 season_create_near=0.0044 full_20_day_bytes=2474 full_20_day_near=0.0247 confess_5_sigs_tgas=6.7
+```
+
+About 0.025 NEAR of storage staking per 20-day season (now includes weight, owner and token index). Confession with five
+verified signatures: 6.7 Tgas (no desk). With `payout_evm`, attach at least 250 Tgas (the confess forwards up to 200 Tgas to
+the desk).
 
 ## Not covered / limits
 
-- Testnet deployment: not done (faucet 429 for this IP until about 2026-11-14 06:32 UTC; integrator is funding the accounts).
-- Stale-season close (3 days idle) is unit-tested with a mocked block timestamp, not in the sandbox.
-- Failed refund transfers (a deleted recipient account) are not handled by callbacks; the NEAR stays in the contract.
+- Testnet: not deployed yet (accounts `lowball-ck.testnet` / `lowball-house-ck.testnet` did not exist on chain at hand-back
+  time; see deploy status in the hand-back). `scripts/deploy-contract.sh` is syntax-checked and its account-detection path
+  was exercised against testnet RPC; the redeploy/`reset` branch was exercised only as the `reset` method in the sandbox
+  (`admin.rs`), not as a live `near` CLI sequence.
+- The real payout desk (`contracts/payout-desk`) is not part of these tests; the mock only fixes the call shape
+  `pay_evm(season_id, to, amount_yocto)` payable.
+- The yield timeout is protocol-fixed at 200 blocks; the sandbox matches mainnet/testnet here, but wall-clock time per block
+  differs (testnet about 1 s).
+- Stale-season close (3 days idle) is still unit-tested with a mocked timestamp only.
+- Failed refund transfers (deleted recipient account) are not handled by callbacks.
+- `mt_transfer_call`, approvals and partial-amount transfers are not implemented (indivisible lots).

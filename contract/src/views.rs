@@ -20,6 +20,11 @@ pub struct LotView {
     pub day: u8,
     pub species: String,
     pub fair_value: u32,
+    pub weight_kg: u32,
+    /// NEP-245 token id of this lot, `s{season}-d{day}`.
+    pub token_id: String,
+    /// Current NEP-245 holder: the contract (escrow) until settled, then the winner (or the player).
+    pub token_owner: AccountId,
     /// Buyers that have committed to the open lot (empty once settled).
     pub committed: Vec<AccountId>,
     pub reveals: Vec<RevealView>,
@@ -52,8 +57,18 @@ pub struct SeasonView {
     pub status: String,
     pub lots: Vec<LotView>,
     pub leniency_day: Option<u8>,
-    /// true while the current day's leniency window is open and nobody has confessed
+    /// true while the current day's leniency window is open: yield live, inside its 200 blocks
     pub leniency_open: bool,
+    /// Block height at which the live window's yield was created.
+    pub leniency_open_block: Option<u64>,
+    /// `leniency_open_block + 200`: a confession after this block gets `E_NO_LENIENCY`.
+    pub leniency_deadline_block: Option<u64>,
+    /// Windows that timed out with nobody confessing.
+    pub holdouts: u32,
+    pub leniency_windows: u32,
+    pub payout_evm: Option<String>,
+    /// "none" | "near" | "evm_pending" | "evm" | "evm_failed_near"
+    pub payout_route: String,
     pub first_confessor: Option<AccountId>,
     pub verified_signers: Vec<AccountId>,
     pub slashed_total: U128,
@@ -75,8 +90,11 @@ pub struct ConfigView {
     pub pact_prefix: String,
 }
 
-fn lot_view(s: &Season, l: &Lot) -> LotView {
+fn lot_view(season_id: u64, s: &Season, l: &Lot) -> LotView {
     LotView {
+        weight_kg: l.weight_kg,
+        token_id: crate::mt::token_id(season_id, l.day),
+        token_owner: l.owner.clone(),
         day: l.day,
         species: l.species.clone(),
         fair_value: l.fair_value,
@@ -108,9 +126,15 @@ pub fn season_view(id: u64, s: &Season) -> SeasonView {
         day: s.day,
         days: s.days,
         status: s.status.as_str().to_string(),
-        lots: s.lots.iter().map(|l| lot_view(s, l)).collect(),
+        lots: s.lots.iter().map(|l| lot_view(id, s, l)).collect(),
         leniency_day: s.leniency_day,
-        leniency_open: s.status == crate::season::Status::Open && s.leniency_day.is_some() && s.leniency_day == Some(s.day),
+        leniency_open: s.status == crate::season::Status::Open && s.window_live(),
+        leniency_open_block: s.leniency_yield.map(|_| s.leniency_open_block),
+        leniency_deadline_block: s.leniency_yield.map(|_| s.leniency_open_block + crate::YIELD_TIMEOUT_BLOCKS),
+        holdouts: s.holdouts,
+        leniency_windows: s.leniency_window,
+        payout_evm: s.payout_evm.clone(),
+        payout_route: s.payout_route.as_str().to_string(),
         first_confessor: s.first_confessor.as_ref().map(acct),
         verified_signers: s.verified_signers.iter().map(acct).collect(),
         slashed_total: U128(s.slashed_total),

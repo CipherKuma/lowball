@@ -1,19 +1,27 @@
 //! Lowball: five buyers form a bid-rigging cartel; the player can offer leniency and the first
 //! buyer to hand over the signed pact is immune while the other signers' bonds are slashed.
 
+mod confess;
 mod errors;
+mod events;
+mod leniency;
+mod mt;
 mod pact;
 mod season;
 mod views;
 
 pub use errors::*;
 pub use pact::{pact_message, Pact, PactSig, PACT_PREFIX};
-pub use season::{Season, Status, BUYERS, MAX_DAYS, STALE_NS};
+pub use mt::{MtContractMetadata, MtToken, MtTokenMetadata};
+pub use season::{PayoutRoute, Season, Status, BUYERS, MAX_DAYS, STALE_NS};
 pub use views::*;
 
 use near_sdk::json_types::{Base64VecU8, U128};
 use near_sdk::store::LookupMap;
 use near_sdk::{env, near, AccountId, NearToken, PanicOnDefault, Promise};
+
+/// Protocol constant `yield_timeout_length_in_blocks`: a yielded promise times out after this.
+pub const YIELD_TIMEOUT_BLOCKS: u64 = 200;
 
 use crate::season::BuyerSlot;
 
@@ -24,6 +32,10 @@ pub struct Contract {
     next_season_id: u64,
     seasons: LookupMap<u64, Season>,
     keys: LookupMap<AccountId, [u8; 32]>,
+    /// Payout desk (Chain Signatures) called as `pay_evm` for seasons with a `payout_evm` address.
+    desk: AccountId,
+    /// NEP-245 index: account -> (season, day) tokens it holds (the contract itself = escrow).
+    owner_tokens: LookupMap<AccountId, Vec<(u64, u8)>>,
 }
 
 fn pay(to: &AccountId, yocto: u128) {
@@ -33,6 +45,18 @@ fn pay(to: &AccountId, yocto: u128) {
 }
 
 impl Contract {
+    fn fresh(house: AccountId) -> Self {
+        let desk = format!("desk.{}", env::current_account_id()).parse().unwrap_or_else(|_| env::current_account_id());
+        Self {
+            house,
+            next_season_id: 0,
+            seasons: LookupMap::new(b"s"),
+            keys: LookupMap::new(b"k"),
+            desk,
+            owner_tokens: LookupMap::new(b"o"),
+        }
+    }
+
     fn only_house(&self) {
         ensure(env::predecessor_account_id() == self.house, E_NOT_HOUSE);
     }
@@ -46,7 +70,21 @@ impl Contract {
 impl Contract {
     #[init]
     pub fn new(house: AccountId) -> Self {
-        Self { house, next_season_id: 0, seasons: LookupMap::new(b"s"), keys: LookupMap::new(b"k") }
+        Self::fresh(house)
+    }
+
+    /// Wipe state and re-initialise. Callable only by the contract account itself (the deploy script
+    /// signs with the contract key), used when a redeploy finds an incompatible old state layout.
+    #[init(ignore_state)]
+    pub fn reset(house: AccountId) -> Self {
+        ensure(env::predecessor_account_id() == env::current_account_id(), E_NOT_CONTRACT);
+        Self::fresh(house)
+    }
+
+    /// House only: point at a different payout desk (default `desk.<this account>`).
+    pub fn set_desk(&mut self, desk: AccountId) {
+        self.only_house();
+        self.desk = desk;
     }
 
     /// Called by the buyer account: registers (or replaces) its 32-byte ed25519 pact key.
@@ -56,8 +94,19 @@ impl Contract {
         self.keys.insert(env::predecessor_account_id(), pk);
     }
 
-    pub fn create_season(&mut self, player: AccountId, buyers: Vec<AccountId>, days: u8, bond: U128) -> u64 {
+    /// `payout_evm`: optional `0x` + 40 hex address; slashed NEAR is then paid out cross-chain.
+    pub fn create_season(
+        &mut self,
+        player: AccountId,
+        buyers: Vec<AccountId>,
+        days: u8,
+        bond: U128,
+        payout_evm: Option<String>,
+    ) -> u64 {
         self.only_house();
+        if let Some(a) = &payout_evm {
+            ensure(a.len() == 42 && a.starts_with("0x") && a[2..].bytes().all(|c| c.is_ascii_hexdigit()), E_BAD_EVM);
+        }
         ensure(buyers.len() == BUYERS, E_BAD_ARGS);
         ensure(days >= 1 && days <= MAX_DAYS && bond.0 > 0, E_BAD_ARGS);
         for (i, b) in buyers.iter().enumerate() {
@@ -90,6 +139,12 @@ impl Contract {
             pact_nonce: None,
             confessed_day: None,
             last_activity_ns: env::block_timestamp(),
+            leniency_window: 0,
+            leniency_yield: None,
+            leniency_open_block: 0,
+            holdouts: 0,
+            payout_evm,
+            payout_route: PayoutRoute::None,
         };
         self.seasons.insert(id, s);
         id
@@ -108,9 +163,15 @@ impl Contract {
         s.touch();
     }
 
-    pub fn open_lot(&mut self, season_id: u64, species: String, fair_value: u32) {
+    /// Opens the next day's lot and mints its NEP-245 token (`weight_kg` units) into escrow.
+    pub fn open_lot(&mut self, season_id: u64, species: String, fair_value: u32, weight_kg: u32) {
         self.only_house();
-        self.season(season_id).open_lot(species, fair_value);
+        let player = {
+            let s = self.season(season_id);
+            s.open_lot(species, fair_value, weight_kg);
+            s.player.clone()
+        };
+        self.mint_open_lot(season_id, &player);
     }
 
     pub fn commit_bid(&mut self, season_id: u64, hash: Base64VecU8) {
@@ -127,47 +188,7 @@ impl Contract {
     pub fn settle_lot(&mut self, season_id: u64) {
         let is_house = env::predecessor_account_id() == self.house;
         self.season(season_id).settle_lot(is_house);
-    }
-
-    /// Player only (signed in the browser). Opens the leniency window for the current day.
-    pub fn offer_leniency(&mut self, season_id: u64) {
-        let who = env::predecessor_account_id();
-        let s = self.season(season_id);
-        ensure(who == s.player, E_NOT_PLAYER);
-        s.ensure_open();
-        ensure(s.day >= 1, E_NO_DAY);
-        if s.leniency_day != Some(s.day) {
-            s.leniency_day = Some(s.day);
-            s.touch();
-        }
-    }
-
-    /// First valid confession wins immunity; the other verified signers' bonds go to the player.
-    pub fn confess(&mut self, season_id: u64, pact: Pact, signatures: Vec<PactSig>) -> U128 {
-        let caller = env::predecessor_account_id();
-        let s = self.season(season_id);
-        let (ci, signers) = pact::verify_confession(s, season_id, &caller, &pact, &signatures);
-        let mut slashed = 0u128;
-        for &i in &signers {
-            if i != ci {
-                s.buyers[i as usize].slashed = true;
-                slashed += s.bond;
-            }
-        }
-        s.buyers[ci as usize].refunded = true;
-        s.status = Status::Confessed;
-        s.first_confessor = Some(ci);
-        s.verified_signers = signers;
-        s.slashed_total = slashed;
-        s.player_payout = slashed;
-        s.pact_cap = Some(pact.cap);
-        s.pact_nonce = Some(pact.nonce);
-        s.confessed_day = Some(s.day);
-        s.touch();
-        let (player, bond) = (s.player.clone(), s.bond);
-        pay(&player, slashed);
-        pay(&caller, bond);
-        U128(slashed)
+        self.deliver_settled_lot(season_id);
     }
 
     /// Buyer reclaims own bond once the season is no longer Open (unless slashed).
@@ -192,6 +213,7 @@ impl Contract {
         let stale = env::block_timestamp().saturating_sub(s.last_activity_ns) > STALE_NS;
         ensure(is_house || s.last_lot_settled() || stale, E_NOT_FINISHED);
         let mut refunds: Vec<AccountId> = vec![];
+        let had_open_lot = s.lots.last().map(|l| !l.settled).unwrap_or(false);
         for b in s.buyers.iter_mut() {
             if b.posted && !b.slashed && !b.refunded {
                 b.refunded = true;
@@ -199,9 +221,13 @@ impl Contract {
             }
         }
         s.status = Status::Closed;
+        s.leniency_yield = None;
         let bond = s.bond;
         for a in refunds {
             pay(&a, bond);
+        }
+        if had_open_lot {
+            self.return_open_lot(season_id);
         }
     }
 

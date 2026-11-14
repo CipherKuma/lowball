@@ -35,6 +35,14 @@ pub const E_CLOSED: &str = "E_CLOSED";
 pub const E_SEASON_OPEN: &str = "E_SEASON_OPEN";
 pub const E_SLASHED: &str = "E_SLASHED";
 pub const E_ALREADY_WITHDRAWN: &str = "E_ALREADY_WITHDRAWN";
+pub const E_LENIENCY_OPEN: &str = "E_LENIENCY_OPEN";
+pub const E_BAD_EVM: &str = "E_BAD_EVM";
+pub const E_NO_TOKEN: &str = "E_NO_TOKEN";
+pub const E_NOT_TOKEN_OWNER: &str = "E_NOT_TOKEN_OWNER";
+pub const E_MT_PARTIAL: &str = "E_MT_PARTIAL";
+pub const E_NEED_1_YOCTO: &str = "E_NEED_1_YOCTO";
+pub const E_SELF_TRANSFER: &str = "E_SELF_TRANSFER";
+pub const E_NOT_CONTRACT: &str = "E_NOT_CONTRACT";
 
 /// Panic unless `cond`, with a stable error code as the panic string.
 #[inline]

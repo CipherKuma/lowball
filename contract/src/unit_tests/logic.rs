@@ -36,18 +36,24 @@ fn house_force_settles_partial_reveals() {
 }
 
 #[test]
-fn leniency_idempotent_and_window_closes_on_next_day() {
+fn leniency_window_closes_on_next_day_and_reopens_then() {
     let mut c = bonded(3);
     lot_with_reveals(&mut c, &[40; 5]);
     c.settle_lot(0);
     as_("player.testnet", 0);
     c.offer_leniency(0);
-    c.offer_leniency(0);
-    assert!(c.get_season(0).leniency_open);
+    let v = c.get_season(0);
+    assert!(v.leniency_open);
+    assert_eq!((v.leniency_open_block, v.leniency_deadline_block, v.holdouts), (Some(0), Some(200), 0));
     as_("house.testnet", 0);
-    c.open_lot(0, "Cod".into(), 90);
+    c.open_lot(0, "Cod".into(), 90, 40);
     let s = c.get_season(0);
     assert_eq!((s.leniency_day, s.leniency_open), (Some(1), false));
+    // day 2: a fresh window may open even though day 1's yield has not timed out yet
+    as_("player.testnet", 0);
+    c.offer_leniency(0);
+    let s = c.get_season(0);
+    assert_eq!((s.leniency_day, s.leniency_open, s.leniency_windows), (Some(2), true, 2));
 }
 
 #[test]

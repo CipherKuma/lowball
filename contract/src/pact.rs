@@ -68,7 +68,7 @@ pub fn verify_confession(
         Status::Open => {}
     }
     let caller_idx = s.buyer_idx(caller);
-    ensure(s.leniency_day.is_some() && s.leniency_day == Some(s.day), E_NO_LENIENCY);
+    ensure(s.window_live(), E_NO_LENIENCY);
     ensure(pact.season_id == season_id, E_SEASON_MISMATCH);
     ensure(pact.members.iter().all(|m| s.idx(m).is_some()), E_NOT_MEMBER);
     ensure(pact.members.contains(caller), E_NOT_MEMBER);

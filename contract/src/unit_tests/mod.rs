@@ -35,7 +35,7 @@ pub(crate) fn fresh(days: u8) -> Contract {
         c.register_buyer_key(b64(&[i as u8 + 1; 32]));
     }
     as_("house.testnet", 0);
-    assert_eq!(c.create_season(a("player.testnet"), buyers(), days, U128(BOND)), 0);
+    assert_eq!(c.create_season(a("player.testnet"), buyers(), days, U128(BOND), None), 0);
     c
 }
 pub(crate) fn bonded(days: u8) -> Contract {
@@ -48,7 +48,7 @@ pub(crate) fn bonded(days: u8) -> Contract {
 }
 pub(crate) fn lot_with_reveals(c: &mut Contract, amounts: &[u32]) {
     as_("house.testnet", 0);
-    c.open_lot(0, "Hake".into(), 100);
+    c.open_lot(0, "Hake".into(), 100, 40);
     for (i, amt) in amounts.iter().enumerate() {
         let salt = [i as u8; 32];
         as_(&format!("b{}.testnet", i + 1), 0);
@@ -62,3 +62,4 @@ pub(crate) fn lot_with_reveals(c: &mut Contract, amounts: &[u32]) {
 
 mod errors;
 mod logic;
+mod u123;

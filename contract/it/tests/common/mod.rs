@@ -97,7 +97,7 @@ pub async fn setup() -> anyhow::Result<Env> {
 pub fn err_code(res: &ExecutionFinalResult) -> Option<String> {
     let text = format!("{:?}", res.failures());
     let start = text.find("E_")?;
-    Some(text[start..].chars().take_while(|c| c.is_ascii_uppercase() || *c == '_').collect())
+    Some(text[start..].chars().take_while(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || *c == '_').collect())
 }
 
 #[track_caller]
@@ -154,7 +154,21 @@ impl Env {
 
     /// Open a lot, every buyer commits+reveals `amounts[i]`, then settle.
     pub async fn play_lot(&self, sid: u64, fair: u32, amounts: [u32; 5]) {
-        self.ok(&self.house, "open_lot", json!({"season_id": sid, "species": "Hake", "fair_value": fair})).await;
+        self.play_lot_w(sid, "Hake", 40, fair, amounts).await;
+    }
+
+    /// Same with species and weight; returns (open_lot result, settle_lot result).
+    pub async fn play_lot_w(
+        &self,
+        sid: u64,
+        species: &str,
+        weight_kg: u32,
+        fair: u32,
+        amounts: [u32; 5],
+    ) -> (ExecutionFinalResult, ExecutionFinalResult) {
+        let opened = self
+            .ok(&self.house, "open_lot", json!({"season_id": sid, "species": species, "fair_value": fair, "weight_kg": weight_kg}))
+            .await;
         for (i, b) in self.buyers.iter().enumerate() {
             let salt = [i as u8 + 9; 32];
             self.ok(b, "commit_bid", json!({"season_id": sid, "hash": commit_hash(amounts[i], &salt)})).await;
@@ -163,7 +177,8 @@ impl Env {
             let salt = [i as u8 + 9; 32];
             self.ok(b, "reveal_bid", json!({"season_id": sid, "amount": amounts[i], "salt": b64(&salt)})).await;
         }
-        self.ok(&self.buyers[0], "settle_lot", json!({"season_id": sid})).await;
+        let settled = self.ok(&self.buyers[0], "settle_lot", json!({"season_id": sid})).await;
+        (opened, settled)
     }
 
     pub fn pact(&self, sid: u64, members: &[usize]) -> PactB {
@@ -188,7 +203,86 @@ impl Env {
         let sid = self.create_season(days).await;
         self.post_bonds(sid).await;
         self.play_lot(sid, 100, [40; 5]).await;
-        self.ok(&self.player, "offer_leniency", json!({"season_id": sid})).await;
+        self.offer(sid).await;
         sid
+    }
+}
+
+impl Env {
+    /// Deploy the mock payout desk at `desk.<contract>` (the game contract's default desk id).
+    pub async fn deploy_desk(&self) -> Account {
+        let wasm = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../mock-desk/target/mock_desk.wasm"))
+            .expect("build contract/mock-desk/build.sh first");
+        let desk = self
+            .contract
+            .as_account()
+            .create_subaccount("desk")
+            .initial_balance(NearToken::from_near(5))
+            .transact()
+            .await
+            .unwrap()
+            .into_result()
+            .unwrap();
+        let c = desk.deploy(&wasm).await.unwrap().into_result().unwrap();
+        c.call("new").transact().await.unwrap().into_result().unwrap();
+        desk
+    }
+
+    /// Like `create_season` but with a payout address.
+    pub async fn create_season_evm(&self, days: u8, evm: &str) -> u64 {
+        self.ok(
+            &self.house,
+            "create_season",
+            json!({"player": self.player.id(), "buyers": self.ids(), "days": days, "bond": BOND.to_string(), "payout_evm": evm}),
+        )
+        .await
+        .json()
+        .unwrap()
+    }
+
+    /// All `EVENT_JSON:` logs of an execution, parsed (receipt order).
+    pub fn events(res: &ExecutionFinalResult) -> Vec<Value> {
+        res.logs()
+            .iter()
+            .filter_map(|l| l.strip_prefix("EVENT_JSON:"))
+            .map(|j| serde_json::from_str(j).unwrap())
+            .collect()
+    }
+
+    pub async fn mt_balance(&self, who: &AccountId, token: &str) -> u128 {
+        let v: String = self.contract.view("mt_balance_of").args_json(json!({"account_id": who, "token_id": token})).await.unwrap().json().unwrap();
+        v.parse().unwrap()
+    }
+}
+
+impl Env {
+    pub async fn ok_confess(&self, sid: u64, who: usize, p: &PactB, signers: &[usize]) -> ExecutionFinalResult {
+        let r = self.confess(sid, who, p, signers).await;
+        assert!(r.is_success(), "confess failed: {:?}", r.failures());
+        r
+    }
+}
+
+impl Env {
+    /// `offer_leniency` leaves a yielded receipt pending, so the transaction is not final until a
+    /// confession or the 200-block timeout: a blocking `transact()` would hang and then retry with a
+    /// new nonce (=> E_LENIENCY_OPEN). Send async, let the function receipt land, return the handle.
+    pub async fn offer(&self, sid: u64) -> near_workspaces::operations::TransactionStatus {
+        let st = self
+            .player
+            .call(self.contract.id(), "offer_leniency")
+            .args_json(json!({"season_id": sid}))
+            .max_gas()
+            .transact_async()
+            .await
+            .unwrap();
+        self.worker.fast_forward(4).await.unwrap();
+        st
+    }
+
+    /// Same as `offer` but expects the function receipt to fail; returns its panic code.
+    pub async fn offer_err(&self, who: &Account, sid: u64) -> Option<String> {
+        let r = who.call(self.contract.id(), "offer_leniency").args_json(json!({"season_id": sid})).max_gas().transact().await.unwrap();
+        err_code(&r)
     }
 }
