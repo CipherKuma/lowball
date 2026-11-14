@@ -1,14 +1,13 @@
 [
-  ["n01", "Five buyers. Five sealed bids. The same number. Every single morning."],
-  ["n02", "Every game economy has its cartels. Now the traders are AI agents, and research shows you can't catch them colluding just by reading their thoughts."],
-  ["n03", "Lowball is a noir auction game on NEAR. You don't out-haggle the cartel. You break it."],
-  ["n04", "Each buyer locks a bond in a NEAR contract, then signs a secret pact with their own key. Your catch is minted as a token, and the bids are sealed."],
-  ["n05", "They always agree. You take their price, and every identical day goes on the record."],
-  ["n06", "With a case, you offer leniency. The window lives on-chain, and closes itself in two hundred blocks."],
-  ["n07", "The first buyer to hand over the signed pact walks free. The contract checks every signature, slashes the rest... and refuses anyone who comes second."],
-  ["n08", "Their bonds are paid to you."],
-  ["n09", "Every buyer thinks inside a TEE on NEAR AI Cloud, and every answer is signed and verified."],
-  ["n09b", "Their signing keys never leave an OutLayer enclave. Nobody, not even the house, can forge a pact or a confession."],
-  ["n10", "The leniency clock is NEAR yield and resume. Every catch is a NEP-245 token. And through chain signatures, the cartel can even pay you on Ethereum."],
-  ["n11", "Lowball. Make one talk."]
+  ["e01", "In game economies, players get stuck selling low to buyers who quietly agree on a price. Now those buyers can be AI agents, and research shows you can't catch AI agents colluding just by reading their reasoning."],
+  ["e02", "So we built Lowball, an auction game on NEAR where you don't out-haggle the cartel. You break it."],
+  ["e03", "Every morning you land a catch, and five AI buyers bid on it. Before the season they agreed a price in private, each one signed that pact with their own key, and each put a bond into our NEAR contract."],
+  ["e04", "Their sealed bids come back identical. So you take the low price for a couple of days, and every identical day goes on the record."],
+  ["e05", "Now you have a case, so you offer leniency. You sign it from your browser, and the contract opens a window that closes by itself after two hundred blocks."],
+  ["e06", "The first buyer to hand over the signed pact gets immunity. The contract checks every signature, slashes the other bonds and pays them to you. And when a second buyer tries, the contract refuses."],
+  ["e07", "Every buyer runs on NEAR AI Cloud inside a TEE, and we verify each response's signature against the attested hardware."],
+  ["e07b", "Their signing keys live inside an OutLayer enclave, so not even our own server can forge a pact or a confession."],
+  ["e08", "Each catch is a NEP-245 token, and with chain signatures the slashed bonds can even pay you out on Ethereum."],
+  ["e09", "In fourteen simulated seasons, the ring held identical bids almost every day without leniency. With it, a buyer cracked in nine seasons out of ten."],
+  ["e10", "That's Lowball. Make one of them talk."]
 ]
