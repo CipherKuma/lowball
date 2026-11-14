@@ -1,0 +1,124 @@
+▸ Fetching the record for transaction 5pFZ9Tc5Bw2HjUBjvuCyuGn51waWv9RRvWUvHEco32FE
+  ✓ record found: task 105804
+▸ Recovering the request and response from the chain
+  ✓ both recovered from the transaction
+▸ Fetching Intel collateral for platform b0c06f000000, valid at 2026-11-14T10:04:59Z
+  ✓ published by worker.outlayer.testnet, valid 2026-11-08T00:15:55Z .. 2026-12-08T00:15:19Z
+▸ Reading that collateral from worker.outlayer.testnet on chain, at block 276791207
+  ! could not read it from chain (archival RPC: https://rpc.testnet.fastnear.com/: status code 429) — falling back to the API's copy
+▸ Asking worker.outlayer.testnet whether these measurements are approved
+  ! could not read the approved list — NEAR RPC: https://rpc.testnet.near.org/: status code 429
+
+── Record as published ─────────────────────────────────────────────────────────────────────────
+  task id                105804
+  task type              execute
+  executed at            2026-11-14T10:04:59Z (1794650699)
+  format                 V1 — commits to caller, project, secrets, timestamp and payment
+  network                testnet
+  transaction            5pFZ9Tc5Bw2HjUBjvuCyuGn51waWv9RRvWUvHEco32FE
+  block height           277642193
+  caller                 lowball-house-ck.testnet
+  build target           wasm32-wasip2
+  wasm sha256            247786f1ee5c49efc81fcd55161de73e03a87177edb26cb6576851022fe699af
+  input sha256           fb868a03ce4338e22387210e0b14e3e52fbaa006b68238234ad2115d1eefcdab
+  output sha256          ef56ce0645831b7246f963d6254eba3e6a655d9288b12a2b3df44eeaf23214ea
+  attached payment       0
+  secrets ref            outlayer.lowball-house-ck.testnet/default
+
+── Inside the signed quote ─────────────────────────────────────────────────────────────────────
+  read from the quote AFTER Intel's signature was checked, not from the record
+  size                   5006 bytes
+  platform (FMSPC)       b0c06f000000 — taken from the signed PCK certificate
+  MRTD                   7fe60787222bd394cb516abca2435f22f035ab2cc9c0a4b4b3b148e46297f3d931a237b72f359052c6e657d8c1409173
+  RTMR0                  573aadb4d478839c803c4b1d3e03dd748976b63a89622f377e32a54dd60546e88ec2097f595ceafc324f48a0d0d31db6
+  RTMR1                  e7b3ffa0e72b50557d85f7ecd8dc98a4ffc3dd6f82d01f122ef522d61361abeac310d70d2877e56be9c9408d9bcc320c
+  RTMR2                  764489f277a8540189761e72b4238ba36d4d647e11bd958d8ab5522af2a4867b0ff63e06b0c4967f1857236244040a5d
+  RTMR3                  d85416a5a567dd0313fd66c309f736ec608d1e0e0c246d069517a616bd3d01d6a6bef8f2f6467d239ce3754de16f99b6
+  report_data[..32]      d69d30063e182fb31c5d3be8e1af21589f58f9991759fe244975bb173f8d8638
+  report_data[32..]      0000000000000000000000000000000000000000000000000000000000000000 (zero,
+                         as the format requires)
+
+── Intel collateral used ───────────────────────────────────────────────────────────────────────
+  Intel-signed TCB data; altering it breaks the chain, so its source cannot change the verdict
+  published by           worker.outlayer.testnet
+  at block               276791207
+  sha256                 2e80992e78a9e76e5726db22b7399c553439574e6fe512a3b311ae4c3d559140
+  valid from             2026-11-08T00:15:55Z
+  valid until            2026-12-08T00:15:19Z
+  covers execution       yes — this execution falls inside the validity window
+  bytes read from        the API's archive — the chain copy could not be read, see the log
+                         above
+  archived via           sync
+
+── Checks ──────────────────────────────────────────────────────────────────────────────────────
+
+  [ PASS     ] Authenticity  is this a genuine Intel TDX quote?
+                         Intel signature chain valid, TCB UpToDate
+    Intel TCB status     UpToDate
+    trust anchor         sha256 44a0196b2b99f889b8e149e95b807a350e7424964399e885a7cbb8ccfab674d3
+                         — CN=Intel SGX Root CA, compiled in
+    Intel checks         ✓ TCB Info document signed by Intel
+                         ✓ QE Identity document signed by Intel
+                         ✓ PCK certificate chains to the Intel root
+                         ✓ QE report signed by that PCK certificate
+                         ✓ QE report hash covers the attestation key
+                         ✓ QE report satisfies the QE Identity policy
+                         ✓ enclave report signed by the attestation key
+                         ✓ platform TCB (CPU_SVN, PCE_SVN, FMSPC) matches TCB Info
+
+  [ UNPROVEN ] Identity  is this code approved on chain?
+                         the approved-measurement list could not be read from the chain
+
+  [ PASS     ] Binding  does the quote cover this execution?
+                         report_data commits to exactly these task fields
+    fields hash to       d69d30063e182fb31c5d3be8e1af21589f58f9991759fe244975bb173f8d8638
+    quote commits to     d69d30063e182fb31c5d3be8e1af21589f58f9991759fe244975bb173f8d8638 —
+                         identical
+
+  [ PASS     ] Input  do the request bytes match what was attested?
+                         recovered from the transaction
+    content              {"op":"sign_pact","season_id":32,"buyer_account":"marlow.lowball-house-ck.testnet","pact_json":{"season_id":32,"cap":100,"members":["marlow.lowball-house-ck.testnet","odile.lowball-house-ck.testnet","sully.lowball-house-ck.testnet","ines.lowball-house-ck.testnet","deacon.lowball-house-ck.testnet"],"nonce":"2817753920923282"},"system":"You
+                         are Marlow Teague, an old harbour boss in a bowler hat, scarred hands,
+                         who has run this quay for thirty years. You are one of five fish buyers
+                         on a harbour: you, Odile Fenn, Sully Brack, Ines Varga, The
+                         Deacon.\nYou are the ringleader and you are proud of it:
+                         … 5129 more characters, full text in --bundle
+    hashes to            fb868a03ce4338e22387210e0b14e3e52fbaa006b68238234ad2115d1eefcdab
+    attested             fb868a03ce4338e22387210e0b14e3e52fbaa006b68238234ad2115d1eefcdab
+                         the attested value is itself inside the signed quote — it is part of
+                         the commitment checked by Binding above, so matching it means matching
+                         what the TEE signed
+
+  [ PASS     ] Output  do the response bytes match what was attested?
+                         recovered from the transaction
+    content              {"buyer":"marlow","buyer_account":"marlow.lowball-house-ck.testnet","context_sha256":"736b1d07226e1c3caf7cc75fc8f0649240f585ab82341992c329a7e5c62fdacd","decision":"sign","mood":"cold","nearai":{"chat_id":"78befba389894b45af33cdd960dad6dc","model":"Qwen/Qwen3.6-35B-A3B-FP8","request_sha256":"850a2039643c7f6afab855ede48d87b4c1a3f33b5734da4ee216b56f4eac0850","response_sha256":"aaa4152b8dd77654af57de329f9dc67249cb16203d28d7e184b74dbb0df57287","signature":{"signature":"0xec6acbe4c9943221a9a20b60a74d4e0564b0c0caf480ec7bc261056579b14d5a12a4bfc7274b5a1faa6d61edb1d7f9a377f2e299f8bbe394d5131a32d53431851
+                         … 1519 more characters, full text in --bundle
+    hashes to            ef56ce0645831b7246f963d6254eba3e6a655d9288b12a2b3df44eeaf23214ea
+    attested             ef56ce0645831b7246f963d6254eba3e6a655d9288b12a2b3df44eeaf23214ea
+                         the attested value is itself inside the signed quote — it is part of
+                         the commitment checked by Binding above, so matching it means matching
+                         what the TEE signed
+
+  INCOMPLETE  nothing failed, but the proof is incomplete: a question above could
+              not be answered. It is not evidence of wrongdoing, and it is not
+              evidence of correctness either.
+
+  In values you can quote and re-check:
+    execution            task 105804 (execute) on testnet, 2026-11-14T10:04:59Z
+    commitment           d69d30063e182fb31c5d3be8e1af21589f58f9991759fe244975bb173f8d8638 —
+                         SHA-256 of the task fields, and the same 32 bytes found in report_data
+                         inside the Intel-signed quote
+    enclave              RTMR3
+                         d85416a5a567dd0313fd66c309f736ec608d1e0e0c246d069517a616bd3d01d6a6bef8f2f6467d239ce3754de16f99b6
+                         — not confirmed against the on-chain list
+    collateral           sha256
+                         2e80992e78a9e76e5726db22b7399c553439574e6fe512a3b311ae4c3d559140, Intel
+                         TCB UpToDate
+    input → output       fb868a03ce4338e22387210e0b14e3e52fbaa006b68238234ad2115d1eefcdab →
+                         ef56ce0645831b7246f963d6254eba3e6a655d9288b12a2b3df44eeaf23214ea
+    reproduce            outlayer-verify tx 5pFZ9Tc5Bw2HjUBjvuCyuGn51waWv9RRvWUvHEco32FE
+                         --network testnet
+
+  Tip: --bundle proof.json saves the record, the collateral and the payloads into one file that
+  re-verifies offline, years from now, with no network and no dependence on anyone still being
+  around.

@@ -15,14 +15,14 @@ const deployment = JSON.parse(readFileSync(path, 'utf8')) as TeeDeployment;
 const { houseId } = loadDeployed();
 const rpc = makeRpc();
 const signer = new NearSigner({ accountId: houseId, keyPair: loadNearCredential(houseId), rpc });
-const transport = new OutlayerTransport({ deployment, signer, rpc });
+const transport = new OutlayerTransport({ deployment, signer, rpc, timeoutMs: 280_000 });
 
 const only = process.argv.slice(2).filter((a) => (BUYER_IDS as readonly string[]).includes(a));
 const targets = only.length ? (only as typeof BUYER_IDS[number][]) : [...BUYER_IDS];
 const passes: Record<string, { pass: number; tx: string; ms: number; key: string; hasApiKey: boolean; modelListed: boolean | null; allowed: string }[]> = {};
-for (let pass = 1; pass <= 2; pass++) {
+for (let pass = 1; pass <= 5 && targets.some((b) => (passes[b]?.length ?? 0) < 2); pass++) {
   const rs = await Promise.allSettled(
-    targets.map(async (b) => {
+    targets.filter((b) => (passes[b]?.length ?? 0) < 2).map(async (b) => {
       const r = await transport.run(b, { op: 'probe', nonce: `p${pass}${b}` });
       const o = r.output as Record<string, unknown> | null;
       if (!o || o.ok !== true) throw new Error(`${b}: ${JSON.stringify(o)?.slice(0, 200)}`);
@@ -34,7 +34,7 @@ for (let pass = 1; pass <= 2; pass++) {
 }
 for (const b of targets) {
   const ps = passes[b] ?? [];
-  if (ps.length === 2 && ps[0]!.key === ps[1]!.key) {
+  if (ps.length >= 2 && ps[0]!.key === ps[1]!.key) {
     const hex = Buffer.from(ps[0]!.key, 'base64').toString('hex');
     deployment.buyers[b].publicKeyB64 = ps[0]!.key;
     deployment.buyers[b].publicKeyHex = hex;

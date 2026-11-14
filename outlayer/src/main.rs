@@ -162,6 +162,11 @@ fn schema(op_deliberate: bool) -> (Value, &'static str) {
     }
 }
 
+enum Parsed {
+    Vote(Vote),
+    Del(Deliberation),
+}
+
 fn decide(i: &Input, deliberate: bool) -> Result<Value, String> {
     caller_allowed(&env("NEAR_USER_ACCOUNT_ID"), ALLOWED_CALLERS)?;
     let season_id = i.season_id.ok_or("season_id required")?;
@@ -185,15 +190,33 @@ fn decide(i: &Input, deliberate: bool) -> Result<Value, String> {
     }
     let who = format!("You are acting as {} (account {account}). Your own key signs only what you decide here.\n\n", display_name(BUYER));
     let (sch, name) = schema(deliberate);
-    let c = http::complete(&key, &format!("{who}{system}"), &user, name, sch)?;
+    // The model sometimes answers with no usable JSON (seen live: "model reply has no JSON object"). A completion
+    // is a 1 to 2 s call, so ask again here, up to three times, instead of failing a whole enclave job.
+    let mut last = String::from("no attempt");
+    let mut got: Option<(http::Completion, Parsed)> = None;
+    for _ in 0..3 {
+        match http::complete(&key, &format!("{who}{system}"), &user, name, sch.clone()) {
+            Ok(c) => {
+                let p = if deliberate { parse_deliberation(&c.content).map(Parsed::Del) } else { parse_vote(&c.content).map(Parsed::Vote) };
+                match p {
+                    Ok(p) => {
+                        got = Some((c, p));
+                        break;
+                    }
+                    Err(e) => last = e,
+                }
+            }
+            Err(e) => last = e,
+        }
+    }
+    let (c, parsed) = got.ok_or(last)?;
     let context_sha = sha256_hex(format!("{system}\n---\n{user}").as_bytes());
-    let (op, decision, say, mood, reasoning, signed_msg, field) = if deliberate {
-        let d = parse_deliberation(&c.content)?;
+    let (op, decision, say, mood, reasoning, signed_msg, field) = if let Parsed::Del(d) = parsed {
         let msg = confession_message(season_id, &account, pact.nonce);
         let dec = if d.confess { "confess" } else { "stay_quiet" };
         ("deliberate", dec, d.say, d.mood, Some(d.reasoning), if d.confess { Some(msg) } else { None }, "confession_sig")
     } else {
-        let v = parse_vote(&c.content)?;
+        let Parsed::Vote(v) = parsed else { return Err("unexpected reply kind".into()) };
         let dec = if v.sign { "sign" } else { "refuse" };
         ("sign_pact", dec, v.say, v.mood, None, if v.sign { Some(pact_msg.clone()) } else { None }, "signature")
     };

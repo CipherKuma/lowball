@@ -1,21 +1,21 @@
 {
-  "at": "2026-11-14T08:29:58.833Z",
+  "at": "2026-11-14T10:01:32.041Z",
   "passes": {
     "marlow": [
       {
         "pass": 1,
-        "tx": "GogY8dDVzvVGdCuvrBAyNvGzEuTXKAYGZZRjngvKiuGD",
-        "ms": 65685,
-        "key": "Ft7Dnnm1lyMs6PzhXUuZVi9Cp03Z7M4yvH+kCLqdX+I=",
+        "tx": "9CquLvoXxiHWMrD8un1Z4jE8ezH9cqrqGdgGZQnmbiCN",
+        "ms": 69387,
+        "key": "kUXT9zMtTy/ZxTjtehf62ruJ7x0GSoJcO879Ymu6N1o=",
         "hasApiKey": true,
         "modelListed": true,
         "allowed": "lowball-house-ck.testnet"
       },
       {
         "pass": 2,
-        "tx": "KBp4Vki6k5TUQ1aoc5ksMHiocdWb8uXXceK2EzHp4uq",
-        "ms": 55759,
-        "key": "Ft7Dnnm1lyMs6PzhXUuZVi9Cp03Z7M4yvH+kCLqdX+I=",
+        "tx": "A6zG5eBbGwb7Kd2dPhTmp6YNkcE5dfXtS1LGLtYTRa9X",
+        "ms": 64550,
+        "key": "kUXT9zMtTy/ZxTjtehf62ruJ7x0GSoJcO879Ymu6N1o=",
         "hasApiKey": true,
         "modelListed": true,
         "allowed": "lowball-house-ck.testnet"
@@ -24,38 +24,18 @@
     "odile": [
       {
         "pass": 1,
-        "tx": "7PCHANVZkiMj45AponiqQYSLQfa9v4cdrbhY9HvNMtq1",
-        "ms": 69572,
-        "key": "qbL2uNN+79h0V01MS9mzLsfJ2D8hkOvIIYRN5N5VERo=",
+        "tx": "zy2we17zZnx1V9LQj3E5PcQ5t2Gxw4dDVk8NDoE8oQu",
+        "ms": 73012,
+        "key": "nJ6dDqIEgNp3bhjFW0PF68m94v6FhZMx5xzSHbeVnDk=",
         "hasApiKey": true,
         "modelListed": true,
         "allowed": "lowball-house-ck.testnet"
       },
       {
         "pass": 2,
-        "tx": "3e7j6PcVy36wvQvVMFCN2ksX9SjkRwzhV7nYdJY4tJXh",
-        "ms": 58699,
-        "key": "qbL2uNN+79h0V01MS9mzLsfJ2D8hkOvIIYRN5N5VERo=",
-        "hasApiKey": true,
-        "modelListed": true,
-        "allowed": "lowball-house-ck.testnet"
-      }
-    ],
-    "sully": [
-      {
-        "pass": 1,
-        "tx": "EkFfN62hj3irs1y4CxtuT9DmzffrwMFq6FfHtrRrs9y3",
-        "ms": 70613,
-        "key": "Daaqb27jmGUYawY0HjJU7V0sSZ3mSytOJKzbotUgQxw=",
-        "hasApiKey": true,
-        "modelListed": true,
-        "allowed": "lowball-house-ck.testnet"
-      },
-      {
-        "pass": 2,
-        "tx": "7XhnMVP189USgzf7c911oAwSSrvJQWoSx5gqpErQ3X3W",
-        "ms": 58736,
-        "key": "Daaqb27jmGUYawY0HjJU7V0sSZ3mSytOJKzbotUgQxw=",
+        "tx": "5gZrbnsY2T71TUcXafHYLuE62JBeE3NFeAHiHwkonHZv",
+        "ms": 66368,
+        "key": "nJ6dDqIEgNp3bhjFW0PF68m94v6FhZMx5xzSHbeVnDk=",
         "hasApiKey": true,
         "modelListed": true,
         "allowed": "lowball-house-ck.testnet"
@@ -64,18 +44,38 @@
     "ines": [
       {
         "pass": 1,
-        "tx": "HnuUiZPT2w3u3SzrpYWcJQva1ccx4PQPAa1h5e24Tpa6",
-        "ms": 73611,
-        "key": "gYNqYLt8DhaPkTwcp8vhaXSZ6l2kqdvMtS52ZVb60jY=",
+        "tx": "65azgHE8ZE2CMxJdSo9zUk2xUftJS6JSSsrJMyiNjgVR",
+        "ms": 76611,
+        "key": "yQJL+tLgsPmtTf4/pAccI6KhuXDGtLc6rt++YUIUwaQ=",
         "hasApiKey": true,
         "modelListed": true,
         "allowed": "lowball-house-ck.testnet"
       },
       {
         "pass": 2,
-        "tx": "A5nAyjhYTBG8MMnDmeaiWh8hbANqar9HCBaoETgZ3oP8",
-        "ms": 62200,
-        "key": "gYNqYLt8DhaPkTwcp8vhaXSZ6l2kqdvMtS52ZVb60jY=",
+        "tx": "BuCCYhpx9JPKsyd639ky7d37FmBK2whMk5J44XLd9ozJ",
+        "ms": 70489,
+        "key": "yQJL+tLgsPmtTf4/pAccI6KhuXDGtLc6rt++YUIUwaQ=",
+        "hasApiKey": true,
+        "modelListed": true,
+        "allowed": "lowball-house-ck.testnet"
+      }
+    ],
+    "sully": [
+      {
+        "pass": 1,
+        "tx": "AFCYfb3LLWK3myFJxN92Sc8vFNNydtSKcEBcqJmpcXzC",
+        "ms": 79048,
+        "key": "Lq5Mv1u4Xf+SKqw+dGwnFPPQ+s8/GKDr7y0ib6UWk74=",
+        "hasApiKey": true,
+        "modelListed": true,
+        "allowed": "lowball-house-ck.testnet"
+      },
+      {
+        "pass": 2,
+        "tx": "6HfSEUjYMX63QFrLRFgv8FJaXLZ4FF9R2VEqqfMipbBA",
+        "ms": 69089,
+        "key": "Lq5Mv1u4Xf+SKqw+dGwnFPPQ+s8/GKDr7y0ib6UWk74=",
         "hasApiKey": true,
         "modelListed": true,
         "allowed": "lowball-house-ck.testnet"
@@ -84,18 +84,18 @@
     "deacon": [
       {
         "pass": 1,
-        "tx": "T8ViX4MzBjCGBFkv4GA1jfPq229YsgaYuEVoTM2fDce",
-        "ms": 76621,
-        "key": "RXxxiAa1CZ8FpqI2N6AtaIC+aPT6XqybTyPGcSKJUwM=",
+        "tx": "C7JPg2ubt8PmAhq5xL6FZefrbiy77n6QkvcZ1cuyG8dF",
+        "ms": 80428,
+        "key": "TQ9P2jxJ0rSflUcmRBw92eYojzXO8rbZMz3yxPjeuwA=",
         "hasApiKey": true,
         "modelListed": true,
         "allowed": "lowball-house-ck.testnet"
       },
       {
         "pass": 2,
-        "tx": "Ek4kkZbjhcfrbTd2LGknPhc3Da4SkX9n7vwBbspbhuqK",
-        "ms": 68966,
-        "key": "RXxxiAa1CZ8FpqI2N6AtaIC+aPT6XqybTyPGcSKJUwM=",
+        "tx": "DbpxLLqm2xRywsN6nQsRRWPnRMZCsXbCSAEkt6HZsmJ9",
+        "ms": 73632,
+        "key": "TQ9P2jxJ0rSflUcmRBw92eYojzXO8rbZMz3yxPjeuwA=",
         "hasApiKey": true,
         "modelListed": true,
         "allowed": "lowball-house-ck.testnet"

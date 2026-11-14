@@ -8,34 +8,34 @@
   "model": "Qwen/Qwen3.6-35B-A3B-FP8",
   "buyers": {
     "marlow": {
-      "wasmSha256": "1ec4788784a8c83f89950d11095f0dcb9d09e1db984a0d65f0a8e3211e12e6cd",
-      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/1ec4788784a8c83f89950d11095f0dcb9d09e1db984a0d65f0a8e3211e12e6cd.wasm",
-      "publicKeyB64": "Ft7Dnnm1lyMs6PzhXUuZVi9Cp03Z7M4yvH+kCLqdX+I=",
-      "publicKeyHex": "16dec39e79b597232ce8fce15d4b99562f42a74dd9ecce32bc7fa408ba9d5fe2"
+      "wasmSha256": "247786f1ee5c49efc81fcd55161de73e03a87177edb26cb6576851022fe699af",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/247786f1ee5c49efc81fcd55161de73e03a87177edb26cb6576851022fe699af.wasm",
+      "publicKeyB64": "kUXT9zMtTy/ZxTjtehf62ruJ7x0GSoJcO879Ymu6N1o=",
+      "publicKeyHex": "9145d3f7332d4f2fd9c538ed7a17fadabb89ef1d064a825c3bcefd626bba375a"
     },
     "odile": {
-      "wasmSha256": "3b01918ea869826a938ecfc2146d73eec2c1cdd628e9e242f1e2c77c68de92f5",
-      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/3b01918ea869826a938ecfc2146d73eec2c1cdd628e9e242f1e2c77c68de92f5.wasm",
-      "publicKeyB64": "qbL2uNN+79h0V01MS9mzLsfJ2D8hkOvIIYRN5N5VERo=",
-      "publicKeyHex": "a9b2f6b8d37eefd874574d4c4bd9b32ec7c9d83f2190ebc821844de4de55111a"
+      "wasmSha256": "be7272e16403c254fb660212a0a9a342efee87e9e667d28c73c21dca1396ea55",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/be7272e16403c254fb660212a0a9a342efee87e9e667d28c73c21dca1396ea55.wasm",
+      "publicKeyB64": "nJ6dDqIEgNp3bhjFW0PF68m94v6FhZMx5xzSHbeVnDk=",
+      "publicKeyHex": "9c9e9d0ea20480da776e18c55b43c5ebc9bde2fe85859331e71cd21db7959c39"
     },
     "sully": {
-      "wasmSha256": "f5c946651fb8375f09c688ee7092d9965f89ce53e2c01d79c59e4d5e51ec0ac3",
-      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/f5c946651fb8375f09c688ee7092d9965f89ce53e2c01d79c59e4d5e51ec0ac3.wasm",
-      "publicKeyB64": "Daaqb27jmGUYawY0HjJU7V0sSZ3mSytOJKzbotUgQxw=",
-      "publicKeyHex": "0da6aa6f6ee39865186b06341e3254ed5d2c499de64b2b4e24acdba2d520431c"
+      "wasmSha256": "47f8e85e820ebd0609f4012dd5b0e2f94d99caeda17061690888589dd65af441",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/47f8e85e820ebd0609f4012dd5b0e2f94d99caeda17061690888589dd65af441.wasm",
+      "publicKeyB64": "Lq5Mv1u4Xf+SKqw+dGwnFPPQ+s8/GKDr7y0ib6UWk74=",
+      "publicKeyHex": "2eae4cbf5bb85dff922aac3e746c2714f3d0facf3f18a0ebef2d226fa51693be"
     },
     "ines": {
-      "wasmSha256": "29586e40df2addc2d84feafee75f1205c6dcdbfb6d383426f0bf29941478c69a",
-      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/29586e40df2addc2d84feafee75f1205c6dcdbfb6d383426f0bf29941478c69a.wasm",
-      "publicKeyB64": "gYNqYLt8DhaPkTwcp8vhaXSZ6l2kqdvMtS52ZVb60jY=",
-      "publicKeyHex": "81836a60bb7c0e168f913c1ca7cbe1697499ea5da4a9dbccb52e766556fad236"
+      "wasmSha256": "cf43ed9965bced454714c890f1816995a6ea2fb695f416cd02b8fb394942fe42",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/cf43ed9965bced454714c890f1816995a6ea2fb695f416cd02b8fb394942fe42.wasm",
+      "publicKeyB64": "yQJL+tLgsPmtTf4/pAccI6KhuXDGtLc6rt++YUIUwaQ=",
+      "publicKeyHex": "c9024bfad2e0b0f9ad4dfe3fa4071c23a2a1b970c6b4b73aaedfbe614214c1a4"
     },
     "deacon": {
-      "wasmSha256": "12244bda100faba6b473f2d99644df89131b436116e5218f951777ff418f8623",
-      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/12244bda100faba6b473f2d99644df89131b436116e5218f951777ff418f8623.wasm",
-      "publicKeyB64": "RXxxiAa1CZ8FpqI2N6AtaIC+aPT6XqybTyPGcSKJUwM=",
-      "publicKeyHex": "457c718806b5099f05a6a23637a02d6880be68f4fa5eac9b4f23c67122895303"
+      "wasmSha256": "9393fa8b4e3cb2d55d19674083a52e43c5f74856d9ebed05f36e2d405377ff24",
+      "wasmUrl": "https://test.fastfs.io/outlayer.lowball-house-ck.testnet/outlayer.testnet/9393fa8b4e3cb2d55d19674083a52e43c5f74856d9ebed05f36e2d405377ff24.wasm",
+      "publicKeyB64": "TQ9P2jxJ0rSflUcmRBw92eYojzXO8rbZMz3yxPjeuwA=",
+      "publicKeyHex": "4d0f4fda3c49d2b49f954726441c3dd9e6288f35cef2b6d9333df2c4f8debb00"
     }
   }
 }
