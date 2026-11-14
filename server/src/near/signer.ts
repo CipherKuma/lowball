@@ -145,7 +145,8 @@ export class NearSigner {
             blockCache = null;
             continue;
           }
-          throw new AppError('TX_FAILED', `transaction rejected: ${e.name_}`);
+          // keep a short cause so a rejection can be told apart (InvalidNonce, Expired, NotEnoughBalance ...)
+          throw new AppError('TX_FAILED', `transaction rejected: ${e.name_} ${/"(\w+)":/.exec(JSON.stringify((e.raw as any)?.cause?.info ?? (e.raw as any)?.data ?? ''))?.[1] ?? ''}`.trim());
         }
         if (attempt === this.maxAttempts) throw e;
       }

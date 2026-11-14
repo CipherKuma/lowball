@@ -77,7 +77,13 @@ export async function ensureKeys(ctx: GameCtx, mode: SeasonMode): Promise<number
       const want = wantedKey(ctx, mode, id);
       if ((await chain.getBuyerKey(account)) === want) return;
       await ctx.must(`register_buyer_key ${id} (${mode})`, account, chain.registerBuyerKey(id, want));
-      if ((await chain.getBuyerKey(account)) !== want) throw new AppError('TX_FAILED', `${id}'s key did not register`);
+      // a view can come from a node that has not seen the block yet: read back a few times before calling it failed
+      let seen = await chain.getBuyerKey(account).catch(() => null);
+      for (let i = 0; i < 6 && seen !== want; i++) {
+        await ctx.sleep(1000);
+        seen = await chain.getBuyerKey(account).catch(() => null);
+      }
+      if (seen !== want) throw new AppError('TX_FAILED', `${id}'s key did not register`);
       changed++;
     }),
   );

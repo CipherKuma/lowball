@@ -96,9 +96,8 @@ The sealed `NEARAI_API_KEY` row exists for each hash (`--access whitelist:lowbal
 
 ## Switching modes
 
-TEE on: `TEE_BUYERS="1"` (committed in `server/wrangler.toml`) and the enclave keys registered (done). Fall back:
-`TEE_BUYERS="0"` and `cd server && npm run tee-register -- --server-keys` (re-registers the server-held pact keys; the
-server then also signs the confession with them).
+Superseded by the per-season mode below (`TEE_MODE`). `cd server && npm run tee-register -- --server-keys` still works as a
+manual reset of the registered keys to the server-held pact keys.
 
 ## Not done / not covered
 
@@ -108,3 +107,48 @@ server then also signs the confession with them).
 * The four non-confessing seasons' jobs were fine, but no season has run with a payout_evm address under TEE mode.
 * Latency under the integrator's three live seasons is unknown; see the table above for how far it can swing.
 * Operator trust caveat from `outlayer-spike.md` still applies (OutLayer's DAO key; the house supplies the prompts).
+
+## Per-season mode: enclave or standard (TEE_MODE, added 11:00Z after the live pool failure)
+
+`TEE_MODE = auto | on | off` in `server/wrangler.toml` (default and committed value `auto`; the old `TEE_BUYERS` 1/0 maps to on/off only
+when `TEE_MODE` is unset). Code: `server/src/tee/mode.ts`, `setup.ts` (`beginSeason`), `acts.ts`, `cartel.ts`, `leniency.ts`.
+
+* **Chosen right before create_season**, once per season, and emitted as `mode{mode:'enclave'|'standard', reason}`; the case file
+  carries `mode` (and `tee` only for enclave seasons).
+* **auto** reads the last 10 recorded OutLayer job attempts (D1 table `tee_jobs`, also created on first use): enclave only if
+  >= 80% ok AND one ok within 30 min AND p90 latency of the ok jobs < 75 s. If the newest job is older than 30 min (or there is none)
+  there is no data: ONE `probe` job (marlow) with a hard 60 s cap decides, and is recorded like any job. A failed probe makes
+  the next sessions see "unhealthy" and go standard without waiting; after 30 min a new probe tries again.
+* **Keys follow the mode**, because the contract snapshots each buyer's registered key at create_season: for each buyer
+  `get_buyer_key` is compared with the wanted key (enclave key from `outlayer/deployed.json`, or the server pact key from
+  `BUYER_KEYS_JSON`), and `register_buyer_key` is sent from the buyer's own account only where they differ, in parallel, with a
+  read-back (retried up to 6 s). The whole "choose mode, register keys, create_season" runs under a D1 lock (`global_locks`,
+  150 s TTL, released in `finally`; another session waits up to 100 s), so two sessions of different modes cannot interleave
+  registrations and snapshots (test: `rrrrrCrrrrrC`). No new accounts.
+* **standard** is the old path: the server signs pact and confession with the buyers' pact keys (confession_sig included).
+* **Degradation inside enclave mode**: a pact job that fails after its retry means that buyer abstains (the pact forms with >= 2
+  signers) and a `line{note:true}` is emitted ("Marlow Teague's enclave never answered; he stays out of the pact."); a failed
+  deliberation job means that buyer stays silent ("... stays silent."). Nothing throws; the season is never blocked on one job.
+* **Job budget**: both attempts of one job share 90 s (first attempt capped at 55 s, the retry gets the rest, skipped under 12 s),
+  and the cap is a hard deadline (a rate-limited RPC poll can no longer hold a job past it). A pact round therefore ends in at
+  most about 95 s, which is what the begin request needs to stay inside the proxy's budget.
+
+### Real runs (local Worker snapshot on port 8796, testnet, 10:41Z to 11:06Z)
+
+| Run | Result |
+|---|---|
+| `TEE_MODE=off` season 36 | `mode standard "Enclave signing is switched off."`; 5 `register_buyer_key` txs (EHsEat4N..., 9ymbp6WG..., AMuJ6W2Y..., DHd5yD5Y..., DMqSjE7e...) re-registered the server keys over the enclave keys; create_season `2vMWLhAVoiyRSr21BHeaaofgN2RMDZ1GhGH6Y1Hwc2ue`; confess marlow `Eonh7fc7N3beHDv86ZpdVFmvcrkBKV7KSNM5dXknCPzH` accepted, season Closed (`evidence/E2E-RUN.standard.md`) |
+| `TEE_MODE=auto`, empty D1, season 38 | no data, the probe job's 60 s cap expired -> `mode standard "no enclave jobs recorded yet; probe failed: The enclave job did not finish within 60 s."`; confess ines `4ZX7Qbhxj8sEmwQABNRNcaivzJ2XLMZNtowSnLqATXbX` accepted (`evidence/E2E-RUN.auto-fallback.md`) |
+| `TEE_MODE=on`, pool failing | `mode enclave`; all five pact jobs failed after their retry (the job txs were accepted, the results never came: the OutLayer log says "Execution promise failed ... Refunded"); five honest `line` notes, no pact, **the season kept going**: day opened, bids, lots settled (`evidence/session-enclave-all-failed-events.json`) |
+| `TEE_MODE=auto`, same D1 afterwards | `mode standard "The enclaves look unhealthy: 0 of the last 10 enclave jobs succeeded."` (no probe, so begin took seconds); season completed, confess sully accepted (`evidence/E2E-RUN.standard-via-auto.md`) |
+
+An enclave season with real signatures could not be re-run in this window: the OutLayer testnet executors were restarting every
+10 to 60 s (`/public/workers` uptime 1 to 51 s) and the job txs came back "Execution promise failed". The last enclave season
+that did work is the 10:03Z one above (season 32).
+
+Observed while doing this, not fixed here: the public testnet RPCs answer HTTP 429 or "provider error 30" in bursts, which also
+starves the `tx` polling for job results; a dedicated RPC (paid fastnear key in `RPC_URLS`) would help the Worker and the enclave
+path. One `INVALID_TRANSACTION` on a house tx and one `TX_MISMATCH` on a leniency verification happened during these runs
+while other sessions were using the same house key and the same free RPCs; both cleared on retry. The signer now keeps the
+rejection cause in its error message. D1 tables (`tee_jobs`, `global_locks`) are created automatically; `migrations/0003_tee.sql`
+is optional.
