@@ -1,0 +1,169 @@
+/* Walkthrough: a miniature table, a lit target, and the foreman's telegram at the bottom. */
+.tut {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px max(var(--gutter), env(safe-area-inset-right, 0px)) 200px max(var(--gutter), env(safe-area-inset-left, 0px));
+}
+.tut > .lamp-pool { position: fixed; }
+.tut-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.tut-kicker { margin: 0; font-size: 13px; letter-spacing: 0.2em; color: var(--lamp); }
+.tut-skip { font-size: 14px; }
+
+.tdesk { display: grid; gap: 18px; width: 100%; max-width: 1240px; margin: 0 auto; }
+[data-lit] { position: relative; }
+[data-lit]::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border: 2px dashed var(--lamp-hot);
+  border-radius: 4px;
+  box-shadow: 0 0 0 9999px rgba(4, 5, 6, 0.45), 0 0 30px rgba(255, 208, 138, 0.35);
+  pointer-events: none;
+  z-index: 5;
+  animation: lit 1.6s var(--ease-in-out) infinite;
+}
+@keyframes lit { 50% { border-color: rgba(255, 208, 138, 0.35); } }
+
+.tdesk-wall {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 150px));
+  justify-content: center;
+  gap: 18px;
+  padding: 6px 0;
+}
+.tdesk-poster { display: block; padding: 0; text-align: left; }
+.tdesk-poster:disabled { cursor: default; }
+.tdesk-poster .poster { padding-top: 22px; }
+.tdesk-poster .poster-name { font-size: 18px; }
+.tdesk-poster-stamp { position: absolute; left: 8px; bottom: 34px; font-size: 16px; }
+
+.tdesk-row {
+  display: grid;
+  grid-template-columns: minmax(0, 280px) minmax(0, 1fr) minmax(0, 320px);
+  gap: 22px;
+  align-items: start;
+}
+.tdesk-slate { padding: 16px 18px; }
+.tdesk-slate-day { margin: 0; font-size: 13px; letter-spacing: 0.2em; }
+.tdesk-slate-species { margin: 2px 0 0; font-size: 34px; font-weight: 900; }
+.tdesk-fish { display: block; width: 100%; max-height: 110px; object-fit: contain; margin: 6px 0; }
+.tdesk-slate-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.tdesk-slate-facts dt { font-family: var(--font-typed); font-size: 11.5px; }
+.tdesk-slate-facts dd { margin: 0; font-size: 26px; font-weight: 800; }
+.tdesk-slate-facts small { font-size: 13px; font-weight: 600; }
+
+.tdesk-bids {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-content: start;
+  padding-top: 58px;
+}
+.tdesk-bids .envelope-from {
+  position: absolute;
+  left: 6px;
+  bottom: 4px;
+  z-index: 5;
+  font-size: 10.5px;
+  color: #2b1c0c;
+}
+.tdesk-bid {
+  display: grid;
+  place-items: center;
+  width: 78%;
+  aspect-ratio: 3 / 2;
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--paper-ink);
+  background: var(--paper);
+  box-shadow: var(--shadow-paper);
+  outline: 3px solid rgba(196, 60, 49, 0.85);
+  outline-offset: 3px;
+  border-radius: 50% / 46%;
+}
+.tdesk-bids-note { grid-column: 1 / -1; margin: 6px 0 0; text-align: center; font-size: 22px; font-style: italic; color: var(--text); }
+
+.tdesk-ledger { padding: 14px 14px 16px 56px; min-height: 160px; --rule-offset: 30px; }
+.tdesk-ledger .label { margin: 0 0 6px; }
+.tdesk-ledger-rows { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.tdesk-ledger-rows li { position: relative; display: grid; grid-template-columns: 50px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; min-height: 26px; }
+.tdesk-taken { color: var(--stamp); }
+.tdesk-ev { font-size: 10px; padding: 0 5px; border-width: 2px; }
+.tdesk-payout { color: var(--verified); font-weight: 700; }
+.tdesk-empty { margin: 0; font-size: 13px; color: var(--paper-ink-2); }
+
+.tdesk-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 18px 28px; }
+.tdesk-actions > span { display: grid; justify-items: center; }
+
+/* the foreman's telegram */
+.tut-coach {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  width: min(640px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 16px 20px 16px;
+  display: grid;
+  gap: 6px;
+}
+.tut-count { margin: 0; }
+.tut-line { margin: 0; font-size: 16.5px; line-height: 1.45; }
+.tut-do { margin: 2px 0 0; font-size: 19px; font-weight: 800; color: var(--stamp); }
+.tut-hint { margin: 0; font-size: 13.5px; color: var(--stamp); }
+.tut-coach-actions { display: flex; justify-content: flex-end; gap: 12px; }
+.tut-coach-actions:empty { display: none; }
+
+/* the back room, miniature */
+.tut-room-wrap { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px 16px 190px; background: rgba(3, 4, 5, 0.72); }
+.tut-room {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  gap: 22px;
+  width: min(760px, 100%);
+  padding: 30px 26px 24px;
+  background-color: rgba(10, 13, 15, 0.92);
+  --c: rgba(239, 238, 230, 0.6);
+}
+.tut-room-osd { position: absolute; top: 8px; left: 34px; margin: 0; font-size: 12px; letter-spacing: 0.14em; color: var(--chalk-dim); display: flex; align-items: center; gap: 8px; }
+.tut-room-portrait { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 20%; filter: contrast(1.05) saturate(0.85); }
+.tut-room-body { display: grid; align-content: start; gap: 10px; min-width: 0; }
+.tut-room-name { margin: 0; font-size: 40px; font-weight: 900; }
+.tut-room-chips { display: grid; gap: 8px; }
+.tut-chip { justify-content: flex-start; text-align: left; font-family: var(--font-spoken); font-weight: 400; font-size: 16px; text-transform: none; letter-spacing: 0; }
+.tut-room-type { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.tut-room-type input {
+  min-height: 46px;
+  padding: 0 12px;
+  font: italic 17px var(--font-spoken);
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+.tut-room-type input:focus { outline: 2px solid var(--lamp-hot); outline-offset: 1px; }
+.tut-room-wait { margin: 0; font-size: 20px; font-style: italic; color: var(--muted); }
+.tut-room-q { margin: 0; font-size: 13.5px; color: var(--muted); }
+.tut-room-a { margin: 0; font-size: 25px; line-height: 1.25; }
+.tut-room-tell { margin: 0; font-size: 13.5px; color: var(--lamp); }
+
+@media (max-width: 960px) {
+  .tdesk-row { grid-template-columns: minmax(0, 1fr); }
+  .tdesk-wall { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; justify-content: flex-start; padding: 6px 10px 12px; }
+  .tdesk-poster { flex: 0 0 120px; scroll-snap-align: start; }
+  .tdesk-bids { padding-top: 46px; }
+  .tut-room { grid-template-columns: minmax(0, 1fr); }
+  .tut-room-portrait { max-height: 180px; aspect-ratio: auto; }
+}
+@media (max-width: 480px) {
+  .tdesk-bid { font-size: 22px; }
+  .tdesk-bids { gap: 6px; }
+  .tut-line { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { [data-lit]::after { animation: none; } }

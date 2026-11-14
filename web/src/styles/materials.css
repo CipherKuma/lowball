@@ -1,0 +1,201 @@
+/* Materials for direction A ("Under the lamp"). Every surface the player reads is an object on the desk.
+   Compose these; don't invent new surface styles per screen. See web/DESIGN.md. */
+
+/* ---------- the desk ---------- */
+.desk {
+  position: relative;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 34%, rgba(242, 183, 92, 0.2), transparent 62%),
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.75)),
+    var(--woodgrain),
+    linear-gradient(180deg, var(--wood-2), var(--wood) 55%, #120b06);
+  background-size: auto, auto, 600px 200px, auto;
+}
+.lamp-pool {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 46% 38% at var(--lx, 50%) var(--ly, 30%), rgba(255, 208, 138, 0.16), transparent 70%);
+  mix-blend-mode: screen;
+  animation: lamp-flicker 7s steps(1) infinite;
+}
+@keyframes lamp-flicker {
+  0%, 100% { opacity: 1; }
+  41% { opacity: 0.86; }
+  42% { opacity: 1; }
+  73% { opacity: 0.93; }
+  74% { opacity: 1; }
+}
+
+/* ---------- paper ---------- */
+.paper {
+  position: relative;
+  color: var(--paper-ink);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(90, 64, 30, 0.22)),
+    var(--fibres),
+    var(--noise);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-paper);
+}
+.paper--aged { background-color: var(--paper-2); }
+.paper--telegram { background-color: var(--telegram); }
+.paper--manila { background-color: var(--manila); }
+.paper--kraft { background-color: var(--kraft); color: #20150a; }
+.paper--ruled {
+  background-image:
+    linear-gradient(90deg, transparent 46px, rgba(163, 49, 42, 0.45) 46px, rgba(163, 49, 42, 0.45) 47px, transparent 47px),
+    repeating-linear-gradient(180deg, transparent 0 25px, rgba(43, 58, 85, 0.22) 25px 26px),
+    radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(90, 64, 30, 0.22)),
+    var(--fibres),
+    var(--noise);
+  background-position: 0 0, 0 var(--rule-offset, 34px), 0 0, 0 0, 0 0;
+}
+.paper :where(h1, h2, h3, h4) { color: var(--paper-ink); }
+.paper :where(a) { color: var(--carbon); text-decoration: underline; text-underline-offset: 2px; }
+
+/* a slight hand-placed tilt; set --tilt per element */
+.tilt { transform: rotate(var(--tilt, -0.6deg)); }
+
+/* brass tack */
+.pin::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass) 45%, #5a4320 100%);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.55);
+  z-index: 2;
+}
+/* tape strip across a corner */
+.tape::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  right: 18px;
+  width: 72px;
+  height: 22px;
+  transform: rotate(4deg);
+  background: rgba(233, 222, 190, 0.55);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(0.5px);
+}
+
+/* ---------- type helpers ---------- */
+.sign { font-family: var(--font-sign); font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; line-height: 0.92; }
+.stencil { font-family: var(--font-stencil); font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
+.typed { font-family: var(--font-typed); letter-spacing: 0.01em; }
+.spoken { font-family: var(--font-spoken); }
+.data { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.label {
+  font-family: var(--font-sign);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.paper .label { color: var(--paper-ink-2); }
+
+/* ---------- controls ---------- */
+/* Primary: a lamp-lit brass plaque. One per screen. */
+.plaque {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 22px 11px;
+  font-family: var(--font-sign);
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1c1106;
+  background: linear-gradient(180deg, var(--lamp-hot), var(--lamp) 46%, var(--lamp-deep));
+  border-radius: var(--r-sm);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 210, 0.75),
+    inset 0 -2px 0 rgba(90, 50, 10, 0.45),
+    0 0 0 1px rgba(60, 35, 8, 0.65),
+    0 10px 24px -8px rgba(242, 183, 92, 0.55),
+    0 4px 8px rgba(0, 0, 0, 0.5);
+  transition: transform 140ms var(--ease-out), filter 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
+}
+.plaque:hover:not(:disabled) { filter: brightness(1.07); }
+.plaque:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
+.plaque:disabled {
+  cursor: not-allowed;
+  color: rgba(239, 231, 212, 0.55);
+  background: linear-gradient(180deg, #3b3226, #2a231a);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.plaque--stamp {
+  color: var(--paper);
+  background: linear-gradient(180deg, var(--stamp-hot), var(--stamp) 55%, #7d231d);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 200, 190, 0.45),
+    0 0 0 1px rgba(40, 8, 6, 0.7),
+    0 10px 24px -8px rgba(196, 60, 49, 0.55),
+    0 4px 8px rgba(0, 0, 0, 0.5);
+}
+/* the line under a control that says why it is locked or what it costs */
+.plaque-note {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-typed);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Secondary: a paper ticket stub with notches. */
+.ticket {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 20px 9px;
+  font-family: var(--font-sign);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+  background-color: var(--paper);
+  background-image: var(--fibres), var(--noise);
+  -webkit-mask: radial-gradient(circle 7px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 7px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle 7px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 7px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+  transition: transform 140ms var(--ease-out), background-color 140ms;
+}
+.ticket:hover:not(:disabled) { background-color: #f4ecd6; }
+.ticket:active:not(:disabled) { transform: translateY(1px); }
+.ticket:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Tertiary: a typed link. */
+.typed-link {
+  font-family: var(--font-typed);
+  font-size: 14px;
+  color: var(--text);
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--muted);
+}
+.typed-link:hover { color: var(--lamp-hot); text-decoration-color: currentColor; }
+.paper .typed-link { color: var(--carbon); }
+
+:where(.plaque, .ticket, .typed-link, .poster-hit):focus-visible {
+  outline: 2px solid var(--lamp-hot);
+  outline-offset: 4px;
+}
+

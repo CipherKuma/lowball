@@ -1,33 +1,97 @@
+/* Direction A, "Under the lamp": the game is played on a wet auction desk at Pier Nine, 4 a.m.
+   Everything the player touches is a physical object under one lamp. Single dark world by design. */
 :root {
-  --ink: #0b1418;
-  --ink-2: #0f1d21;
-  --harbour: #14302c;
-  --harbour-2: #1b3d38;
-  --amber: #e8a33d;
-  --amber-hot: #ffc266;
-  --amber-glow: rgba(232, 163, 61, 0.22);
-  --fog: #c8d1c9;
-  --rust: #8a2b22;
-  --rust-hot: #b8392c;
-  --paper: #e6dcc4;
-  --paper-ink: #2a2116;
-  --text: #ece6d6;
-  --muted: #8d9a93;
-  --line: rgba(200, 209, 201, 0.14);
-  --ok: #7fb59a;
+  /* night and wood */
+  --night: #06080a;
+  --ink: #0b1013;
+  --ink-2: #11181b;
+  --wood: #24180f;
+  --wood-2: #3a2717;
+  --wood-hi: #5a3d22;
 
-  --font-display: 'Fraunces', 'Times New Roman', serif;
-  --font-ui: 'Inter Tight', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  /* the lamp */
+  --lamp: #f2b75c;
+  --lamp-hot: #ffd08a;
+  --lamp-deep: #c47f2a;
+  --glow: rgba(242, 183, 92, 0.24);
 
+  /* papers */
+  --paper: #ebe1c8;
+  --paper-2: #d9caa5;
+  --paper-edge: #b9a57c;
+  --paper-ink: #1f170e;
+  --paper-ink-2: #5b4a33;
+  --manila: #d4b673;
+  --manila-2: #b8964f;
+  --kraft: #b48a57;
+  --kraft-2: #8f6a3e;
+  --telegram: #efe3b0;
+
+  /* slate and chalk */
+  --slate: #1a2023;
+  --slate-2: #252d31;
+  --chalk: #efeee6;
+  --chalk-dim: rgba(239, 238, 230, 0.55);
+
+  /* ink colours used ON paper */
+  --stamp: #a3312a;
+  --stamp-hot: #c43c31;
+  --verified: #2f6b4a;
+  --carbon: #2b3a55;
+
+  /* harbour */
+  --sea: #15302c;
+  --sea-2: #21493f;
+  --brass: #b8914d;
+  --brass-hi: #e0bd78;
+
+  /* text on the dark */
+  --text: #efe7d4;
+  --muted: #a39c88;
+  --faint: rgba(239, 231, 212, 0.38);
+  --line: rgba(239, 231, 212, 0.14);
+  --ok: #8fc2a0;
+  --danger: #e0705f;
+
+  /* type roles */
+  --font-sign: 'Big Shoulders Display', 'Arial Narrow', 'Helvetica Neue', sans-serif; /* signage, headings, buttons */
+  --font-stencil: 'Big Shoulders Stencil Display', 'Big Shoulders Display', 'Arial Narrow', sans-serif; /* crates, day markers */
+  --font-typed: 'Special Elite', 'Courier Prime', 'Courier New', monospace; /* typed documents, telegrams, stamps */
+  --font-spoken: 'IM Fell English', 'Iowan Old Style', Georgia, serif; /* what people say */
+  --font-ui: 'Libre Franklin', system-ui, -apple-system, sans-serif; /* help text, body */
+  --font-data: 'Courier Prime', 'Courier New', ui-monospace, monospace; /* hashes, numbers, accounts */
+
+  /* legacy names, kept so untouched screens still render during the redesign */
+  --amber: var(--lamp);
+  --amber-hot: var(--lamp-hot);
+  --amber-glow: var(--glow);
+  --fog: #c9cfc6;
+  --rust: var(--stamp);
+  --rust-hot: var(--stamp-hot);
+  --harbour: var(--sea);
+  --harbour-2: var(--sea-2);
+  --font-display: var(--font-spoken);
+  --font-mono: var(--font-data);
+
+  /* motion */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-drop: cubic-bezier(0.2, 0.9, 0.25, 1.15); /* papers landing on the desk */
 
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 16px;
-  --shadow-deep: 0 30px 80px -20px rgba(0, 0, 0, 0.85);
+  /* shape and depth: paper is nearly square-cornered; nothing is pill-shaped */
+  --r-sm: 2px;
+  --r-md: 3px;
+  --r-lg: 4px;
+  --shadow-paper: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 10px 22px -8px rgba(0, 0, 0, 0.75), 0 2px 4px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 22px 40px -12px rgba(0, 0, 0, 0.85), 0 4px 10px rgba(0, 0, 0, 0.5);
+  --shadow-deep: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
   --gutter: clamp(16px, 2.4vw, 32px);
+
+  /* textures (inline SVG noise; no network) */
+  --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.25  0 0 0 0 0.19  0 0 0 0 0.1  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --fibres: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='f'><feTurbulence type='turbulence' baseFrequency='.012 .6' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.22  0 0 0 0 0.12  0 0 0 0.16 0'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
+  --woodgrain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='200'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='.004 .09' numOctaves='4' seed='9'/><feColorMatrix values='0 0 0 0 0.22  0 0 0 0 0.13  0 0 0 0 0.06  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23w)'/></svg>");
+
   color-scheme: dark;
 }

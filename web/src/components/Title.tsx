@@ -1,81 +1,77 @@
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
+import type { BuyerId } from '../../../shared/api';
 
-const RULES = [
-  ['Five buyers. One price.', 'Every morning they seal their bids. Every morning the number is the same, and it is low.'],
-  ['They signed a pact.', 'Each buyer put up a bond and signed a secret agreement with their own key.'],
-  ['Make one talk.', 'Take their rigged price long enough to build a case, then offer leniency on NEAR. The first to hand over the signed pact walks free; the rest lose their bonds to you.'],
-] as const;
+const RING: { id: BuyerId; name: string; role: string; tilt: number }[] = [
+  { id: 'marlow', name: 'Marlow Teague', role: 'Harbour boss', tilt: -3 },
+  { id: 'odile', name: 'Odile Fenn', role: 'Cannery books', tilt: 2.5 },
+  { id: 'sully', name: 'Sully Brack', role: 'Dock buyer', tilt: -1.5 },
+  { id: 'ines', name: 'Ines Varga', role: 'Restaurateur', tilt: 3 },
+  { id: 'deacon', name: 'The Deacon', role: 'Middleman', tilt: -2.5 },
+];
 
-const ease = [0.23, 1, 0.32, 1] as const;
+const drop = (i: number, still: boolean | null, rot = 0) =>
+  still
+    ? { style: { rotate: rot } }
+    : {
+        initial: { opacity: 0, y: -18, rotate: -4 },
+        animate: { opacity: 1, y: 0, rotate: rot },
+        transition: { delay: 0.15 + i * 0.08, duration: 0.55, ease: [0.2, 0.9, 0.25, 1.15] as const },
+      };
 
-export function Title({ onStart, starting }: { onStart: () => void; starting: boolean }) {
+/** Landing: the noticeboard on the pier shed wall. One job: get the player to start. */
+export function Title({ onStart, onHowTo, starting, tutorialDone }: { onStart: () => void; onHowTo: () => void; starting: boolean; tutorialDone: boolean }) {
+  const still = useReducedMotion();
   return (
-    <main className="title">
-      <div className="title-copy">
-        <motion.p
-          className="title-kicker"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease, delay: 0.2 }}
-        >
-          Pier Nine · 4 a.m.
-        </motion.p>
-        <motion.h1
-          className="display"
-          initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ duration: 0.9, ease, delay: 0.3 }}
-        >
-          Lowball
-        </motion.h1>
-        <motion.p
-          className="title-lede"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease, delay: 0.55 }}
-        >
-          Five AI fish buyers are rigging your auction. Break the ring by making one of them confess.
-        </motion.p>
-        <ol className="rules">
-          {RULES.map(([h, p], i) => (
-            <motion.li
-              key={h}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.55, ease, delay: 0.75 + i * 0.12 }}
-            >
-              <span className="mono">0{i + 1}</span>
-              <div>
-                <strong>{h}</strong>
-                <p>{p}</p>
-              </div>
-            </motion.li>
-          ))}
+    <main className="landing">
+      <div className="lamp-pool" style={{ ['--lx' as string]: '34%', ['--ly' as string]: '30%' }} aria-hidden />
+
+      <motion.section className="landing-bill paper paper--aged pin" {...drop(0, still, -1)} aria-labelledby="landing-title">
+        <p className="stencil landing-kicker">Pier Nine · 4 a.m. fish auction</p>
+        <h1 id="landing-title" className="sign landing-word">Lowball</h1>
+        <p className="spoken landing-lede">Five buyers. One price. Make one of them talk.</p>
+        <ol className="landing-rules typed">
+          <li><span>1</span>Sell your catch. Their sealed bids keep coming back identical.</li>
+          <li><span>2</span>Lean on a buyer in the back room. Out loud, or typed.</li>
+          <li><span>3</span>Offer leniency on NEAR. The first to confess walks free; the rest lose their bonds to you.</li>
         </ol>
-        <motion.div
-          className="title-cta"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease, delay: 1.15 }}
-        >
-          <button className="btn btn-amber btn-lg" onClick={onStart} disabled={starting}>
-            {starting ? 'Rowing in…' : 'Take your catch to market'}
+        <div className="landing-cta">
+          <button className="plaque" onClick={onStart} disabled={starting}>
+            {starting ? 'Rowing in…' : tutorialDone ? 'Start the season' : 'Start: learn the ropes'}
           </button>
-          <span className="title-note">Sound on. A season takes about five minutes.</span>
-        </motion.div>
-        <motion.ul
-          className="title-stack"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 1.4 }}
-          aria-label="Built with"
-        >
-          <li>NEAR testnet contract</li>
-          <li>NEAR AI Cloud buyers</li>
-          <li>Signed model receipts</li>
-          <li>ElevenLabs voices</li>
-        </motion.ul>
-      </div>
+          {tutorialDone ? (
+            <button className="typed-link" onClick={onHowTo}>Replay the walkthrough</button>
+          ) : (
+            <span className="plaque-note">A one-minute walkthrough first. Skip it any time.</span>
+          )}
+        </div>
+      </motion.section>
+
+      <section className="landing-wall" aria-label="The buyers">
+        {RING.map((b, i) => (
+          <motion.figure
+            key={b.id}
+            className="poster pin landing-poster"
+            {...drop(i + 1, still, b.tilt)}
+          >
+            <p className="stencil landing-poster-head">Buyer</p>
+            <img className="poster-photo" src={`/art/${b.id}_calm.webp`} alt="" />
+            <figcaption>
+              <p className="poster-name">{b.name}</p>
+              <p className="poster-role">{b.role}</p>
+            </figcaption>
+          </motion.figure>
+        ))}
+        <motion.p className="landing-telegram" {...drop(6, still, 1.2)}>
+          <span className="telegram-strip">Ring holds at sixty stop sign it or starve stop</span>
+        </motion.p>
+      </section>
+
+      <footer className="landing-foot typed">
+        <span>Buyers think on NEAR AI Cloud</span>
+        <span>Every move is a NEAR testnet transaction</span>
+        <span>Voices by ElevenLabs</span>
+        <span>Sound on · about five minutes</span>
+      </footer>
     </main>
   );
 }

@@ -1,0 +1,185 @@
+/* Objects on the desk for direction A: stamps, slate, envelopes, posters, telegrams, camera frame. See web/DESIGN.md. */
+
+/* ---------- stamps ---------- */
+.stamp {
+  display: inline-block;
+  padding: 4px 10px 3px;
+  font-family: var(--font-typed);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--stamp);
+  border: 3px solid currentColor;
+  border-radius: 3px;
+  transform: rotate(var(--angle, -7deg));
+  mix-blend-mode: multiply;
+  opacity: 0.88;
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='60'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.4 1.75'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='60'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.4 1.75'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+}
+.stamp--verified { color: var(--verified); }
+.stamp--carbon { color: var(--carbon); }
+.stamp--on-dark { mix-blend-mode: normal; color: var(--stamp-hot); opacity: 0.95; }
+
+/* ---------- the slate (lot board) ---------- */
+.slate {
+  position: relative;
+  color: var(--chalk);
+  background:
+    radial-gradient(ellipse at 40% 30%, rgba(255, 255, 255, 0.05), transparent 60%),
+    var(--noise),
+    linear-gradient(180deg, var(--slate-2), var(--slate));
+  border: 10px solid var(--wood-2);
+  border-image: linear-gradient(180deg, var(--wood-hi), var(--wood-2) 40%, var(--wood)) 1;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6), var(--shadow-lift);
+}
+.chalk {
+  color: var(--chalk);
+  filter: url(#chalk);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.35);
+}
+.chalk-dim { color: var(--chalk-dim); }
+
+/* ---------- envelopes ---------- */
+.envelope {
+  position: relative;
+  aspect-ratio: 7 / 4.4;
+  background-color: var(--kraft);
+  background-image: var(--fibres), var(--noise), linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.12));
+  border-radius: 2px;
+  box-shadow: var(--shadow-paper);
+  perspective: 600px;
+  color: #20150a;
+}
+.envelope-flap {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 58%;
+  transform-origin: 50% 0;
+  background-color: var(--kraft-2);
+  background-image: var(--fibres), var(--noise);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+  z-index: 3;
+  transition: transform 520ms var(--ease-out);
+}
+.envelope[data-open] .envelope-flap { transform: rotateX(180deg); z-index: 0; }
+.envelope-seal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  margin: -16px 0 0 -13px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d0554a, var(--stamp) 55%, #5e1712);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+  z-index: 4;
+  transition: opacity 200ms;
+}
+.envelope[data-open] .envelope-seal { opacity: 0; }
+.envelope-card {
+  position: absolute;
+  inset: 12% 8% 10%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  transform: translateY(0);
+  transition: transform 560ms var(--ease-drop) 180ms, z-index 0s 180ms;
+}
+.envelope-card { z-index: 1; }
+/* the front pocket hides the card until the flap lifts; the card then rises above it */
+.envelope::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background-color: var(--kraft);
+  background-image: var(--fibres), var(--noise), linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.14));
+  clip-path: polygon(0 0, 50% 52%, 100% 0, 100% 100%, 0 100%);
+  border-radius: 2px;
+}
+.envelope[data-open] .envelope-card { transform: translateY(-58%); z-index: 3; }
+.envelope[data-open] .envelope-flap { z-index: 0; }
+
+/* ---------- wanted posters (the buyers) ---------- */
+.poster {
+  position: relative;
+  padding: 26px 10px 12px;
+  color: var(--paper-ink);
+  background-color: var(--paper-2);
+  background-image:
+    radial-gradient(ellipse at 50% 40%, transparent 50%, rgba(80, 55, 25, 0.35)),
+    var(--fibres),
+    var(--noise);
+  box-shadow: var(--shadow-paper);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
+}
+.poster-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: 50% 22%;
+  filter: grayscale(0.45) sepia(0.4) contrast(1.12) brightness(0.92);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.poster-name {
+  margin: 8px 0 0;
+  font-family: var(--font-sign);
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 0.95;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+.poster-role { margin: 3px 0 0; font-family: var(--font-typed); font-size: 12px; color: var(--paper-ink-2); }
+.poster-hit { cursor: pointer; }
+.poster-hit:hover .poster,
+.poster-hit:focus-visible .poster { transform: rotate(0deg) translateY(-4px); box-shadow: var(--shadow-lift); }
+
+/* ---------- telegram strip ---------- */
+.telegram-strip {
+  display: inline;
+  padding: 2px 6px;
+  font-family: var(--font-typed);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #241a0c;
+  background: #f3e7b4;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- surveillance frame (back room, wiretap only) ---------- */
+.camera {
+  position: relative;
+  --c: rgba(239, 238, 230, 0.75);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 26px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) top left / 2px 26px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 26px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 2px 26px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 26px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 2px 26px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 26px 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 2px 26px no-repeat;
+}
+.rec-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e2483c;
+  box-shadow: 0 0 8px #e2483c;
+  animation: rec 1.2s steps(1) infinite;
+}
+@keyframes rec { 50% { opacity: 0.2; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lamp-pool, .rec-dot { animation: none; }
+  .envelope-flap, .envelope-card, .poster, .plaque, .ticket { transition: none; }
+}

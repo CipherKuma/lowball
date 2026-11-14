@@ -28,7 +28,10 @@ function friendly(e: unknown): string {
       case 'NETWORK':
         return e.message;
       default:
-        return e.message;
+        // A bare status (502, 503, ...) means the harbour office itself is down, not the wallet.
+        return /^Request failed \(\d+\)$/.test(e.message)
+          ? 'The harbour office is not answering right now. Try again in a moment, or play with a dock pass.'
+          : e.message;
     }
   }
   if (looksRejected(e)) return 'You closed the wallet before signing. Nothing was sent. Try again when you are ready.';
