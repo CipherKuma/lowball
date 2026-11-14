@@ -12,13 +12,16 @@ are on the record, lean on a buyer in the back room, then offer **leniency**. Th
 the signed pact to our NEAR contract walks free. Every other signer loses their bond to you. A second
 confession, a forged one, or a replayed one is refused on-chain.
 
-- **Play:** https://play.lowball-game.pages.dev (NEAR testnet, no wallet needed) · **Demo video:** _X post linked at submission_
+- **Play:** https://play.lowball-game.pages.dev · **Connect your NEAR wallet** (NEAR Connect: Meteor web or extension, Intear, Nightly, Ledger; NEAR testnet). Judging without a wallet? Use **Judge demo: no wallet** on the landing page. · **Demo video:** _X post linked at submission_
 - **Contract:** [`lowball-ck.testnet`](https://testnet.nearblocks.io/address/lowball-ck.testnet) · **Payout desk:** [`desk.lowball-ck.testnet`](https://testnet.nearblocks.io/address/desk.lowball-ck.testnet)
 - **Tracks:** Games With Real Economies · Privacy & Private AI · Agent Economy
 
 ## A season
 
-1. **Before dawn.** Your fisher account opens on NEAR testnet with a key generated in your browser. The
+1. **Before dawn.** You sign in with your own NEAR wallet through NEAR Connect: a free NEP-413 message
+   bound to a one-time server nonce (replays are refused), checked against a full-access key on your
+   account. Your account becomes the season's player. (The judge demo instead opens a throwaway testnet
+   account for the browser, labelled as such everywhere.) The
    five buyers lock bonds in the contract and talk in private; each decides whether to sign the pact
    (`every member bids exactly N marks`) with its own ed25519 key. You only hear that talk at the end.
 2. **The market.** Each day's catch is minted as a NEP-245 `CATCH` token in escrow. Its board price is
@@ -28,7 +31,9 @@ confession, a forged one, or a replayed one is refused on-chain.
 3. **The back room.** Once a day you can corner one buyer and **speak** to them. Your voice is
    transcribed by ElevenLabs Scribe v3, the buyer answers through the same TEE model, in their own
    ElevenLabs v4 voice. What you said, and how they took it, stays with them.
-4. **Leniency.** With two days of identical bids on the record, you sign `offer_leniency` yourself.
+4. **Leniency.** With two days of identical bids on the record, you sign `offer_leniency` yourself, in
+   your wallet. Slashed bonds are paid to your own NEAR account, or, if you connected an Ethereum wallet
+   (EIP-6963), to that address on Sepolia through NEAR Chain Signatures.
    The contract opens a **NEP-519 yield** that closes by itself after 200 blocks. The buyers deliberate
    on real numbers: their bond, their share of the ring's pool, the evidence, what you said to them.
    Whoever confesses first gets immunity; the contract verifies every pact signature and the
@@ -49,7 +54,10 @@ confession, a forged one, or a replayed one is refused on-chain.
 | **Chain Signatures** | Optional: slashed bonds pay out in Sepolia ETH from an address NEAR's MPC network derives and signs for | `contracts/payout-desk/` |
 | **NEAR AI Cloud** | Every buyer decision runs on Qwen3.6-35B in NEAR AI's own-fleet **Confidential TEE**; each response signature is checked against a signer proven by a live Intel TDX quote + NVIDIA GPU attestation | `server/src/llm/`, `server/evidence/` |
 | **OutLayer** (Intel TDX) | **Enclave mode:** each buyer's pact key is derived inside its own enclave binary; the pact signature and the confession signature are made there, and the attestation verifies (first accepted enclave confession: season 32, `research/outlayer-integration.md`). Each season picks enclave or standard mode from OutLayer's live health, records it on-chain through the contract's key snapshot, and shows it in the top bar | `outlayer/`, `server/src/tee/` |
-| **Function-call keys** | Your browser key can call only `offer_leniency` on this contract | `web/src/lib/wallet.ts` |
+| **NEAR Connect** (`@hot-labs/near-connect`) | Your own wallet (Meteor web or extension, Intear, Nightly, Ledger on testnet) signs you in and signs `offer_leniency`; slashed bonds are paid to your account | `web/src/lib/near-connect.ts`, `web/src/lib/identity.ts` |
+| **NEP-413 sign-in** | Server-issued 32-byte nonce, fixed recipient and message, single use (replays refused), key must be a full-access key on your account | `server/src/auth/` |
+| **EIP-6963 / EIP-1193** | Optional: your own Ethereum wallet's address receives the Chain Signatures payout on Sepolia | `web/src/lib/evm.ts` |
+| **Function-call key (judge demo only)** | The no-wallet judge demo opens a throwaway testnet account whose browser key can call only `offer_leniency` | `web/src/lib/wallet.ts` |
 | **ElevenLabs** | v4 voices for every buyer and the narrator, v4 Turbo for live lines, Scribe v3 (keyterms) for your interrogation, Text to Dialogue for the wiretap, SFX v3, Music v2.5 | `audio/`, `server/src/tts.ts`, `server/src/features/` |
 | **NOAA Fisheries FOSS** | Real ex-vessel $/lb sets each lot's board price | `server/src/features/noaa.ts`, `server/src/generated/prices.json` |
 | **Open-Meteo Marine** | Live wave height at New Bedford scales the catch | `server/src/features/` |
@@ -58,7 +66,8 @@ confession, a forged one, or a replayed one is refused on-chain.
 
 - **Contract:** 87 tests (unit + near-workspaces sandbox, including a real confession race) — `contract/TEST-RESULTS.md`.
 - **On the deployed contract:** 18 of 18 adversarial refusals as expected — `server/sim/ADVERSARIAL-REAL.md`; the forgery drill's real refused transactions — `server/FEATURES-RUN.md`.
-- **Server:** 308 tests — `server/TEST-RESULTS.md`.
+- **Server:** 338 tests (including NEP-413 sign-in: wrong recipient, tampered signature, replayed and expired nonce, function-call key refused; wallet seasons; wallet leniency without a tx hash) — `server/TEST-RESULTS.md`.
+- **Wallets:** the NEAR Connect selector opens on the deployed site and lists Meteor, Intear, Ledger, Nightly and NEAR CLI on testnet. A season played end to end with a real Meteor wallet is pending; its transactions will be listed here.
 - **Live on the deployed game (14 Nov, season 46):** a buyer confessed, four bonds were slashed and paid to the player, a second
   confession was refused, all five pact signatures re-checked in the browser, and the forgery drill's three attacks were refused.
 - **Behaviour (simulation, real NEAR AI buyers on a rule-faithful mock chain):** without leniency the ring
@@ -85,6 +94,8 @@ confession, a forged one, or a replayed one is refused on-chain.
   access the shared master secret outside an enclave.
 - Simulation numbers come from a mock chain that enforces the contract's rules; live seasons are on testnet.
 - Testnet only: bonds and payouts are testnet NEAR and Sepolia ETH.
+- HOT and MyNearWallet don't appear in NEAR Connect on testnet (their manifests don't mark testnet support).
+  NEAR Auth (FastAuth) isn't offered: its shared testnet login accepts only a localhost callback.
 
 ## License
 
