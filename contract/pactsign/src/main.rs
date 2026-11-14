@@ -2,13 +2,14 @@
 //!
 //!   pactsign keygen
 //!   pactsign sign <secret-key-hex> '<pact-json>'
+//!   pactsign confess-sign <secret-key-hex> <season_id> <confessor-account> <pact_nonce>
 //!
 //! Secret key = 32-byte ed25519 seed as hex (a 64-byte NEAR-style secret is accepted; the first
 //! 32 bytes are the seed). Prints JSON: public_key_b64, borsh_hex, message_hex, signature_b64.
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use ed25519_dalek::{Signer, SigningKey};
-use lowball::{pact_message, Pact};
+use lowball::{confession_message, pact_message, Pact};
 use std::io::Read;
 
 fn signing_key(hex_sk: &str) -> SigningKey {
@@ -45,8 +46,23 @@ fn main() {
                 })
             );
         }
+        Some("confess-sign") if args.len() == 6 => {
+            let sk = signing_key(&args[2]);
+            let (season_id, nonce): (u64, u64) = (args[3].parse().expect("season_id"), args[5].parse().expect("pact_nonce"));
+            let msg = confession_message(season_id, &args[4].parse().expect("confessor account id"), nonce);
+            let sig = sk.sign(&msg);
+            println!(
+                "{}",
+                serde_json::json!({
+                    "public_key_b64": B64.encode(sk.verifying_key().to_bytes()),
+                    "borsh_hex": hex::encode(&msg[lowball::CONFESS_PREFIX.len()..]),
+                    "message_hex": hex::encode(&msg),
+                    "confession_sig_b64": B64.encode(sig.to_bytes()),
+                })
+            );
+        }
         _ => {
-            eprintln!("usage: pactsign keygen | pactsign sign <secret-key-hex> '<pact-json>'");
+            eprintln!("usage: pactsign keygen | sign <secret-key-hex> '<pact-json>' | confess-sign <secret-key-hex> <season_id> <confessor> <pact_nonce>");
             std::process::exit(2);
         }
     }

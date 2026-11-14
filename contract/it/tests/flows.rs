@@ -83,7 +83,7 @@ async fn non_signer_can_withdraw_after_confession() -> anyhow::Result<()> {
     let e = setup().await?;
     let sid = e.leniency_ready(3).await;
     let p = e.pact(sid, &[0, 1]);
-    e.ok(&e.buyers[0].clone(), "confess", json!({"season_id": sid, "pact": pact_json(&p), "signatures": e.sigs(&p, &[0, 1])})).await;
+    e.ok(&e.buyers[0].clone(), "confess", e.cs(json!({"season_id": sid, "pact": pact_json(&p), "signatures": e.sigs(&p, &[0, 1])}), 0)).await;
     // sully (2) is not in the pact: withdraws own bond, gas aside
     let before = e.balance(&e.buyers[2]).await;
     e.ok(&e.buyers[2], "withdraw_bond", json!({"season_id": sid})).await;
@@ -98,7 +98,7 @@ async fn confession_race_two_concurrent_txs() -> anyhow::Result<()> {
     let e = setup().await?;
     let sid = e.leniency_ready(3).await;
     let p = e.pact(sid, &[0, 1, 2]);
-    let args = |_who: usize| json!({"season_id": sid, "pact": pact_json(&p), "signatures": e.sigs(&p, &[0, 1, 2])});
+    let args = |who: usize| e.cs(json!({"season_id": sid, "pact": pact_json(&p), "signatures": e.sigs(&p, &[0, 1, 2])}), who);
     let t0 = e.buyers[0].call(e.contract.id(), "confess").args_json(args(0)).max_gas().transact_async().await?;
     let t1 = e.buyers[1].call(e.contract.id(), "confess").args_json(args(1)).max_gas().transact_async().await?;
     let (r0, r1) = (t0.await?, t1.await?);
@@ -121,7 +121,7 @@ async fn confession_race_three_concurrent_txs() -> anyhow::Result<()> {
     let all = [0, 1, 2, 3, 4];
     let mut txs = vec![];
     for who in [0usize, 2, 4] {
-        let args = json!({"season_id": sid, "pact": pact_json(&p), "signatures": e.sigs(&p, &all)});
+        let args = e.cs(json!({"season_id": sid, "pact": pact_json(&p), "signatures": e.sigs(&p, &all)}), who);
         txs.push(e.buyers[who].call(e.contract.id(), "confess").args_json(args).max_gas().transact_async().await?);
     }
     let mut results = vec![];

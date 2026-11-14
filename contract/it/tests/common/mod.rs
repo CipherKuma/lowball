@@ -38,6 +38,27 @@ pub fn pact_message(p: &PactB) -> Vec<u8> {
     m
 }
 
+pub const CONFESS_PREFIX: &[u8] = b"LOWBALL-CONFESS-v1:";
+
+/// Borsh layout identical to the contract's `ConfessionMsg`.
+#[derive(BorshSerialize, Clone)]
+pub struct ConfB {
+    pub season_id: u64,
+    pub confessor: String,
+    pub pact_nonce: u64,
+}
+
+pub fn confession_message(season_id: u64, confessor: &str, pact_nonce: u64) -> Vec<u8> {
+    let mut m = CONFESS_PREFIX.to_vec();
+    m.extend(borsh::to_vec(&ConfB { season_id, confessor: confessor.to_string(), pact_nonce }).unwrap());
+    m
+}
+
+/// base64 ed25519 signature a buyer's pact key makes to authorise its own confession.
+pub fn confession_sig(key: &SigningKey, season_id: u64, confessor: &str, pact_nonce: u64) -> String {
+    B64.encode(key.sign(&confession_message(season_id, confessor, pact_nonce)).to_bytes())
+}
+
 pub fn pact_json(p: &PactB) -> Value {
     json!({"season_id": p.season_id, "cap": p.cap, "members": p.members, "nonce": p.nonce.to_string()})
 }
@@ -195,7 +216,7 @@ impl Env {
     }
 
     pub async fn confess(&self, sid: u64, who: usize, p: &PactB, signers: &[usize]) -> ExecutionFinalResult {
-        self.call(&self.buyers[who], "confess", json!({"season_id": sid, "pact": pact_json(p), "signatures": self.sigs(p, signers)})).await
+        self.call(&self.buyers[who], "confess", self.cs(json!({"season_id": sid, "pact": pact_json(p), "signatures": self.sigs(p, signers)}), who)).await
     }
 
     /// Season at day 1 with identical low bids settled and the leniency window open.
@@ -284,5 +305,17 @@ impl Env {
     pub async fn offer_err(&self, who: &Account, sid: u64) -> Option<String> {
         let r = who.call(self.contract.id(), "offer_leniency").args_json(json!({"season_id": sid})).max_gas().transact().await.unwrap();
         err_code(&r)
+    }
+}
+
+impl Env {
+    /// Add the caller's `confession_sig` (signed with buyer `who`'s key over season_id, its own
+    /// account and the pact nonce found in `v`) to confess arguments.
+    pub fn cs(&self, mut v: Value, who: usize) -> Value {
+        let sid = v["season_id"].as_u64().unwrap();
+        let n = &v["pact"]["nonce"];
+        let nonce: u64 = n.as_str().map(|s| s.parse().unwrap()).unwrap_or_else(|| n.as_u64().unwrap());
+        v["confession_sig"] = json!(confession_sig(&self.keys[who], sid, self.buyers[who].id().as_str(), nonce));
+        v
     }
 }

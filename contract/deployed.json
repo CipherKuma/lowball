@@ -2,14 +2,14 @@
   "network": "testnet",
   "contractId": "lowball-ck.testnet",
   "houseId": "lowball-house-ck.testnet",
-  "codeHash": "HKqqmQmprcxBVk8wWhDADZyUtzm8tr7tWzwtYobFBV9R",
-  "deployTx": "9KZZhkDXPNZpjnGJ7motvKwde1XsxkFmhMHjZWxAbqTQ",
-  "deployedAt": "2026-11-14T06:36:03+00:00",
+  "codeHash": "6ARBEDbSDzshagWAN58EYrmsHvj21he89goibjkfjFYN",
+  "deployTx": "ADGTScayMBmq4ELo7fHL61vmco5nrK9LvQ6X7fLkPzaY",
+  "deployedAt": "2026-11-14T07:34:17+00:00",
   "rpc": "https://archival-rpc.testnet.near.org",
   "explorer": {
     "contract": "https://testnet.nearblocks.io/address/lowball-ck.testnet",
     "house": "https://testnet.nearblocks.io/address/lowball-house-ck.testnet",
-    "deployTx": "https://testnet.nearblocks.io/txns/9KZZhkDXPNZpjnGJ7motvKwde1XsxkFmhMHjZWxAbqTQ"
+    "deployTx": "https://testnet.nearblocks.io/txns/ADGTScayMBmq4ELo7fHL61vmco5nrK9LvQ6X7fLkPzaY"
   },
   "pactPrefix": "LOWBALL-PACT-v1:",
   "deskAccountId": "desk.lowball-ck.testnet",

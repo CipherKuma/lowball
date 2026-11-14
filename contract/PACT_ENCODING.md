@@ -32,7 +32,8 @@ Order of `members` is significant (it is signed as given). No padding, no traili
 {
   "season_id": 7,
   "pact": {"season_id": 7, "cap": 40, "members": ["marlow.x.testnet", "odile.x.testnet"], "nonce": "1234567890123456789"},
-  "signatures": [{"signer": "marlow.x.testnet", "signature": "<base64 of the 64 raw signature bytes>"}]
+  "signatures": [{"signer": "marlow.x.testnet", "signature": "<base64 of the 64 raw signature bytes>"}],
+  "confession_sig": "<base64 of 64 raw bytes: the CALLER's own pact-key signature, see below>"
 }
 ```
 
@@ -41,6 +42,53 @@ Order of `members` is significant (it is signed as given). No padding, no traili
 - `signature` and `register_buyer_key.public_key` are standard base64 (with padding) of raw bytes.
 - `signer` must be a member of `pact.members` and a buyer of the season; each signer at most once.
 - Commit hash for bids: `sha256(amount_u32_le ++ salt32)`, base64 of the 32 digest bytes; `salt` is exactly 32 bytes.
+
+## Confession signature (`confession_sig`)
+
+The house server holds the buyers' NEAR keys, so a NEAR-signed `confess` alone does not show the buyer chose to confess.
+`confess` therefore also needs the CALLER's own pact-key signature (the key snapshotted at `create_season`, the same key
+that signs the pact) over a separate, domain-separated message:
+
+```
+confession_message = b"LOWBALL-CONFESS-v1:"  ++  borsh(ConfessionMsg)
+ConfessionMsg      = { season_id: u64, confessor: AccountId, pact_nonce: u64 }
+confession_sig     = ed25519_sign(caller_pact_secret_key, confession_message)     // 64 bytes, base64 on the wire
+```
+
+| bytes | field |
+|---|---|
+| 19 | ASCII prefix `LOWBALL-CONFESS-v1:` |
+| 8 | `season_id` u64 LE (the `season_id` argument of `confess`) |
+| 4 + n | `confessor`: u32 LE byte length n, then the UTF-8 account id of the `confess` caller (transaction signer) |
+| 8 | `pact_nonce` u64 LE (= `pact.nonce` of the submitted pact) |
+
+No padding, no trailing bytes. Check order in the contract: after every `E_NOT_MEMBER` / `E_DUP_SIGNER` / `E_BAD_SIG`
+check and before `E_TOO_FEW`. A missing, wrong-length or invalid signature is `E_BAD_CONFESSION_SIG`. Binding season,
+confessor and nonce means a signature cannot be replayed in another season, by another account, or against another pact.
+Tool: `cargo run -q -p pactsign -- confess-sign <secret_key_hex> <season_id> <confessor> <pact_nonce>`.
+
+```confession-vector
+secret_key_hex: 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+public_key_b64: A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=
+season_id: 7
+confessor: marlow.lowball-ck.testnet
+pact_nonce: 1234567890123456789
+borsh_hex: 0700000000000000190000006d61726c6f772e6c6f7762616c6c2d636b2e746573746e65741581e97df4102211
+confession_message_hex: 4c4f5742414c4c2d434f4e464553532d76313a0700000000000000190000006d61726c6f772e6c6f7762616c6c2d636b2e746573746e65741581e97df4102211
+confession_sig_b64: zffnG8aMFU6LtJPvslu9/Uq+LuR5VxeAxULok6Yr9cQn04C31LIJBQBPFmGIHLto/joIuMB6OVnPGIH8jousAw==
+```
+
+Verified three ways like the pact vector: `contract/pactsign` (Rust), `contract/it/tests/vector.rs`, and an independent
+Node `crypto` computation (identical message hex and signature).
+
+TypeScript (uses `enc`, `cat`, `u32`, `u64` from the pact helper above):
+
+```ts
+export function confessionMessage(seasonId: number | bigint, confessor: string, pactNonce: string | bigint) {
+  const who = enc.encode(confessor);
+  return cat(enc.encode("LOWBALL-CONFESS-v1:"), u64(BigInt(seasonId)), u32(who.length), who, u64(BigInt(pactNonce)));
+}
+```
 
 ## Test vector (verified by tests)
 
@@ -81,4 +129,4 @@ export function pactMessage(p: { season_id: number | bigint; cap: number; member
 // then: signature = await crypto.subtle.sign("Ed25519", privateKey, pactMessage(pact))   // or @noble/ed25519
 ```
 
-Never sign anything else with a buyer's pact key: the fixed prefix is the only domain separation.
+Never sign anything else with a buyer's pact key: the two fixed prefixes (`LOWBALL-PACT-v1:`, `LOWBALL-CONFESS-v1:`) are the only domain separation.

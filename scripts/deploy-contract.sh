@@ -33,6 +33,19 @@ OUT="$ROOT/contract/deployed.json"
 [[ "${SKIP_BUILD:-0}" == "1" ]] || "$ROOT/contract/build.sh"
 [[ -f "$WASM" ]] || { echo "missing $WASM" >&2; exit 1; }
 
+near_cli() {  # near CLI; on an RPC rate limit, retry with the other testnet connection profiles
+  local net out rc i
+  for net in $(for _ in 1 2 3 4 5 6; do echo ${NETS:-testnet-fastnear testnet testnet-lava}; done); do
+    local args=("$@")
+    for i in "${!args[@]}"; do
+      [[ "${args[$i]}" == testnet && "${args[$((i-1))]:-}" == network-config ]] && args[$i]="$net"
+    done
+    rc=0; out="$("$NEAR" "${args[@]}" 2>&1 </dev/null)" || rc=$?
+    if ! grep -qi 'rate limit\|exceeded\|too many requests\| 429' <<<"$out"; then printf '%s\n' "$out"; return $rc; fi
+    echo "rate limited on profile $net, retrying" >&2; sleep 6
+  done
+  printf '%s\n' "$out"; return 1
+}
 rpc() {  # first endpoint that answers with a result or a definitive UNKNOWN_ACCOUNT
   local u r
   for u in $RPCS; do
@@ -48,7 +61,7 @@ exists() { view_account "$1" | grep -q '"amount"'; }
 code_hash_of() { view_account "$1" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["code_hash"])'; }
 NO_CODE=11111111111111111111111111111111
 get_config() {  # prints get_config JSON, or fails when the view errors (e.g. state layout mismatch)
-  local r; r="$("$NEAR" contract call-function as-read-only "$CONTRACT_ID" get_config json-args '{}' network-config testnet now 2>&1 | sed 's/\x1b\[[0-9;]*m//g')"
+  local r; r="$(near_cli contract call-function as-read-only "$CONTRACT_ID" get_config json-args '{}' network-config testnet now 2>&1 | sed 's/\x1b\[[0-9;]*m//g')"
   grep -q '"season_count"' <<<"$r" || return 1
   echo "$r"
 }
@@ -104,11 +117,11 @@ fi
 echo "deploying $WASM to $CONTRACT_ID (mode: $MODE, house=$HOUSE_ID)"
 DEPLOY_LOG="$(mktemp)"
 if [[ "$MODE" == fresh ]]; then
-  "$NEAR" contract deploy "$CONTRACT_ID" use-file "$WASM" "${INIT_ARGS[@]}" \
+  near_cli contract deploy "$CONTRACT_ID" use-file "$WASM" "${INIT_ARGS[@]}" \
     network-config testnet sign-with-legacy-keychain send >"$DEPLOY_LOG" 2>&1 \
     || { sed 's/\x1b\[[0-9;]*m//g' "$DEPLOY_LOG" | tail -20 >&2; rm -f "$DEPLOY_LOG"; exit 4; }
 else
-  "$NEAR" contract deploy "$CONTRACT_ID" use-file "$WASM" without-init-call \
+  near_cli contract deploy "$CONTRACT_ID" use-file "$WASM" without-init-call \
     network-config testnet sign-with-legacy-keychain send >"$DEPLOY_LOG" 2>&1 \
     || { sed 's/\x1b\[[0-9;]*m//g' "$DEPLOY_LOG" | tail -20 >&2; rm -f "$DEPLOY_LOG"; exit 4; }
 fi
@@ -118,7 +131,7 @@ rm -f "$DEPLOY_LOG"
 if [[ "$MODE" == redeploy ]] && ! get_config >/dev/null; then
   echo "old state does not deserialise under the new code: wiping with reset (no seasons existed)" >&2
   RESET_LOG="$(mktemp)"
-  "$NEAR" contract call-function as-transaction "$CONTRACT_ID" reset json-args "{\"house\":\"$HOUSE_ID\"}" \
+  near_cli contract call-function as-transaction "$CONTRACT_ID" reset json-args "{\"house\":\"$HOUSE_ID\"}" \
     prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as "$CONTRACT_ID" network-config testnet \
     sign-with-legacy-keychain send >"$RESET_LOG" 2>&1 \
     || { sed 's/\x1b\[[0-9;]*m//g' "$RESET_LOG" | tail -20 >&2; rm -f "$RESET_LOG"; exit 7; }
@@ -130,7 +143,7 @@ CODE_HASH="$(code_hash_of "$CONTRACT_ID")"
 CONFIG="$(get_config || true)"
 grep -q "$HOUSE_ID" <<<"$CONFIG" || { echo "get_config did not return the house: $CONFIG" >&2; exit 5; }
 echo "get_config OK:"; echo "$CONFIG"
-"$NEAR" contract call-function as-read-only "$CONTRACT_ID" mt_metadata_contract json-args '{}' network-config testnet now 2>&1 \
+near_cli contract call-function as-read-only "$CONTRACT_ID" mt_metadata_contract json-args '{}' network-config testnet now 2>&1 \
   | sed 's/\x1b\[[0-9;]*m//g' | grep -q 'CATCH' || { echo "mt_metadata_contract (NEP-245) not answering" >&2; exit 8; }
 echo "NEP-245 metadata OK"
 

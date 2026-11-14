@@ -153,3 +153,32 @@ fn token_id_roundtrip() {
     assert_eq!(crate::mt::parse_token_id("s12-d300"), None);
     assert_eq!(crate::mt::token_id(7, 2), "s7-d2");
 }
+
+const CONF_MESSAGE_HEX: &str = "4c4f5742414c4c2d434f4e464553532d76313a0700000000000000190000006d61726c6f772e6c6f7762616c6c2d636b2e746573746e65741581e97df4102211";
+const CONF_SIG_B64: &str = "zffnG8aMFU6LtJPvslu9/Uq+LuR5VxeAxULok6Yr9cQn04C31LIJBQBPFmGIHLto/joIuMB6OVnPGIH8jousAw==";
+const CONF_PK_B64: &str = "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=";
+
+#[test]
+fn confession_message_matches_documented_vector() {
+    let m = crate::confession_message(7, &a("marlow.lowball-ck.testnet"), 1234567890123456789);
+    assert_eq!(hex::encode(&m), CONF_MESSAGE_HEX);
+    let md = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/PACT_ENCODING.md")).unwrap();
+    assert!(md.contains(&format!("confession_message_hex: {CONF_MESSAGE_HEX}")));
+    assert!(md.contains(&format!("confession_sig_b64: {CONF_SIG_B64}")));
+}
+
+#[test]
+fn documented_confession_signature_verifies_and_binds_every_field() {
+    use base64::Engine as _;
+    let b = base64::engine::general_purpose::STANDARD;
+    as_("house.testnet", 0);
+    let pk: [u8; 32] = b.decode(CONF_PK_B64).unwrap().try_into().unwrap();
+    let sig: [u8; 64] = b.decode(CONF_SIG_B64).unwrap().try_into().unwrap();
+    let ok = |s: u64, who: &str, n: u64| near_sdk::env::ed25519_verify(&sig, &crate::confession_message(s, &a(who), n), &pk);
+    assert!(ok(7, "marlow.lowball-ck.testnet", 1234567890123456789));
+    assert!(!ok(8, "marlow.lowball-ck.testnet", 1234567890123456789)); // other season
+    assert!(!ok(7, "odile.lowball-ck.testnet", 1234567890123456789)); // other confessor
+    assert!(!ok(7, "marlow.lowball-ck.testnet", 1234567890123456790)); // other nonce
+    // a confession message can never be mistaken for a pact message (different prefix)
+    assert_ne!(&crate::confession_message(7, &a("x.testnet"), 1)[..16], PACT_PREFIX);
+}

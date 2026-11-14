@@ -11,7 +11,7 @@ mod season;
 mod views;
 
 pub use errors::*;
-pub use pact::{pact_message, Pact, PactSig, PACT_PREFIX};
+pub use pact::{confession_message, pact_message, ConfessionMsg, Pact, PactSig, CONFESS_PREFIX, PACT_PREFIX};
 pub use mt::{MtContractMetadata, MtToken, MtTokenMetadata};
 pub use season::{PayoutRoute, Season, Status, BUYERS, MAX_DAYS, STALE_NS};
 pub use views::*;

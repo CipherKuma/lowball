@@ -1,7 +1,7 @@
 //! `confess`: first valid confession wins immunity, resumes the leniency yield, slashes the other
 //! verified signers and pays the player (directly, or via the Chain Signatures payout desk).
 
-use near_sdk::json_types::U128;
+use near_sdk::json_types::{Base64VecU8, U128};
 use near_sdk::serde_json::json;
 use near_sdk::{env, near, AccountId, Gas, NearToken, Promise};
 
@@ -17,11 +17,12 @@ const RESERVE_GAS: Gas = Gas::from_tgas(8);
 
 #[near]
 impl Contract {
-    pub fn confess(&mut self, season_id: u64, pact: Pact, signatures: Vec<PactSig>) -> U128 {
+    /// `confession_sig`: the caller's own pact-key signature over `confession_message` (see PACT_ENCODING.md).
+    pub fn confess(&mut self, season_id: u64, pact: Pact, signatures: Vec<PactSig>, confession_sig: Base64VecU8) -> U128 {
         let caller = env::predecessor_account_id();
         let desk = self.desk.clone();
         let s = self.season(season_id);
-        let (ci, signers) = pact::verify_confession(s, season_id, &caller, &pact, &signatures);
+        let (ci, signers) = pact::verify_confession(s, season_id, &caller, &pact, &signatures, &confession_sig.0);
         // Resume the yield first: a refused resume (window timed out this very block) aborts everything.
         leniency::resume(s.leniency_yield.unwrap_or_else(|| env::panic_str(E_NO_LENIENCY)), &caller, season_id);
         let mut slashed = 0u128;

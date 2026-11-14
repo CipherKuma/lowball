@@ -5,7 +5,19 @@ Wasm under test: `contract/target/near/lowball.wasm` (288 KB), sha256
 Mock desk for the payout tests: `contract/mock-desk/build.sh` (test double only, never deployed). Sandbox: near-sandbox
 2.13.4 via near-workspaces 0.23.
 
-Totals: **59 unit + 24 sandbox = 83 passed, 0 failed.** (Previous version: 44 + 11 = 55.)
+Totals: **61 unit + 26 sandbox = 87 passed, 0 failed.** (After U1-U3: 59 + 24 = 83; originally 44 + 11 = 55.)
+Wasm after U5 (confession_sig): sha256 `4cb3ff89784f3dbe4a357178af15012652eb3f5fde235e8bb9b3ab78897be863`.
+
+### U5: confession signature
+- Unit: documented vector message equals `confession_message(7, marlow..., nonce)`; the documented signature verifies and
+  fails for another season, another confessor, another nonce.
+- Sandbox `confess_errors.rs::confession_signature_matrix`: missing, 63-byte, unregistered key, another buyer's valid
+  signature, wrong season, wrong nonce, wrong confessor name, replay of a valid signature from season A in season B (with a
+  correctly signed pact for B) all give `E_BAD_CONFESSION_SIG` and change no state; the right signature confesses only its
+  own season; order checks (`E_BAD_SIG` before it, `E_TOO_FEW` after it). `vector.rs::confession_vector_matches` recomputes
+  the PACT_ENCODING.md vector. All previous confess tests now pass a valid `confession_sig`.
+- One flaky run: `cost.rs` hit a sandbox "connection refused" under 4 parallel test threads and passed on rerun alone.
+
 
 ## Unit tests: `cd contract && cargo test`
 
@@ -90,7 +102,7 @@ the desk).
 
 ## Not covered / limits
 
-- Testnet: not deployed yet (accounts `lowball-ck.testnet` / `lowball-house-ck.testnet` did not exist on chain at hand-back
+- (superseded by deploy record below) Testnet: not deployed yet (accounts `lowball-ck.testnet` / `lowball-house-ck.testnet` did not exist on chain at hand-back
   time; see deploy status in the hand-back). `scripts/deploy-contract.sh` is syntax-checked and its account-detection path
   was exercised against testnet RPC; the redeploy/`reset` branch was exercised only as the `reset` method in the sandbox
   (`admin.rs`), not as a live `near` CLI sequence.
@@ -101,3 +113,13 @@ the desk).
 - Stale-season close (3 days idle) is still unit-tested with a mocked timestamp only.
 - Failed refund transfers (deleted recipient account) are not handled by callbacks.
 - `mt_transfer_call`, approvals and partial-amount transfers are not implemented (indivisible lots).
+
+## Deploy record (U5, 2026-11-14 07:34 UTC)
+
+`lowball-ck.testnet` redeployed with the U5 wasm: code hash `6ARBEDbSDzshagWAN58EYrmsHvj21he89goibjkfjFYN` (= base58 sha256 of
+`contract/target/near/lowball.wasm`), deploy tx `ADGTScayMBmq4ELo7fHL61vmco5nrK9LvQ6X7fLkPzaY` (an earlier identical deploy
+tx `ESWnawXGLmt7mQb6Nt5EiSVtQWrTVwxHfNVR62c7jz4D` landed while the script was fighting RPC rate limits). The state layout did
+not change in U5, so no `reset` ran: `get_config` still reports `season_count: 10` and **buyer keys and old seasons survived**
+(`reset` should also keep buyer keys, since storage under the same prefixes is not deleted; reasoned, not tested. Season ids
+restart at 0 and overwrite old seasons; re-register keys anyway if in doubt). Existing seasons carry their key snapshots, so a
+confession there now also needs `confession_sig` from that snapshot key.

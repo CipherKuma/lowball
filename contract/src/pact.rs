@@ -9,6 +9,26 @@ use crate::errors::*;
 use crate::season::Season;
 
 pub const PACT_PREFIX: &[u8] = b"LOWBALL-PACT-v1:";
+/// Domain separator of the confession signature (distinct from the pact prefix on purpose).
+pub const CONFESS_PREFIX: &[u8] = b"LOWBALL-CONFESS-v1:";
+
+/// What a buyer's own pact key signs to authorise ITS confession (the house holds the buyers' NEAR
+/// keys, so a NEAR signature alone does not prove the buyer chose to confess).
+#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[borsh(crate = "near_sdk::borsh")]
+pub struct ConfessionMsg {
+    pub season_id: u64,
+    pub confessor: AccountId,
+    pub pact_nonce: u64,
+}
+
+/// `b"LOWBALL-CONFESS-v1:" ++ borsh(ConfessionMsg)`
+pub fn confession_message(season_id: u64, confessor: &AccountId, pact_nonce: u64) -> Vec<u8> {
+    let msg = ConfessionMsg { season_id, confessor: confessor.clone(), pact_nonce };
+    let mut m = CONFESS_PREFIX.to_vec();
+    m.extend(borsh::to_vec(&msg).unwrap_or_else(|_| env::panic_str(E_BAD_ARGS)));
+    m
+}
 
 /// Accept a JSON number or a decimal string (safe for ids beyond 2^53).
 fn flex_u64<'de, D: Deserializer<'de>>(d: D) -> Result<u64, D::Error> {
@@ -53,13 +73,15 @@ pub fn pact_message(pact: &Pact) -> Vec<u8> {
 /// Validate a confession against the season. Returns the verified signer indexes (in signature
 /// order) and the caller index. Check order is part of the contract:
 /// E_CLOSED, E_ALREADY_CONFESSED, E_NOT_BUYER, E_NO_LENIENCY, E_SEASON_MISMATCH, E_NOT_MEMBER
-/// (members), E_DUP_SIGNER (members), E_NOT_MEMBER/E_DUP_SIGNER (signatures), E_BAD_SIG, E_TOO_FEW.
+/// (members), E_DUP_SIGNER (members), E_NOT_MEMBER/E_DUP_SIGNER (signatures), E_BAD_SIG,
+/// E_BAD_CONFESSION_SIG, E_TOO_FEW.
 pub fn verify_confession(
     s: &Season,
     season_id: u64,
     caller: &AccountId,
     pact: &Pact,
     sigs: &[PactSig],
+    confession_sig: &[u8],
 ) -> (u8, Vec<u8>) {
     use crate::season::Status;
     match s.status {
@@ -85,6 +107,12 @@ pub fn verify_confession(
         ensure(env::ed25519_verify(&sig, &msg, &s.buyers[idx as usize].pk), E_BAD_SIG);
         signers.push(idx);
     }
+    let csig: Option<[u8; 64]> = confession_sig.try_into().ok();
+    let cmsg = confession_message(season_id, caller, pact.nonce);
+    ensure(
+        csig.map(|g| env::ed25519_verify(&g, &cmsg, &s.buyers[caller_idx as usize].pk)).unwrap_or(false),
+        E_BAD_CONFESSION_SIG,
+    );
     ensure(signers.len() >= 2 && signers.contains(&caller_idx), E_TOO_FEW);
     (caller_idx, signers)
 }

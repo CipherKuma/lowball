@@ -38,3 +38,18 @@ fn pact_encoding_vector_matches() {
     let given = Signature::from_slice(&B64.decode(&v["signature_b64"]).unwrap()).unwrap();
     assert!(sk.verifying_key().verify(&msg, &given).is_ok());
 }
+
+#[test]
+fn confession_vector_matches() {
+    let md = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../PACT_ENCODING.md")).unwrap();
+    let block = md.split("```confession-vector\n").nth(1).expect("confession-vector block").split("```").next().unwrap();
+    let v: std::collections::HashMap<String, String> =
+        block.lines().filter_map(|l| l.split_once(": ")).map(|(k, x)| (k.to_string(), x.trim().to_string())).collect();
+    let seed: [u8; 32] = hex::decode(&v["secret_key_hex"]).unwrap().try_into().unwrap();
+    let sk = SigningKey::from_bytes(&seed);
+    assert_eq!(B64.encode(sk.verifying_key().to_bytes()), v["public_key_b64"]);
+    let msg = confession_message(v["season_id"].parse().unwrap(), &v["confessor"], v["pact_nonce"].parse().unwrap());
+    assert_eq!(hex::encode(&msg[CONFESS_PREFIX.len()..]), v["borsh_hex"]);
+    assert_eq!(hex::encode(&msg), v["confession_message_hex"]);
+    assert_eq!(B64.encode(sk.sign(&msg).to_bytes()), v["confession_sig_b64"]);
+}

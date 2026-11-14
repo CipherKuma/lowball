@@ -4,6 +4,23 @@ Network: NEAR testnet. Contract `lowball-ck.testnet` (house `lowball-house-ck.te
 `contract/build.sh`. JSON args/returns. `U128` = decimal string, `U64`-ish fields noted. Every failure is a
 panic whose message is exactly an `E_...` code (match on substring of the execution error).
 
+## Breaking change U5: `confess` takes `confession_sig` (required)
+
+`confess(season_id, pact, signatures, confession_sig)`. `confession_sig` = base64 of a 64-byte ed25519 signature by the
+**caller's own season pact key** (the key snapshotted at `create_season`) over
+
+```
+b"LOWBALL-CONFESS-v1:" ++ borsh(ConfessionMsg{ season_id: u64 LE, confessor: AccountId (u32 LE len + utf8), pact_nonce: u64 LE })
+```
+
+with `season_id` = the call's `season_id`, `confessor` = the `confess` caller, `pact_nonce` = `pact.nonce`. Exact bytes and a
+verified test vector are in `PACT_ENCODING.md` (section "Confession signature"); `pactsign confess-sign` produces it.
+Missing, wrong-length or invalid: `E_BAD_CONFESSION_SIG`, checked after `E_NOT_MEMBER`/`E_DUP_SIGNER`/`E_BAD_SIG` and before
+`E_TOO_FEW` (all other check order unchanged). Purpose: the house holds the buyers' NEAR keys; without the buyer's pact key
+(sealed in the OutLayer TDX job) it can no longer submit a confession the buyer did not choose. Replay across seasons, by
+another account, or with another nonce fails. A buyer's own key snapshot is what verifies it, so `register_buyer_key`
+must be the TEE-derived public key before `create_season`.
+
 ## Breaking changes vs the first version (server/web must adapt)
 
 | Change | Detail |
@@ -15,7 +32,7 @@ panic whose message is exactly an `E_...` code (match on substring of the execut
 | `confess` window rule | needs a **live** window: yield pending, same day as the window, and `block_height <= leniency_open_block + 200`. After the timeout: `E_NO_LENIENCY`. A new day's `open_lot` also kills the old window (as before). |
 | `confess` with `payout_evm` season | needs more gas: attach **at least 250 Tgas** (it forwards up to 200 Tgas to `desk.pay_evm`). Without `payout_evm`, 30 Tgas is plenty (about 5 Tgas used). |
 | New fields on views | see `SeasonView` / `LotView` below (additive). |
-| New error codes | `E_LENIENCY_OPEN`, `E_BAD_EVM`, `E_NO_TOKEN`, `E_NOT_TOKEN_OWNER`, `E_MT_PARTIAL`, `E_NEED_1_YOCTO`, `E_SELF_TRANSFER`, `E_NOT_CONTRACT`. All older codes keep their meaning and check order. |
+| New error codes | `E_LENIENCY_OPEN`, `E_BAD_EVM`, `E_NO_TOKEN`, `E_NOT_TOKEN_OWNER`, `E_MT_PARTIAL`, `E_NEED_1_YOCTO`, `E_SELF_TRANSFER`, `E_NOT_CONTRACT`, `E_BAD_CONFESSION_SIG` (U5). All older codes keep their meaning and check order. |
 | Season close/confess with an unsold open lot | the lot's token returns to the player (`mt_transfer`, memo `returned unsold`). |
 | Pact encoding | unchanged (`PACT_ENCODING.md`). |
 
@@ -36,7 +53,7 @@ Caller column: H house, P player, B season buyer, A anyone, C the contract accou
 | `reveal_bid` | B | `season_id, amount: u32, salt: base64 (32)` | 0 | | `E_NO_COMMIT E_ALREADY_REVEALED E_BAD_REVEAL` |
 | `settle_lot` | A (H with partial reveals) | `season_id` | 0 | | `E_NOT_READY E_NO_LOT`. Transfers the token escrow -> winner (memo `sold at <price> marks`). |
 | `offer_leniency` | P | `season_id` | 0 | | `E_NOT_PLAYER E_NO_DAY E_LENIENCY_OPEN E_CLOSED E_SEASON_OVER`. Yields; see breaking changes. |
-| `confess` | B | `season_id, pact: Pact, signatures: PactSig[]` | 0 | `U128` slashed total | `E_CLOSED E_ALREADY_CONFESSED E_NOT_BUYER E_NO_LENIENCY E_SEASON_MISMATCH E_NOT_MEMBER E_DUP_SIGNER E_BAD_SIG E_TOO_FEW` |
+| `confess` | B | `season_id, pact: Pact, signatures: PactSig[], confession_sig: base64 (64)` | 0 | `U128` slashed total | `E_CLOSED E_ALREADY_CONFESSED E_NOT_BUYER E_NO_LENIENCY E_SEASON_MISMATCH E_NOT_MEMBER E_DUP_SIGNER E_BAD_SIG E_BAD_CONFESSION_SIG E_TOO_FEW` |
 | `withdraw_bond` | B | `season_id` | 0 | | `E_SEASON_OPEN E_NO_BOND E_SLASHED E_ALREADY_WITHDRAWN` |
 | `close_season` | H, or A when last lot settled / 3 days idle | `season_id` | 0 | | `E_CLOSED E_NOT_FINISHED` |
 | `mt_transfer` | token owner | `receiver_id, token_id, amount: U128 (= full weight), approval?, memo?` | exactly 1 yocto | | `E_NEED_1_YOCTO E_SELF_TRANSFER E_NO_TOKEN E_NOT_TOKEN_OWNER E_MT_PARTIAL` |

@@ -35,6 +35,7 @@ pub const E_CLOSED: &str = "E_CLOSED";
 pub const E_SEASON_OPEN: &str = "E_SEASON_OPEN";
 pub const E_SLASHED: &str = "E_SLASHED";
 pub const E_ALREADY_WITHDRAWN: &str = "E_ALREADY_WITHDRAWN";
+pub const E_BAD_CONFESSION_SIG: &str = "E_BAD_CONFESSION_SIG";
 pub const E_LENIENCY_OPEN: &str = "E_LENIENCY_OPEN";
 pub const E_BAD_EVM: &str = "E_BAD_EVM";
 pub const E_NO_TOKEN: &str = "E_NO_TOKEN";
