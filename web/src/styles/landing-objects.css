@@ -1,14 +1,14 @@
 /* Landing objects: the ring on the shed wall, and the zinc counter with five sealed bids. */
 
 /* the shed wall: boards behind the posters */
-.wall {
+.ring-wall {
   position: relative;
   justify-self: end;
   width: min(100%, 580px, 66vh);
   aspect-ratio: 1 / 1.02;
   min-width: 0;
 }
-.wall::before {
+.ring-wall::before {
   content: '';
   position: absolute;
   inset: -4% -6%;
@@ -128,7 +128,7 @@
   .landing-plank { font-size: 12px; letter-spacing: 0.18em; padding-inline: 20px; }
   .osd .osd-bl, .osd .osd-br, .osd .osd-tr { display: none; }
   .osd span { font-size: 10.5px; }
-  .wall {
+  .ring-wall {
     flex: none;
     width: auto;
     display: flex;
@@ -139,7 +139,7 @@
     scroll-snap-type: x mandatory;
     padding: 18px 4px 70px;
   }
-  .wall::before { display: none; }
+  .ring-wall::before { display: none; }
   .wall-poster { position: relative; left: auto !important; top: auto !important; width: 136px !important; flex: 0 0 136px; scroll-snap-align: start; }
   .counter-row { grid-template-columns: repeat(5, minmax(0, 1fr)); padding-top: 34px; }
 }

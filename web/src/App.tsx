@@ -40,7 +40,9 @@ export function App() {
       setEvm({ address: null, busy: false, error: e instanceof EvmError ? e.message : 'The Ethereum wallet did not answer.' });
     }
   };
-  const { view } = g;
+  // A wallet season makes no account (no account_created event), so the player is the signed-in wallet account.
+  const view =
+    g.view.playerAccountId || g.meta?.playerKind !== 'wallet' ? g.view : { ...g.view, playerAccountId: id.kind === 'wallet' ? id.accountId : null };
 
   const walletReady = id.status === 'ready' && id.kind === 'wallet' && !!id.accountId;
   // Signed in with an Ethereum wallet (0x NEAR account): that address is the default Chain Signatures payout.

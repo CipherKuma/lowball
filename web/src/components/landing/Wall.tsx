@@ -15,7 +15,7 @@ const SPOTS: Record<BuyerId, { x: number; y: number; w: number; tilt: number }> 
 export function Wall({ focus, onFocus }: { focus: BuyerId | null; onFocus: (b: BuyerId | null) => void }) {
   const still = useReducedMotion();
   return (
-    <section className="wall" aria-label="The ring: five buyers">
+    <section className="ring-wall" aria-label="The ring: five buyers">
       {RING.map((b, i) => {
         const s = SPOTS[b.id];
         const on = focus === b.id;
