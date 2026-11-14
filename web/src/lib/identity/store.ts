@@ -9,15 +9,19 @@ export interface IdentityState {
   error: string | null;
   /** a wallet is connected but has no valid API session yet (reload after expiry, or a failed signature) */
   walletConnected: boolean;
+  /** the player's own 0x address when they signed in with Ethereum Wallets (account id == address), else null; default the payout to it */
+  evmAddress: string | null;
 }
 
-export const initialIdentity: IdentityState = { status: 'idle', kind: null, accountId: null, error: null, walletConnected: false };
+export const initialIdentity: IdentityState = { status: 'idle', kind: null, accountId: null, error: null, walletConnected: false, evmAddress: null };
 
 let state: IdentityState = initialIdentity;
 const listeners = new Set<() => void>();
 export const getIdentity = () => state;
 export function setIdentity(patch: Partial<IdentityState>) {
-  state = { ...state, ...patch };
+  const next = { ...state, ...patch };
+  next.evmAddress = next.kind === 'wallet' && next.accountId && /^0x[0-9a-f]{40}$/.test(next.accountId) ? next.accountId : null;
+  state = next;
   listeners.forEach((l) => l());
 }
 export function subscribeIdentity(fn: () => void) {

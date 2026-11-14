@@ -12,8 +12,7 @@ export async function getConnector(): Promise<NearConnector> {
   const { NearConnector } = await import('@hot-labs/near-connect');
   connector = new NearConnector({
     network: 'testnet',
-    // the sign-in message and offer_leniency both need these; wallets without them are not listed
-    features: { signMessage: true, signAndSendTransaction: true, signInAndSignMessage: true },
+    // no feature filter: Ethereum Wallets (0x accounts) cannot signMessage and sign in through EIP-191 instead
   });
   await connector.whenManifestLoaded.catch(() => undefined);
   return connector;
@@ -98,4 +97,14 @@ export async function viewSeason(contractId: string, seasonId: number): Promise<
     }
   }
   return null;
+}
+
+export const isEvmAccount = (id: string) => /^0x[0-9a-f]{40}$/.test(id);
+
+/** Wallet picker with every testnet manifest wallet listed (connect() would hide the ones without signInAndSignMessage). */
+export async function pickWallet(): Promise<{ walletId: string; features: Record<string, boolean | undefined> }> {
+  const c = await getConnector();
+  const walletId = await c.selectWallet({});
+  const m = c.availableWallets.find((w) => w.manifest.id === walletId)?.manifest;
+  return { walletId, features: (m?.features ?? {}) as Record<string, boolean | undefined> };
 }

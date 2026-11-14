@@ -123,6 +123,23 @@ export interface AuthVerifyRequest {
   recipient: string;
   message: string;
 }
+/**
+ * Ethereum Wallets (NEP-518 0x accounts) cannot sign NEP-413; they sign this text with EIP-191 personal_sign.
+ * Client and server build it from the same three fields, so the server never trusts a client-supplied text.
+ */
+export function evmSignInText(f: { message: string; recipient: string; nonce: string }): string {
+  return `${f.message}\n\nRecipient: ${f.recipient}\nNonce: ${f.nonce}`;
+}
+/** POST /api/auth/verify-evm */
+export interface AuthVerifyEvmRequest {
+  /** lowercase 0x address == the NEAR account id; must equal the address recovered from the signature */
+  accountId: string;
+  /** 0x + 65 bytes hex (r||s||v) from personal_sign */
+  signature: string;
+  nonce: string;
+  recipient: string;
+  message: string;
+}
 export interface AuthVerifyResponse {
   token: string;
   accountId: string;

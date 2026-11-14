@@ -1,6 +1,7 @@
 import type {
   ApiError,
   AuthNonceResponse,
+  AuthVerifyEvmRequest,
   AuthVerifyRequest,
   AuthVerifyResponse,
   CasefileResponse,
@@ -53,6 +54,8 @@ export const api = {
   authNonce: () => call<AuthNonceResponse>('/api/auth/nonce', { method: 'POST', body: '{}' }),
   authVerify: (body: AuthVerifyRequest) =>
     call<AuthVerifyResponse>('/api/auth/verify', { method: 'POST', body: JSON.stringify(body) }),
+  authVerifyEvm: (body: AuthVerifyEvmRequest) =>
+    call<AuthVerifyResponse>('/api/auth/verify-evm', { method: 'POST', body: JSON.stringify(body) }),
   authMe: (token: string) => call<{ accountId: string }>('/api/auth/me', { headers: bearer(token) }),
   authLogout: (token: string) => call<unknown>('/api/auth/logout', { method: 'POST', body: '{}', headers: bearer(token) }),
   /** wallet season: the signed-in account is the player; nothing is created or funded for it */

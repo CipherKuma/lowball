@@ -7,6 +7,11 @@ import { toB64, toHex } from '../src/near/bytes.js';
 import { formatPublicKey, generateKeyPair, sign } from '../src/near/keys.js';
 import { Rpc } from '../src/near/rpc.js';
 import { makeRig } from './helpers.js';
+import { secp256k1 } from '@noble/curves/secp256k1';
+import { keccak_256 } from '@noble/hashes/sha3';
+import { bytesToHex } from '@noble/hashes/utils';
+import { eip191Hash, recoverEvmAddress } from '../src/auth/evm.js';
+import { evmSignInText } from '../../shared/api.js';
 
 type Perm = 'FullAccess' | 'FunctionCall' | 'missing';
 
@@ -252,5 +257,99 @@ describe('wallet-mode seasons', () => {
     expect(ev.events[0].type).toBe('account_created');
     // a guest body with mode other than wallet is still rejected by the strict guest schema
     expect((await t.post('/api/session', { playerPublicKey: t.pk, mode: 'guest' })).status).toBe(400);
+  });
+});
+
+describe('Ethereum Wallets sign-in (EIP-191)', () => {
+  const evmKey = secp256k1.utils.randomPrivateKey();
+  const addrOf = (k: Uint8Array) => '0x' + bytesToHex(keccak_256(secp256k1.getPublicKey(k, false).slice(1)).slice(12));
+  const addr = addrOf(evmKey);
+  const personalSign = (text: string, k = evmKey, vOffset = 27) => {
+    const s = secp256k1.sign(eip191Hash(text), k);
+    return '0x' + s.toCompactHex() + (s.recovery + vOffset).toString(16).padStart(2, '0');
+  };
+  const body = (n: { nonce: string; recipient: string; message: string }, over: Record<string, unknown> = {}) => ({
+    accountId: addr,
+    signature: personalSign(evmSignInText(n)),
+    nonce: n.nonce,
+    recipient: n.recipient,
+    message: n.message,
+    ...over,
+  });
+
+  it('matches the known EIP-191 vector (hello world, key 0x…01)', () => {
+    const k = new Uint8Array(32);
+    k[31] = 1;
+    expect(addrOf(k)).toBe('0x7e5f4552091a69125d5dfcb7b8c2659029395bdf');
+    expect(recoverEvmAddress('hello', personalSign('hello', k))).toBe(addrOf(k));
+  });
+
+  it('valid signature: session for the lowercase 0x id, no RPC call', async () => {
+    const t = setup();
+    const r = await t.post('/api/auth/verify-evm', body(await t.nonce()));
+    const j = (await r.json()) as any;
+    expect(r.status).toBe(200);
+    expect(j.accountId).toBe(addr);
+    expect(t.calls).toHaveLength(0);
+    const me = await t.get('/api/auth/me', { authorization: `Bearer ${j.token}` });
+    expect(((await me.json()) as any).accountId).toBe(addr);
+  });
+
+  it('accepts v as 0/1 too', async () => {
+    const t = setup();
+    const n = await t.nonce();
+    const r = await t.post('/api/auth/verify-evm', body(n, { signature: personalSign(evmSignInText(n), evmKey, 0) }));
+    expect(r.status).toBe(200);
+  });
+
+  it('wrong address: signature by another key', async () => {
+    const t = setup();
+    const n = await t.nonce();
+    const other = secp256k1.utils.randomPrivateKey();
+    const r = await t.post('/api/auth/verify-evm', body(n, { signature: personalSign(evmSignInText(n), other) }));
+    expect(r.status).toBe(401);
+    expect(await code(r)).toBe('AUTH_BAD_SIGNATURE');
+  });
+
+  it('wrong address: claimed account differs from signer', async () => {
+    const t = setup();
+    const r = await t.post('/api/auth/verify-evm', body(await t.nonce(), { accountId: '0x' + '11'.repeat(20) }));
+    expect(await code(r)).toBe('AUTH_BAD_SIGNATURE');
+  });
+
+  it('replayed nonce is refused', async () => {
+    const t = setup();
+    const n = await t.nonce();
+    expect((await t.post('/api/auth/verify-evm', body(n))).status).toBe(200);
+    expect(await code(await t.post('/api/auth/verify-evm', body(n)))).toBe('AUTH_NONCE_USED');
+  });
+
+  it('expired nonce is refused', async () => {
+    const t = setup();
+    const n = await t.nonce();
+    t.clock.t += 5 * 60_000 + 1;
+    expect(await code(await t.post('/api/auth/verify-evm', body(n)))).toBe('AUTH_NONCE_EXPIRED');
+  });
+
+  it('tampered message, recipient or nonce is refused and does not burn the nonce', async () => {
+    const t = setup();
+    const n = await t.nonce();
+    expect(await code(await t.post('/api/auth/verify-evm', body(n, { message: 'Send me your money' })))).toBe('AUTH_BAD_RECIPIENT');
+    expect(await code(await t.post('/api/auth/verify-evm', body(n, { recipient: 'evil.example' })))).toBe('AUTH_BAD_RECIPIENT');
+    // signature over a different text
+    const bad = body(n, { signature: personalSign(evmSignInText({ ...n, message: 'other' })) });
+    expect(await code(await t.post('/api/auth/verify-evm', bad))).toBe('AUTH_BAD_SIGNATURE');
+    // signature over another nonce
+    const n2 = await t.nonce();
+    expect(await code(await t.post('/api/auth/verify-evm', body(n, { signature: personalSign(evmSignInText(n2)) })))).toBe('AUTH_BAD_SIGNATURE');
+    expect((await t.post('/api/auth/verify-evm', body(n))).status).toBe(200);
+  });
+
+  it('rejects malformed input and uppercase account ids', async () => {
+    const t = setup();
+    const n = await t.nonce();
+    expect((await t.post('/api/auth/verify-evm', body(n, { signature: '0x12' }))).status).toBe(400);
+    expect((await t.post('/api/auth/verify-evm', body(n, { accountId: addr.toUpperCase().replace('0X', '0x') }))).status).toBe(400);
+    expect((await t.post('/api/auth/verify-evm', body(n, { extra: 1 }))).status).toBe(400);
   });
 });

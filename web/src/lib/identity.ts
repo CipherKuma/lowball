@@ -3,6 +3,8 @@ import type { NearWalletBase } from '@hot-labs/near-connect';
 import { ApiFailure, api } from './api';
 import {
   connectedWallet,
+  isEvmAccount,
+  pickWallet,
   fromB64,
   getConnector,
   isTestnetAccount,
@@ -10,6 +12,8 @@ import {
   signatureToB64,
   withKeyPrefix,
 } from './near-connect';
+import { personalSignAs } from './evm';
+import { evmSignInText } from '../../../shared/api';
 import { getIdentity, initialIdentity, readSession, setIdentity, subscribeIdentity, writeSession, type IdentityState } from './identity/store';
 
 export type { IdentityKind, IdentityState, IdentityStatus } from './identity/store';
@@ -55,6 +59,15 @@ async function signIn(wallet: NearWalletBase, signed: { accountId: string; publi
   setIdentity({ status: 'ready', kind: 'wallet', accountId: r.accountId, error: null, walletConnected: true });
 }
 
+/** Ethereum Wallets: the account id is the 0x address; EIP-191 over the server's text, signed by that same address. */
+async function signInEvm(accountId: string, n: { nonce: string; recipient: string; message: string }) {
+  setIdentity({ status: 'signing' });
+  const signature = await personalSignAs(accountId, evmSignInText(n));
+  const r = await api.authVerifyEvm({ accountId, signature, nonce: n.nonce, recipient: n.recipient, message: n.message });
+  writeSession({ token: r.token, accountId: r.accountId, expiresAt: r.expiresAt });
+  setIdentity({ status: 'ready', kind: 'wallet', accountId: r.accountId, error: null, walletConnected: true });
+}
+
 async function dropWallet(wallet: NearWalletBase | null) {
   try {
     const c = await getConnector();
@@ -75,6 +88,10 @@ export async function connectWallet(): Promise<void> {
     const challenge = await api.authNonce();
     const params = { message: challenge.message, recipient: challenge.recipient, nonce: fromB64(challenge.nonce) };
     const existing = await connectedWallet();
+    if (existing && isEvmAccount(existing.accountId)) {
+      await signInEvm(existing.accountId, challenge);
+      return;
+    }
     if (existing && isTestnetAccount(existing.accountId)) {
       setIdentity({ status: 'signing' });
       const signed = await existing.wallet.signMessage({ ...params, signerId: existing.accountId });
@@ -83,6 +100,7 @@ export async function connectWallet(): Promise<void> {
     }
     if (existing) await dropWallet(existing.wallet); // a mainnet account left over: start clean
     const c = await getConnector();
+    const picked = await pickWallet();
     let signed: { accountId: string; publicKey: string; signature: string } | null = null;
     const onSigned = (t: { accounts: { accountId: string; signedMessage: { publicKey: string; signature: string; accountId: string } }[] }) => {
       const a = t.accounts[0];
@@ -90,7 +108,19 @@ export async function connectWallet(): Promise<void> {
     };
     c.on('wallet:signInAndSignMessage', onSigned);
     try {
-      const wallet = await c.connect({ signMessageParams: params });
+      const canSignIn = picked.features.signInAndSignMessage === true;
+      const wallet = await c.connect({ walletId: picked.walletId, ...(canSignIn ? { signMessageParams: params } : {}) });
+      if (!canSignIn) {
+        const acct = (await wallet.getAccounts())[0];
+        if (!acct) throw new Error('The wallet connected but returned no account.');
+        if (isEvmAccount(acct.accountId)) return await signInEvm(acct.accountId, challenge);
+        if (!picked.features.signMessage) {
+          await dropWallet(wallet);
+          throw new Error('That wallet cannot sign the sign-in message. Pick another wallet.');
+        }
+        const sm = await wallet.signMessage({ ...params, signerId: acct.accountId });
+        return await signIn(wallet, sm, challenge);
+      }
       if (!signed) throw new Error('The wallet signed in but did not sign the message.');
       await signIn(wallet, signed, challenge);
     } finally {

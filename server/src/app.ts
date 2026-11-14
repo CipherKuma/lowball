@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { ZodError, type ZodTypeAny, type z } from 'zod';
 import { AppError, toApiError } from './errors.js';
 import { debug } from './log.js';
-import { issueNonce, requireAccount, tokenHash, VerifySchema, verifySignIn, type AuthDeps } from './auth/service.js';
+import { issueNonce, requireAccount, tokenHash, VerifyEvmSchema, VerifySchema, verifyEvmSignIn, verifySignIn, type AuthDeps } from './auth/service.js';
 import { casefile, createSession, getEvents, leniency, step } from './game/engine.js';
 import type { GameDeps } from './game/ctx.js';
 import {
@@ -79,6 +79,11 @@ export function createApp(o: AppOptions): Hono {
   app.post('/api/auth/verify', async (c) => {
     const body = await parseBody(c, VerifySchema);
     return c.json(await verifySignIn(authOf(c), body));
+  });
+
+  app.post('/api/auth/verify-evm', async (c) => {
+    const body = await parseBody(c, VerifyEvmSchema);
+    return c.json(await verifyEvmSignIn(authOf(c), body));
   });
 
   app.post('/api/auth/logout', async (c) => {

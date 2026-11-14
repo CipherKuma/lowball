@@ -5,6 +5,8 @@ import { toB64, toHex } from '../near/bytes.js';
 import { parsePublicKey } from '../near/keys.js';
 import { Rpc, RpcError } from '../near/rpc.js';
 import type { Store } from '../store/types.js';
+import { evmSignInText } from '../../../shared/api.js';
+import { recoverEvmAddress } from './evm.js';
 import { verifyNep413 } from './nep413.js';
 
 export const NONCE_TTL_MS = 5 * 60_000;
@@ -51,6 +53,17 @@ export const VerifySchema = z
   })
   .strict();
 export type VerifyBody = z.infer<typeof VerifySchema>;
+
+export const VerifyEvmSchema = z
+  .object({
+    accountId: z.string().regex(/^0x[0-9a-f]{40}$/, 'accountId must be a lowercase 0x address'),
+    signature: z.string().regex(/^0x[0-9a-fA-F]{130}$/, 'signature must be 65 bytes of hex'),
+    nonce: b64Field(64),
+    recipient: z.string().min(1).max(200),
+    message: z.string().min(1).max(500),
+  })
+  .strict();
+export type VerifyEvmBody = z.infer<typeof VerifyEvmSchema>;
 
 export const tokenHash = (token: string): string => toHex(sha256(new TextEncoder().encode(token)));
 
@@ -107,6 +120,30 @@ export async function verifySignIn(d: AuthDeps, body: VerifyBody) {
   const expiresAt = now + TOKEN_TTL_MS;
   await d.store.putAuthSession(tokenHash(token), body.accountId, expiresAt);
   return { token, accountId: body.accountId, expiresAt };
+}
+
+/** Ethereum Wallets sign-in: EIP-191 personal_sign over evmSignInText; the account id is the recovered 0x address. */
+export async function verifyEvmSignIn(d: AuthDeps, body: VerifyEvmBody) {
+  const now = (d.now ?? Date.now)();
+  if (body.recipient !== d.recipient || body.message !== SIGN_IN_MESSAGE) throw new AppError('AUTH_BAD_RECIPIENT');
+  const nonceBytes = decodeB64(body.nonce);
+  if (!nonceBytes || nonceBytes.length !== 32) throw new AppError('BAD_REQUEST', 'nonce must be 32 bytes (base64).');
+  const text = evmSignInText({ message: body.message, recipient: body.recipient, nonce: body.nonce });
+  let signer: string | null = null;
+  try {
+    signer = recoverEvmAddress(text, body.signature);
+  } catch {
+    signer = null;
+  }
+  if (!signer || signer !== body.accountId) throw new AppError('AUTH_BAD_SIGNATURE');
+  const spent = await d.store.consumeAuthNonce(toB64(nonceBytes), now);
+  if (spent === 'used') throw new AppError('AUTH_NONCE_USED');
+  if (spent === 'expired') throw new AppError('AUTH_NONCE_EXPIRED');
+  if (spent === 'unknown') throw new AppError('AUTH_NONCE_UNKNOWN');
+  const token = b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const expiresAt = now + TOKEN_TTL_MS;
+  await d.store.putAuthSession(tokenHash(token), signer, expiresAt);
+  return { token, accountId: signer, expiresAt };
 }
 
 export function bearerOf(header: string | undefined): string | null {
