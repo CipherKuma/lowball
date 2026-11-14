@@ -12,6 +12,7 @@ export async function getConnector(): Promise<NearConnector> {
   const { NearConnector } = await import('@hot-labs/near-connect');
   connector = new NearConnector({
     network: 'testnet',
+    providers: { testnet: TESTNET_RPCS }, // sandboxed executors (Meteor, ...) read through these; FastNEAR alone rate-limits
     // no feature filter: Ethereum Wallets (0x accounts) cannot signMessage and sign in through EIP-191 instead
   });
   await connector.whenManifestLoaded.catch(() => undefined);
