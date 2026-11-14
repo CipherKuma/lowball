@@ -1,0 +1,42 @@
+00:58:46 +1794684526.3 origin 127.0.0.1:4399, commit ce51dc2
+00:58:46 +0.0 == segment a
+00:58:55 +9.0 landing settled
+00:58:58 +11.5 hover Sully
+00:59:00 +13.5 connect
+00:59:03 +17.1 picked Meteor
+00:59:07 +20.8 Meteor Web
+00:59:07 +20.9 rec a stop
+00:59:08 +0.0 == segment m1
+00:59:12 +4.0 Meteor Sign Message
+00:59:14 +6.6 rec m1 stop
+00:59:15 +0.0 == segment b
+00:59:15 +0.1 licence
+00:59:19 +4.4 start the season
+00:59:37 +22.1 day 1 open
+00:59:42 +27.5 day 1 sell
+00:59:55 +40.4 day 1 settled
+01:00:01 +46.3 next day
+01:00:04 +49.4 day 2 open
+01:00:09 +54.3 back room
+01:00:13 +57.9 mic on
+01:00:21 +66.6 mic off
+01:00:26 +70.8 answered
+01:00:39 +84.5 day 2 sell
+01:00:55 +100.0 case ready
+01:00:58 +103.2 offer leniency
+01:00:59 +104.7 rec b stop
+01:01:00 +0.0 == segment m2
+01:01:04 +4.5 Meteor Approve
+01:01:08 +8.2 rec m2 stop
+01:01:08 +0.0 == segment c
+01:01:16 +7.3 verdict: SOMEBODY TALKED
+01:01:27 +18.3 case file
+01:01:33 +24.7 recheck
+01:01:44 +35.4 back room tab
+01:01:48 +39.8 wiretap
+01:02:08 +59.9 on-chain
+01:02:19 +71.0 forgeries sent
+01:02:49 +100.8 drill: 3 OF 3 REFUSED BY THE CONTRACT
+01:02:56 +107.3 rec c stop
+01:02:56 +107.3 session 7d314f91-d0fa-48f4-b05f-b2e249e417ba
+01:02:58 +109.5 saved events    10144 B, casefile    45839 B

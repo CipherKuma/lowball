@@ -9,21 +9,22 @@ export type VoiceSlot = {id:string; from:number; to:number; source:string; src:s
   captionCues:{from:number;to:number;text:string}[]};
 /** A piece of the take's own audio (the game's TTS, the actor's question, the wiretap), placed in film seconds. */
 export type TakeAudio = {id:string; at:number; src:string; startFrom?:number; duration:number; volume:number; provenance:string};
-// Every value below is from take 2 (season 49, 14 Nov 2026 17:22 IST) or a check run on it; see demo/truth-ledger.md.
+// Every value below is from take 10 (season 64, 15 Nov 2026 00:58 IST, played by cipherkuma.testnet through Meteor) or a
+// check run on it; see demo/truth-ledger.md. Recorded on a local production build of ce51dc2 against the live API and contract.
 export const take = {
-  identity: {session:'547e3fe3-c385-41a4-b8d2-514a312285c7', network:'NEAR testnet', recordedUrl:'https://play.lowball-game.pages.dev', previewMode:false, mode:'standard'},
+  identity: {session:'7d314f91-d0fa-48f4-b05f-b2e249e417ba', network:'NEAR testnet', recordedUrl:'http://127.0.0.1:4399 (build of ce51dc2, live API + contract)', previewMode:false, mode:'standard', wallet:'cipherkuma.testnet (Meteor)'},
   links: {play:'play.lowball-game.pages.dev', repo:'github.com/CipherKuma/lowball'},
   api: {endpoint:'POST cloud-api.near.ai/v1/chat/completions', model:'Qwen/Qwen3.6-35B-A3B-FP8', bondNear:'0.05', yieldBlocks:200},
-  live: {season:'49', species:'bluefin tuna', swellMetres:'0.38', swellTime:'11:45 UTC', bid:'60',
-    takenFromYou:'441', latencyMs:'3.0 s', signatureCount:'5', payout:'0.20', confessor:'Sully Brack',
-    buyerTranscript:'I don’t know what you mean. Same? That’s just… bad luck, right?',
+  live: {season:'64', species:'monkfish', weightKg:'926', swellMetres:'0.32', swellTime:'19:15 UTC', bid:'60',
+    takenFromYou:'163', latencyMs:'4.2 s', signatureCount:'5', payout:'0.20', confessor:'Sully Brack',
+    buyerTranscript:'Marguerite, I’m just a boy buying fish. I bid what I thought was right.',
     fisherTranscript:'Sully, four envelopes said the same number yesterday. Who told you to write it?',
-    browserSignature:'function-call key', tokenId:'s49-d1', interrogationReceipt:'d24476bad97d…', receiptsVerified:'26/26'},
-  // Full hashes: demo/footage/take-2.casefile.json; outcomes re-read from testnet RPC (demo/truth-ledger.md).
-  receipts: {season:'xAn5Bq8N…3qSxW', bond:'2JHdbadF…gmCtD', mint:'39eYF6CD…VsaJC', leniency:'8qt7a4o2…PaabeA', confess:'5Rgodoqx…xRn39',
-    refusal:'r8WxNQYo…bM19h', refusal2:'4T3babAv…eProT', close:'2krVPp9p…PstZG', sepolia:'0x92fbe20e…610c'},
+    browserSignature:'Meteor wallet', tokenId:'s64-d1', interrogationReceipt:'a47f963d036a…', receiptsVerified:'26/26'},
+  // Full hashes: demo/footage/take-10.casefile.json + events; leniency from NearBlocks (signer cipherkuma.testnet).
+  receipts: {season:'Da9VdLxJ…nYQ2S', bond:'Ev4CXwZK…LSWaJ', mint:'CfgZBR3h…RZ54h', leniency:'58XrpDpt…T5Vjj', confess:'DZgEwTip…L3sdv',
+    refusal:'6AoE5NLZ…VAZczF', refusal2:'6NRHxeqc…wnkKJ', close:'2gXVzzHe…9RUxi', sepolia:'0x92fbe20e…610c'},
   verifiedTransactions:{season:true,bond:true,mint:true,leniency:true,confess:true,refusal:true,slash:true,payout:true,sepolia:true},
-  proof: {nearAi:{verified:true,tdx:true,gpu:true,receipt:'d24476bad97d…'},
+  proof: {nearAi:{verified:true,tdx:true,gpu:true,receipt:'a47f963d036a…'},
     outlayer:{live:false,proven:false,attestation:'season 32 · confess 2Ad3j5Xk…',truthLedger:'demo/truth-ledger.md'},
     signaturesVerified:true,chainSignaturesVerified:true},
   problem: {quote:'stuck selling low and buying high', attribution:'WoW forums · Aug 2025',
@@ -131,29 +132,31 @@ export const take = {
   // frames either side of all 11 cuts, by Claude; nobody has watched it at full speed with sound yet (Gabriel's call).
   // Master: demo/out/lowball-demo.mp4 decoded end to end with 0 errors; ebur128 on the final file. voiceLufs is the
   // narration windows inside the master (-13.3 to -14.2): a narration-led film cannot hold VO at -16 under a -14 master.
-  review:{causalOrderApproved:true,visualReviewApproved:false,encodedMasterDecoded:true,
-    masterLufs:-14.2 as number|null,truePeakDbtp:-1.4 as number|null,voiceLufs:-13.8 as number|null},
+  // Not reviewed yet: re-cut from take 10 at 01:10 IST; master numbers are filled in after the new master is measured.
+  review:{causalOrderApproved:true,visualReviewApproved:false,encodedMasterDecoded:false,
+    masterLufs:null as number|null,truePeakDbtp:null as number|null,voiceLufs:null as number|null},
   // The day-1 lot of the recorded take (the Chart shows this species and its NOAA price).
-  referenceSpecies:'bluefin tuna' as const,
-  // Selects cut from demo/footage/raw/take-2-{a,b,c}.webm (see demo/footage/takes.md for source ranges).
+  referenceSpecies:'monkfish' as const,
+  // Selects cut by scratchpad/cut-take.mjs from demo/footage/raw/take-10-{a,m1,b,m2,c}.mp4 using the beat times in take-10.log.
   footage: [
-    {id:'cold-open',from:0,to:7,title:'Five envelopes. One number.',expected:'',src:'footage/cold-open.mp4',sourceIn:0,focus:[42,30],provenance:'take-2-a 39.5–46.5 s'},
-    {id:'before-dawn',from:26,to:36,title:'Before dawn',expected:'',src:'footage/before-dawn.mp4',sourceIn:0,focus:[50,45],provenance:'take-2-a 4–26 s at 2.2×',speed:[{from:0,to:10,label:'sped up ×2.2'}]},
-    {id:'day-one-lot',from:36,to:47,title:'The first catch',expected:'',src:'footage/day-one-lot.mp4',sourceIn:0,focus:[45,80],provenance:'take-2-a 26–37 s'},
-    {id:'identical-bids',from:47,to:55,title:'The price of silence',expected:'',src:'footage/identical-bids.mp4',sourceIn:0,focus:[45,32],provenance:'take-2-a 41–49 s'},
-    {id:'interrogation',from:55,to:77,title:'Make him answer',expected:'',src:'footage/interrogation.mp4',sourceIn:0,focus:[55,42],provenance:'take-2-a 53–75 s'},
-    {id:'leniency',from:77,to:103,title:'One chance to talk',expected:'',src:'footage/leniency.mp4',sourceIn:0,focus:[42,40],provenance:'take-2-a 85–97 s at 2× + take-2-b 1–21 s',speed:[{from:0,to:6,label:'sped up ×2'}]},
-    {id:'case-file',from:103,to:116,title:'The case file',expected:'',src:'footage/case-file.mp4',sourceIn:0,focus:[50,45],provenance:'take-2-c 5–7.5, 13.5–16.5, 22–26.5, 83.9–86.9 s'},
+    {id:'cold-open',from:0,to:7,title:'Five envelopes. One number.',expected:'',src:'footage/cold-open.mp4',sourceIn:0,focus:[42,30],provenance:'take-10-b 93.4–100.4 s'},
+    {id:'before-dawn',from:26,to:36,title:'Your wallet, before dawn',expected:'',src:'footage/before-dawn.mp4',sourceIn:0,focus:[50,45],provenance:'take-10-a 13.1–15.1 s + take-10-m1 1.8–4.3 s (Meteor) + take-10-b 4.1–22.6 s at 3.4×',speed:[{from:4.5,to:10,label:'sped up ×3.4'}]},
+    {id:'day-one-lot',from:36,to:47,title:'The first catch',expected:'',src:'footage/day-one-lot.mp4',sourceIn:0,focus:[45,80],provenance:'take-10-b 22.6–33.6 s'},
+    {id:'identical-bids',from:47,to:55,title:'The price of silence',expected:'',src:'footage/identical-bids.mp4',sourceIn:0,focus:[45,32],provenance:'take-10-b 33.9–41.9 s'},
+    {id:'interrogation',from:55,to:77,title:'Make him answer',expected:'',src:'footage/interrogation.mp4',sourceIn:0,focus:[55,42],provenance:'take-10-b 53.3–75.3 s'},
+    {id:'leniency',from:77,to:103,title:'One chance to talk',expected:'',src:'footage/leniency.mp4',sourceIn:0,focus:[42,40],provenance:'take-10-b 84.0–100.5 s at 2.5× + take-10-b 101.8–103.8 s + take-10-m2 0.9–6.9 s (Meteor) + take-10-c 3.3–14.8 s',speed:[{from:0,to:6.6,label:'sped up ×2.5'}]},
+    {id:'case-file',from:103,to:116,title:'The case file',expected:'',src:'footage/case-file.mp4',sourceIn:0,focus:[50,45],provenance:'take-10-c 18.8–21.3, 25.5–29.3, 55.5–59.5, 98.6–101.3 s'},
   ] as MediaSlot[],
   narration,
   optionalOutlayerVoice:{source:'demo/vo/e07b.mp3',src:null as string|null,from:114,to:118},
   // The take's own audio, placed where the game played it (offsets from the event log and the recording).
+  // Film times follow take-10.log: mic on at b 57.9 → 59.6; answer at b 70.8 → 72.5; the wiretap shot starts at deck 4.0 s.
   takeAudio:[
-    {id:'deacon-line-d1',at:3.6,src:'take-audio/deacon-d1.mp3',duration:2.9,volume:.85,provenance:'line seq 24 · /api/tts'},
-    {id:'actor-question',at:60.15,src:'take-audio/actor-question.mp3',duration:6.6,volume:.95,provenance:'actor recording fed to the mic (demo/actor/fisher-q1.wav)'},
-    {id:'sully-answer',at:71.3,src:'take-audio/sully-answer.mp3',duration:4.5,volume:.95,provenance:'interrogation seq 30 · /api/tts'},
-    {id:'deacon-line-leniency',at:91.6,src:'take-audio/deacon-len.mp3',duration:3.4,volume:.9,provenance:'line seq 52 · /api/tts'},
-    {id:'wiretap',at:109.6,src:'take-audio/wiretap.mp3',startFrom:3.9,duration:3.8,volume:.9,provenance:'/api/session/…/wiretap, 3.9–7.7 s'},
+    {id:'deacon-line-d2',at:3.0,src:'take-audio/deacon-d1.mp3',duration:4.3,volume:.85,provenance:'line seq 40 (day 2) · /api/tts'},
+    {id:'actor-question',at:59.7,src:'take-audio/actor-question.mp3',duration:6.6,volume:.95,provenance:'actor recording fed to the mic (demo/actor/fisher-q1.wav)'},
+    {id:'sully-answer',at:72.6,src:'take-audio/sully-answer.mp3',duration:4.9,volume:.95,provenance:'interrogation seq 29 · /api/tts'},
+    {id:'sully-line-leniency',at:91.9,src:'take-audio/sully-len.mp3',duration:3.3,volume:.9,provenance:'line seq 50 · /api/tts'},
+    {id:'wiretap',at:109.3,src:'take-audio/wiretap.mp3',startFrom:2.5,duration:4.0,volume:.9,provenance:'/api/session/7d314f91…/wiretap, 2.5–6.5 s ("…Season 64. Cap at 60. Sign with me."), deck playing from c 53.0'},
   ] as TakeAudio[],
 };
 export const slot = (id:string) => {

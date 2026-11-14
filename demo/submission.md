@@ -27,6 +27,7 @@ Measured: 87 contract tests; 348 server tests; 18 of 18 attacks refused on the d
 
 ## Notes for the form (not part of the text above)
 
-- The demo's back-room question is an actor's voice (ElevenLabs) fed to the microphone, because the recording browser was headless. Everything after it is the live game. Disclosed in `demo/footage/takes.md`.
-- The recorded season (49) ran in standard mode; enclave mode is shown as season 32's evidence, not claimed for the take.
+- The film's season (64) was played by the team's recording wallet, cipherkuma.testnet, in Meteor through NEAR Connect: real sign-in and a real wallet-signed `offer_leniency` (`58XrpDpt…`), on a local build of the deployed commit pointed at the live API and contract.
+- The demo's back-room question is an actor's voice (ElevenLabs) fed to the microphone, because the recording browser had no microphone. Everything after it is the live game. Disclosed in `demo/footage/takes.md`.
+- Season 64 ran in standard mode; enclave mode is shown as season 32's evidence, not claimed for the take.
 - Every on-screen claim and its evidence: `demo/truth-ledger.md`.

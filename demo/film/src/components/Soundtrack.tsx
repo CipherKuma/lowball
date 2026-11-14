@@ -12,13 +12,13 @@ const Track=({src,seconds,gain,loop=false,start=0}:{src:string;seconds:number;ga
   const duck=voiceAt(af+F(start))?.36:1;
   return gain*duck*lerp(af,0,24)*lerp(af,seconds*30-40,seconds*30,1,0);
  }}/>;
-// Game music changes where the game changed it: harbour_tense when leniency opened (film 89.6 s), the confession
-// sting with Sully's confession (93.6 s), then the victory theme once the bonds were slashed.
+// Game music changes where the game changed it (take 10): harbour_tense once the wallet-signed leniency window opened
+// (film ~91.4 s), the confession sting with Sully's confession (94.9 s), then the victory theme once the bonds were slashed.
 export const Soundtrack=()=> <>
- <Sequence from={0} durationInFrames={F(90.5)} name="MUSIC · harbour_loop"><Track src="audio/music/harbour_loop.mp3" seconds={90.5} gain={.2} loop/></Sequence>
- <Sequence from={F(89.4)} durationInFrames={F(9)} name="MUSIC · harbour_tense"><Track src="audio/music/harbour_tense.mp3" seconds={9} start={89.4} gain={.17} loop/></Sequence>
- <Sequence from={F(93.6)} durationInFrames={F(6)} name="MUSIC · confession_sting"><Track src="audio/music/confession_sting.mp3" seconds={6} start={93.6} gain={.22}/></Sequence>
- <Sequence from={F(98)} durationInFrames={F(37)} name="MUSIC · victory"><Track src="audio/music/victory.mp3" seconds={37} start={98} gain={.18} loop/></Sequence>
+ <Sequence from={0} durationInFrames={F(92.4)} name="MUSIC · harbour_loop"><Track src="audio/music/harbour_loop.mp3" seconds={92.4} gain={.2} loop/></Sequence>
+ <Sequence from={F(91.3)} durationInFrames={F(6.5)} name="MUSIC · harbour_tense"><Track src="audio/music/harbour_tense.mp3" seconds={6.5} start={91.3} gain={.17} loop/></Sequence>
+ <Sequence from={F(94.9)} durationInFrames={F(6)} name="MUSIC · confession_sting"><Track src="audio/music/confession_sting.mp3" seconds={6} start={94.9} gain={.22}/></Sequence>
+ <Sequence from={F(97.4)} durationInFrames={F(37.6)} name="MUSIC · victory"><Track src="audio/music/victory.mp3" seconds={37.6} start={97.4} gain={.18} loop/></Sequence>
  <Sequence from={0} durationInFrames={F(135)} name="SFX · rain"><Track src="audio/sfx/rain_loop.mp3" seconds={135} gain={.085} loop/></Sequence>
  <Sequence from={F(7)} durationInFrames={F(128)} name="SFX · lamp"><Track src="audio/sfx/lamp_buzz_loop.mp3" seconds={128} start={7} gain={.025} loop/></Sequence>
  {soundCues.map((s,i)=><Sequence key={i} from={F(s.at)} durationInFrames={90} name={`SFX · ${s.file}`}><Audio src={staticFile(`audio/sfx/${s.file}.mp3`)} volume={s.volume}/></Sequence>)}

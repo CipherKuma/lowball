@@ -47,3 +47,21 @@ wiretap · 50 on-chain record · 84.2 forgery drill results: `E_BAD_CONFESSION_S
 | case-file.mp4 | c 5–7.5, 13.5–16.5, 22–26.5, 83.9–86.9 (in order) | 103–116 |
 
 Raw takes stay local until the final cut is approved, then go to Dropbox with `~/.agents/bin/media-offload`.
+
+## Take 10 (final, wallet-first) — 15 Nov 2026 00:58 IST, season 64
+
+- Player: **cipherkuma.testnet** in the Meteor web wallet (team recording wallet, Chrome on CDP 9412, approved by Gabriel
+  for testnet recording). Sign-in = NEAR Connect → Meteor "Sign Message: Sign in to Lowball"; leniency = Meteor
+  "Approve Transaction" for `offer_leniency` (`58XrpDpt7WNFrxL7qwygCfAvVhKF6TsE1xS2NQBT5Vjj`).
+- Origin: local production build of `ce51dc2` on `http://127.0.0.1:4399`, `/api` proxied to the live Worker (live testnet
+  contract and API), per the rule that value-moving approvals happen on a local build.
+- Segments (MP4/H.264, 24 fps, all real time): a (landing → Connect → picker → Meteor Web), m1 (Meteor sign message),
+  b (licence → season → day 1 → day 2 back room → day 2 → Offer leniency), m2 (Meteor approve), c (verdict → case file).
+  Beat times: `take-10.log`. Cut by `cut-take.mjs` (session scratchpad) into the film's slots; provenance per slot in
+  `demo/film/src/data/take.ts`.
+- Outcome: Sully confessed first; Ines and Odile refused `E_ALREADY_CONFESSED`; 4 bonds slashed, 0.20 NEAR paid to
+  cipherkuma.testnet; 5/5 pact signatures re-checked in the browser; 3/3 forgeries refused. All tx outcomes re-read on
+  testnet (demo/truth-ledger.md).
+- The back-room question is the same actor recording fed through the page's getUserMedia seam (the recording browser
+  has no microphone). Takes 2–9 are superseded; take 9 (season 62) was discarded because its gameplay segment dropped
+  frames under machine load and played faster than real time.

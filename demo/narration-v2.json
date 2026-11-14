@@ -1,7 +1,7 @@
 {
   "voice": "iP95p4xoKVk53GoZ742B",
   "model": "eleven_v4",
-  "take": "take 9, season 62 (wallet-first, 15 Nov 2026)",
+  "take": "take 10, season 64 (wallet-first, 15 Nov 2026)",
   "lines": [
     {
       "id": "n01",
@@ -19,7 +19,7 @@
       "id": "n03",
       "at": 26.3,
       "text": "You sign in with your own NEAR wallet. Before dawn, the five buyers sign a price-fixing pact, each with its own key, and lock bonds in our contract.",
-      "evidence": "season 62: cipherkuma.testnet signed in through NEAR Connect (Meteor, NEP-413); 5 bonds posted, pact with 5 members"
+      "evidence": "season 64: cipherkuma.testnet signed in through NEAR Connect (Meteor, NEP-413); 5 bonds posted, pact with 5 members"
     },
     {
       "id": "n04",
@@ -49,13 +49,13 @@
       "id": "n08",
       "at": 83.6,
       "text": "So you offer leniency, signed in your own wallet. The contract opens a window that closes after two hundred blocks.",
-      "evidence": "season 62: offer_leniency signed by cipherkuma.testnet in Meteor; NEP-519 yield, deadline block 277697679"
+      "evidence": "season 64: offer_leniency 58XrpDpt… signed by cipherkuma.testnet in Meteor; NEP-519 yield, 200 blocks"
     },
     {
       "id": "n09",
       "at": 95.1,
-      "text": "Sully talks first and walks free. Every signature checks out, and four bonds are slashed and paid to your wallet.",
-      "evidence": "season 62: Sully confessed (9isYKgqY…), 4 bonds slashed, 0.20 NEAR paid to cipherkuma.testnet"
+      "text": "Sully talks first and walks free. Every signature checks out, four bonds are slashed and paid to your wallet, and the late confessions are refused.",
+      "evidence": "season 64: Sully confessed (DZgEwTip…), 4 bonds slashed, 0.20 NEAR paid to cipherkuma.testnet; Ines and Odile refused E_ALREADY_CONFESSED"
     },
     {
       "id": "n10",
