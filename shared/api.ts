@@ -28,13 +28,18 @@ export type ContractErrorCode =
   | 'E_NO_COMMIT' | 'E_ALREADY_REVEALED' | 'E_BAD_REVEAL' | 'E_NOT_READY' | 'E_NOT_FINISHED'
   | 'E_NO_DAY' | 'E_NO_LENIENCY' | 'E_SEASON_MISMATCH' | 'E_NOT_MEMBER' | 'E_DUP_SIGNER'
   | 'E_BAD_SIG' | 'E_TOO_FEW' | 'E_ALREADY_CONFESSED' | 'E_CLOSED' | 'E_SEASON_OPEN'
-  | 'E_SLASHED' | 'E_ALREADY_WITHDRAWN';
+  | 'E_SLASHED' | 'E_ALREADY_WITHDRAWN'
+  // contract upgrade (BRIEF-2 U1/U2/U3)
+  | 'E_LENIENCY_OPEN' | 'E_BAD_EVM' | 'E_NO_TOKEN' | 'E_NOT_TOKEN_OWNER' | 'E_MT_PARTIAL'
+  | 'E_NEED_1_YOCTO' | 'E_SELF_TRANSFER' | 'E_NOT_CONTRACT';
 
 /** Server-side error codes (HTTP error bodies and `error` events). */
 export type ServerErrorCode =
   | 'BAD_REQUEST' | 'NOT_FOUND' | 'BAD_PHASE' | 'BUSY' | 'RATE_LIMITED' | 'TREASURY_LOW'
   | 'RPC_UNAVAILABLE' | 'TX_FAILED' | 'TX_NOT_FOUND' | 'TX_MISMATCH' | 'MODEL_UNAVAILABLE'
-  | 'MODEL_BAD_OUTPUT' | 'TTS_UNAVAILABLE' | 'INTERNAL';
+  | 'MODEL_BAD_OUTPUT' | 'TTS_UNAVAILABLE' | 'INTERNAL'
+  // additive: spend caps and the cross-chain payout
+  | 'BUDGET_EXHAUSTED' | 'TTS_LIMIT' | 'PAYOUT_EVM_FAILED';
 
 export type ErrorCode = ContractErrorCode | ServerErrorCode;
 
@@ -62,6 +67,11 @@ export interface SessionStatus {
   leniencyAvailable: boolean;
   /** true once a confession has been settled on-chain */
   confessed: boolean;
+  /**
+   * true while the server is still waiting on the chain after leniency: the 200-block window has not
+   * resolved (holdout pending) or the cross-chain payout has not landed. Keep polling events.
+   */
+  finalizing?: boolean;
   /** highest event seq written so far */
   lastSeq: number;
 }
@@ -70,6 +80,11 @@ export interface SessionStatus {
 export interface CreateSessionRequest {
   /** "ed25519:<base58>" browser-generated public key; becomes a FunctionCall key on the player account */
   playerPublicKey: string;
+  /**
+   * Optional Sepolia address ("0x" + 40 hex). When set the slashed NEAR is paid out cross-chain through
+   * Chain Signatures (the `payout_evm` event); the server validates it with zod and passes it to create_season.
+   */
+  payoutEvm?: string;
 }
 export interface CreateSessionResponse {
   sessionId: string;
@@ -80,6 +95,8 @@ export interface CreateSessionResponse {
   days: number;
   bondYocto: string;
   network: 'testnet';
+  /** the validated payout address the season was created with, or null (NEAR payout) */
+  payoutEvm?: string | null;
 }
 
 // ---- GET /api/session/:id/events?after=n ----
@@ -141,11 +158,40 @@ export type GameEventBody =
   | { type: 'bids_revealed'; reveals: BidReveal[]; identical: boolean }
   | { type: 'lot_settled'; winner: BuyerId | null; price: number; shortfall: number; tx: string }
   | { type: 'line'; buyer: BuyerId; text: string; mood: Mood }
-  | { type: 'leniency_open'; tx: string }
+  /** deadlineBlock: NEAR block height at which the on-chain 200-block window ends (always set by the server) */
+  | { type: 'leniency_open'; tx: string; deadlineBlock?: number }
   | { type: 'deliberating'; buyer: BuyerId }
   | { type: 'confession_attempt'; buyer: BuyerId; ok: boolean; errorCode?: ErrorCode; tx: string }
-  | { type: 'slashed'; confessor: BuyerId; slashed: SlashedBuyer[]; payoutYocto: string; tx: string }
-  | { type: 'holdout' }
+  | {
+      type: 'slashed';
+      confessor: BuyerId;
+      slashed: SlashedBuyer[];
+      payoutYocto: string;
+      tx: string;
+      /** contract payout_route when the event was written: 'near' | 'evm_pending' (cross-chain payout follows) */
+      payoutRoute?: string;
+    }
+  /**
+   * reason 'timeout': the contract's 200-block yield expired with no confession (confirmed on-chain);
+   * 'no_pact': fewer than two buyers signed, so nobody could confess. Always set by the server.
+   */
+  | { type: 'holdout'; reason?: 'timeout' | 'no_pact' }
+  /** NEP-245 mt_mint of the day's catch (parsed from the open_lot receipt). amount = kg. */
+  | { type: 'lot_minted'; tokenId: string; amount: number; tx: string }
+  /** NEP-245 mt_transfer of the catch from escrow to the winning buyer (parsed from the settle_lot receipt). */
+  | { type: 'lot_transferred'; tokenId: string; to: string; buyer?: BuyerId | null; memo?: string; tx: string }
+  /** Cross-chain payout: Chain Signatures signed a Sepolia transfer to the fisher's address. */
+  | {
+      type: 'payout_evm';
+      to: string;
+      amountWei: string;
+      sepoliaTx: string;
+      nearTx: string;
+      /** receipt state at emit time; a broadcast tx that is not yet mined is 'pending' */
+      status?: 'success' | 'reverted' | 'pending';
+    }
+  /** Reserved for the OutLayer TEE buyer keys (emitted by that integration, not by the core server). */
+  | { type: 'tee_signed'; buyer: BuyerId; jobId: string; attestationUrl: string }
   | { type: 'season_closed'; tx: string }
   | { type: 'error'; code: ErrorCode; message: string; retryable: boolean };
 

@@ -19,4 +19,11 @@ SEASON_DAYS = "6"
 BOND_NEAR = "0.2"
 MIN_TREASURY_NEAR = "1.5"
 MAX_SESSIONS_PER_IP_HOUR = "8"
+# Spend caps enforced by code (src/pricing.ts): POST /api/session answers 402 BUDGET_EXHAUSTED once the D1 ledger of
+# NEAR AI token spend reaches this many USD; ElevenLabs upstream calls are capped per session (cache hits are free).
+NEARAI_BUDGET_USD = "8"
+TTS_MAX_PER_SESSION = "40"
+# Cross-chain payout relayer: desk defaults to desk.<contract>; Sepolia RPCs default to public providers.
+# DESK_ACCOUNT_ID = "desk.lowball-ck.testnet"
+# SEPOLIA_RPC_URLS = "https://ethereum-sepolia-rpc.publicnode.com,https://sepolia.drpc.org"
 ALLOWED_ORIGIN = "*"

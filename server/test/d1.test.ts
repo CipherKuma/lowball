@@ -14,8 +14,10 @@ let db: D1Database;
 beforeAll(async () => {
   proxy = await getPlatformProxy({ configPath: new URL('../wrangler.toml', import.meta.url).pathname, persist: false });
   db = (proxy.env as { DB: D1Database }).DB;
-  const sql = readFileSync(new URL('../migrations/0001_init.sql', import.meta.url), 'utf8');
-  for (const stmt of sql.split(';').map((s) => s.trim()).filter(Boolean)) await db.prepare(stmt).run();
+  for (const file of ['0001_init.sql', '0002_spend.sql']) {
+    const sql = readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8').replace(/^--.*$/gm, '');
+    for (const stmt of sql.split(';').map((s) => s.trim()).filter(Boolean)) await db.prepare(stmt).run();
+  }
 }, 30000);
 afterAll(async () => {
   await proxy.dispose();
@@ -52,6 +54,21 @@ function storeContract(name: string, make: () => Store) {
       expect(await s.listArtifacts(id, 'tx')).toEqual([{ a: 2 }]);
       expect(await s.countSessionsSince('1.1.1.1', Date.now() - 1000)).toBeGreaterThanOrEqual(1);
       expect(await s.countSessionsSince('2.2.2.2', 0)).toBe(0);
+    });
+
+    it('keeps the spend ledger and the per-session voice counter', async () => {
+      const s = make();
+      const before = await s.totalSpendUsd();
+      await s.addSpend({ model: 'm', promptTokens: 100, completionTokens: 10, usd: 0.25 });
+      await s.addSpend({ model: 'm', promptTokens: 100, completionTokens: 10, usd: 0.5 });
+      expect((await s.totalSpendUsd()) - before).toBeCloseTo(0.75, 10);
+      const id = crypto.randomUUID();
+      expect(await s.reserveTts(id, 2)).toBe(true);
+      expect(await s.reserveTts(id, 2)).toBe(true);
+      expect(await s.reserveTts(id, 2)).toBe(false);
+      await s.releaseTts(id);
+      expect(await s.reserveTts(id, 2)).toBe(true);
+      expect(await s.reserveTts(crypto.randomUUID(), 2)).toBe(true);
     });
   });
 }

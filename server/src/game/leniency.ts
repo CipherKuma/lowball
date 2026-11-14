@@ -3,7 +3,11 @@ import { AppError } from '../errors.js';
 import { DeliberateOut, JSON_SCHEMAS } from '../llm/schemas.js';
 import type { PactJson, PactSigJson } from '../chain/types.js';
 import type { GameCtx } from './ctx.js';
+import { startHoldoutWait, startPayout } from './finalize.js';
 import { deliberatePrompt, system } from './prompts.js';
+
+/** Default wall-clock one /leniency request may spend waiting on the chain (the proxy cuts at 100 s). */
+export const DEFAULT_WAIT_MS = 40_000;
 
 export interface LeniencyOutcome {
   confessor: BuyerId | null;
@@ -29,7 +33,7 @@ interface Attempt {
  */
 export async function runLeniency(ctx: GameCtx, txHash: string): Promise<LeniencyOutcome> {
   const s = ctx.state;
-  if ((s.phase !== 'lot_open' && s.phase !== 'settled') || s.seasonId === null || s.confessed) {
+  if ((s.phase !== 'lot_open' && s.phase !== 'settled') || s.seasonId === null || s.confessed || s.finalize) {
     throw new AppError('BAD_PHASE', 'Leniency is not available right now.');
   }
   if (s.deliberatedDays.includes(s.day)) {
@@ -38,12 +42,14 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
   const check = await ctx.chain.verifyLeniencyTx(txHash, s.playerAccountId, s.seasonId);
   if (!check.ok) throw new AppError(check.errorCode ?? 'TX_FAILED', check.message ? 'The offer_leniency transaction failed.' : undefined);
   s.leniencyTx[String(s.day)] = txHash;
-  await ctx.emit({ type: 'leniency_open', tx: txHash });
+  const deadlineBlock = check.deadlineBlock ?? (await ctx.chain.blockHeight()) + 200;
+  await ctx.emit({ type: 'leniency_open', tx: txHash, deadlineBlock });
 
   if (!s.pact) {
-    // No cartel formed, so nobody holds a pact to hand over. An honest outcome.
+    // No cartel formed, so nobody holds a pact to hand over and nobody will confess; the chain window just
+    // times out. An honest outcome, reported as such without waiting for it.
     s.deliberatedDays.push(s.day);
-    await ctx.emit({ type: 'holdout' });
+    await ctx.emit({ type: 'holdout', reason: 'no_pact' });
     await ctx.save();
     return { confessor: null };
   }
@@ -84,7 +90,7 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
     let errorCode: ErrorCode | undefined;
     let hash = '';
     try {
-      const r = await ctx.chain.confess(id, s.seasonId!, pact, sigs);
+      const r = await ctx.chain.confess(id, s.seasonId!, pact, sigs, { payoutEvm: s.payoutEvm !== null });
       await ctx.recordTx(`confess ${id}`, acct, r);
       ok = r.ok;
       errorCode = r.errorCode;
@@ -104,8 +110,9 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
       await ctx.save();
       throw new AppError('MODEL_UNAVAILABLE', 'A buyer could not answer; offer leniency again.');
     }
-    await ctx.emit({ type: 'holdout' });
-    await ctx.save();
+    // Nobody confessed. The contract, not this server, decides the holdout: the NEP-519 yield has to time out
+    // (200 blocks). Wait for it within this request's budget; if it is not over yet, event polls resume it.
+    await startHoldoutWait(ctx, deadlineBlock, ctx.deps.waitMs ?? DEFAULT_WAIT_MS);
     return { confessor: null };
   }
 
@@ -125,11 +132,11 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
     slashed,
     payoutYocto: view.player_payout,
     tx: winner.tx!,
+    payoutRoute: view.payout_route,
   });
-  const closeTx = await ctx.must('close_season', ctx.chain.houseId, ctx.chain.closeSeason(s.seasonId));
-  s.closeTx = closeTx;
-  s.phase = 'closed';
-  await ctx.emit({ type: 'season_closed', tx: closeTx });
   await ctx.save();
+  // Settle the payout story (cross-chain hop when the season has one), then close. The phase stays put until
+  // that is done so the client keeps polling and sees every event.
+  await startPayout(ctx, winner.tx!, ctx.deps.waitMs ?? DEFAULT_WAIT_MS);
   return { confessor: winner.buyer };
 }

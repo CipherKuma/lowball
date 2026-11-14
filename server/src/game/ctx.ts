@@ -10,6 +10,16 @@ export interface GameConfig {
   days: number;
   bondYocto: bigint;
   minTreasuryYocto: bigint;
+  /** refuse new sessions once cumulative NEAR AI spend reaches this many USD (undefined: no cap) */
+  nearAiBudgetUsd?: number;
+}
+
+/** Cross-chain payout relayer (server/src/chainsig). Absent when the Worker has none configured. */
+export interface PayoutRelay {
+  relay(
+    seasonId: number,
+    o: { waitSignedMs: number; waitReceiptMs: number },
+  ): Promise<{ to: string; amountWei: string; sepoliaTx: string; status: 'success' | 'reverted' | 'pending' }>;
 }
 
 export interface GameDeps {
@@ -19,6 +29,14 @@ export interface GameDeps {
   pactKeys: Record<BuyerId, KeyPair>;
   config: GameConfig;
   now?: () => number;
+  payout?: PayoutRelay;
+  /** wait between chain polls (tests advance the mock chain here) */
+  sleep?: (ms: number) => Promise<void>;
+  pollMs?: number;
+  /** wall-clock one HTTP request may spend waiting on the chain after leniency (Cloudflare proxy cuts at 100 s) */
+  waitMs?: number;
+  /** wall-clock one events poll may spend resuming a pending holdout/payout */
+  lazyMs?: number;
 }
 
 /** Per-request handle on one session: owns the in-memory state, event sequencing and receipts. */
@@ -50,6 +68,18 @@ export class GameCtx {
 
   save(): Promise<void> {
     return this.deps.store.saveState(this.id, this.state);
+  }
+
+  /** Like must(), but returns the whole result (receipt logs included). */
+  async mustTx(label: string, signer: string, p: Promise<TxResult>): Promise<TxResult> {
+    const r = await p;
+    await this.recordTx(label, signer, r);
+    if (!r.ok) throw new AppError(r.errorCode ?? 'TX_FAILED', r.failure ? `${label}: ${r.errorCode ?? 'failed'}` : undefined);
+    return r;
+  }
+
+  sleep(ms: number): Promise<void> {
+    return (this.deps.sleep ?? ((n) => new Promise<void>((r) => setTimeout(r, n))))(ms);
   }
 
   /** Record a tx for the case file and return its hash; throws AppError when the tx failed. */

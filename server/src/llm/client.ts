@@ -25,6 +25,8 @@ export interface NearAiOptions {
   fetchFn?: typeof fetch;
   timeoutMs?: number;
   sleep?: (ms: number) => Promise<void>;
+  /** called once per completion HTTP response (also ones whose output is later rejected): the spend ledger */
+  onUsage?: (u: UsageReport) => void | Promise<void>;
   /** hard cap on total completions (sim harness) */
   maxCalls?: number;
   /** attestation evidence record; undefined uses the bundled file, null means none */
@@ -55,6 +57,14 @@ export function extractJson(text: string): unknown {
   throw new Error('no JSON object in reply');
 }
 
+export interface UsageReport {
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  /** true when the response carried no usage block and the counts are an upper-bound estimate from byte sizes */
+  estimated: boolean;
+}
+
 export class NearAiLlm implements Llm {
   readonly model: string;
   private base: string;
@@ -68,6 +78,7 @@ export class NearAiLlm implements Llm {
   private useSchema = true;
   calls = 0;
   private maxCalls: number;
+  private onUsage: ((u: UsageReport) => void | Promise<void>) | undefined;
 
   constructor(o: NearAiOptions) {
     this.evidence = o.evidence === undefined ? (bundledEvidence as unknown as AttestationEvidence) : o.evidence;
@@ -79,6 +90,22 @@ export class NearAiLlm implements Llm {
     this.timeoutMs = o.timeoutMs ?? 25000;
     this.sleep = o.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
     this.maxCalls = o.maxCalls ?? Infinity;
+    this.onUsage = o.onUsage;
+  }
+
+  /** Report token usage to the ledger. Never throws: metering must not break a game step. */
+  private async meter(j: any, requestBytes: number, responseBytes: number): Promise<void> {
+    if (!this.onUsage) return;
+    const pt = Number(j?.usage?.prompt_tokens);
+    const ct = Number(j?.usage?.completion_tokens);
+    const has = Number.isFinite(pt) && Number.isFinite(ct);
+    // no usage block: assume one token per byte, a ceiling for English/JSON text
+    const report: UsageReport = { model: this.model, promptTokens: has ? pt : requestBytes, completionTokens: has ? ct : responseBytes, estimated: !has };
+    try {
+      await this.onUsage(report);
+    } catch (e) {
+      debug('nearai', 'usage ledger failed', String(e));
+    }
   }
 
   private headers(): Record<string, string> {
@@ -173,6 +200,7 @@ export class NearAiLlm implements Llm {
       let raw: unknown;
       try {
         const j: any = JSON.parse(new TextDecoder().decode(responseBytes));
+        await this.meter(j, requestBytes.length, responseBytes.length);
         chatId = String(j.id ?? '');
         const content: string = j.choices?.[0]?.message?.content ?? '';
         raw = extractJson(content);

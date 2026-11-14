@@ -21,6 +21,8 @@ export interface AppOptions {
   allowedOrigin: (c: Context) => string;
   maxSessionsPerIpHour: (c: Context) => number;
   elevenLabsKey: (c: Context) => string;
+  /** upstream ElevenLabs calls one session may cause (cache hits are free) */
+  ttsMaxPerSession: (c: Context) => number;
   cache?: () => CacheLike | null;
   ttsFetch?: typeof fetch;
 }
@@ -68,7 +70,7 @@ export function createApp(o: AppOptions): Hono {
     const ip = c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for') ?? 'local';
     const used = await deps.store.countSessionsSince(ip, Date.now() - 3_600_000);
     if (used >= o.maxSessionsPerIpHour(c)) throw new AppError('RATE_LIMITED');
-    return c.json(await createSession(deps, body.playerPublicKey, ip));
+    return c.json(await createSession(deps, body.playerPublicKey, ip, body.payoutEvm));
   });
 
   app.get('/api/session/:id/events', async (c) => {
@@ -97,10 +99,15 @@ export function createApp(o: AppOptions): Hono {
   app.get('/api/tts', async (c) => {
     const q = TtsQuerySchema.safeParse({ session: c.req.query('session'), seq: c.req.query('seq') });
     if (!q.success) throw new AppError('BAD_REQUEST', 'session and seq are required.');
-    const ev = await o.deps(c).store.getEvent(q.data.session, q.data.seq);
+    const store = o.deps(c).store;
+    const ev = await store.getEvent(q.data.session, q.data.seq);
     if (!ev || ev.type !== 'line') throw new AppError('NOT_FOUND', 'That event is not a spoken line.');
+    const max = o.ttsMaxPerSession(c);
     return synthesize(ev.buyer as BuyerId, ev.text, {
       apiKey: o.elevenLabsKey(c),
+      // the per-session cap is enforced here, in code, before any upstream (billed) call
+      reserve: () => store.reserveTts(q.data.session, max),
+      release: () => store.releaseTts(q.data.session),
       cache: o.cache?.() ?? null,
       fetchFn: o.ttsFetch,
     });

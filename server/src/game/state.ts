@@ -26,6 +26,8 @@ export interface AuctionProgress {
   day: number;
   decisions: Partial<Record<BuyerId, BidDecision>>;
   settleTx?: string;
+  /** NEP-245 mt_transfer parsed from the settle_lot receipt (kept so a resumed step still reports it) */
+  transfer?: { tokenId: string; to: string; memo?: string };
 }
 
 export interface SetupProgress {
@@ -42,6 +44,11 @@ export interface PactMemory {
   nonce: string;
   signatures: { buyer: BuyerId; signer: string; signatureB64: string }[];
 }
+
+/** Work that still waits on the chain after a /leniency request returned (the phase stays put until it ends). */
+export type Finalize =
+  | { kind: 'holdout'; day: number; deadlineBlock: number; checkedAt: number }
+  | { kind: 'payout'; confessTx: string; startedAt: number; checkedAt: number };
 
 export interface SessionState {
   playerAccountId: string;
@@ -71,6 +78,9 @@ export interface SessionState {
   /** days on which the deliberation already ran, to keep /leniency idempotent */
   deliberatedDays: number[];
   closeTx?: string;
+  /** Sepolia address the season was created with (cross-chain payout), or null */
+  payoutEvm: string | null;
+  finalize: Finalize | null;
 }
 
 export function newState(init: {
@@ -81,9 +91,12 @@ export function newState(init: {
   days: number;
   bondYocto: string;
   seed: number;
+  payoutEvm?: string | null;
 }): SessionState {
   return {
     ...init,
+    payoutEvm: init.payoutEvm ?? null,
+    finalize: null,
     seasonId: null,
     phase: 'created',
     day: 0,

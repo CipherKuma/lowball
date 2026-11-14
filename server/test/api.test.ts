@@ -21,6 +21,7 @@ function rigApp() {
     allowedOrigin: () => '*',
     maxSessionsPerIpHour: () => 2,
     elevenLabsKey: () => 'xi-test',
+    ttsMaxPerSession: () => 40,
     cache: () => cache,
     ttsFetch: (async (url: string, init: any) => {
       ttsCalls++;
@@ -93,7 +94,7 @@ describe('API boundaries (zod) and error shape', () => {
 
 describe('error mapping for every contract error code', () => {
   const errorsRs = readFileSync(new URL('../../contract/src/errors.rs', import.meta.url), 'utf8');
-  const codes = [...errorsRs.matchAll(/pub const (E_[A-Z_]+): &str/g)].map((m) => m[1]!);
+  const codes = [...errorsRs.matchAll(/pub const (E_[A-Z0-9_]+): &str/g)].map((m) => m[1]!);
 
   it('finds the contract codes', () => expect(codes.length).toBeGreaterThanOrEqual(30));
 

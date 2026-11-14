@@ -22,6 +22,10 @@ export interface TtsOptions {
   cache?: CacheLike | null;
   fetchFn?: typeof fetch;
   voiceMap?: Record<string, string>;
+  /** claim one upstream call (false: the session's cap is spent); cache hits never call it */
+  reserve?: () => Promise<boolean>;
+  /** hand a claimed call back when the upstream call failed */
+  release?: () => Promise<void>;
 }
 
 /** ElevenLabs flash TTS with a Cache API layer keyed by voice + text hash. */
@@ -32,6 +36,7 @@ export async function synthesize(buyer: BuyerId, text: string, o: TtsOptions): P
   const cacheKey = new Request(keyUrl);
   const hit = await o.cache?.match(cacheKey);
   if (hit) return new Response(hit.body, { status: 200, headers: { 'content-type': 'audio/mpeg', 'x-tts-cache': 'hit', 'cache-control': 'public, max-age=86400' } });
+  if (o.reserve && !(await o.reserve())) throw new AppError('TTS_LIMIT');
   const f = o.fetchFn ?? fetch;
   let res: Response;
   try {
@@ -41,9 +46,13 @@ export async function synthesize(buyer: BuyerId, text: string, o: TtsOptions): P
       body: JSON.stringify({ text, model_id: TTS_MODEL, voice_settings: { stability: 0.45, similarity_boost: 0.8 } }),
     });
   } catch {
+    await o.release?.();
     throw new AppError('TTS_UNAVAILABLE');
   }
-  if (!res.ok) throw new AppError('TTS_UNAVAILABLE');
+  if (!res.ok) {
+    await o.release?.();
+    throw new AppError('TTS_UNAVAILABLE');
+  }
   const bytes = new Uint8Array(await res.arrayBuffer());
   const headers = { 'content-type': 'audio/mpeg', 'cache-control': 'public, max-age=86400' };
   await o.cache?.put(cacheKey, new Response(bytes, { status: 200, headers })).catch(() => undefined);

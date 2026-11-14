@@ -43,7 +43,7 @@ export async function runAdversarial(
     const cs = mustOk(await chain.createSeason(player, buyers, days, bond), 'create_season');
     const id = cs.seasonId!;
     if (withBonds) for (const b of BUYER_IDS) mustOk(await chain.postBond(b, id, bond), 'post_bond');
-    if (lot) mustOk(await chain.openLot(id, 'cod', 100), 'open_lot');
+    if (lot) mustOk(await chain.openLot(id, 'Atlantic cod', 100, 40), 'open_lot');
     return id;
   };
   const sign = (p: Pact, ids: BuyerId[], keys = pactKeys): PactSigJson[] =>
@@ -56,7 +56,8 @@ export async function runAdversarial(
   // 1. bid before bond
   const s1 = await newSeason(false, false);
   record('commit before bond posted', 'E_NO_BOND', await chain.commitBid('marlow', s1, sha256(concat(u32le(1), salt()))));
-  record('open lot before bonds posted', 'E_BONDS_MISSING', await chain.openLot(s1, 'cod', 100));
+  record('open lot before bonds posted', 'E_BONDS_MISSING', await chain.openLot(s1, 'Atlantic cod', 100, 40));
+  record('create_season with a malformed payout address', 'E_BAD_EVM', await chain.createSeason(player, buyers, days, bond, '0x1234'));
 
   // 2. wrong deposit
   record('post_bond with wrong deposit', 'E_BAD_DEPOSIT', await chain.postBond('marlow', s1, bond + 1n));
@@ -107,8 +108,10 @@ export async function runAdversarial(
       mustOk(await chain.revealBid(b, s4, 50, salts[i]!), 'reveal');
     }
     mustOk(await chain.settleLot(s4), 'settle');
-    if (d < days) mustOk(await chain.openLot(s4, 'cod', 100), 'open_lot');
+    if (d < days) mustOk(await chain.openLot(s4, 'Atlantic cod', 100, 40), 'open_lot');
   }
-  record('open lot past the last day', 'E_PAST_DAYS', await chain.openLot(s4, 'cod', 100));
+  record('open lot past the last day', 'E_PAST_DAYS', await chain.openLot(s4, 'Atlantic cod', 100, 40));
+  const s5 = await newSeason(true, false);
+  record('open lot with zero weight', 'E_BAD_ARGS', await chain.openLot(s5, 'Atlantic cod', 100, 0));
   return results;
 }

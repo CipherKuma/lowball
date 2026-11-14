@@ -101,7 +101,7 @@ export async function beginSeason(ctx: GameCtx): Promise<void> {
       const r = await chain.ensureBuyerFunds(b.id, b.accountId, config.bondYocto);
       if (r) await ctx.must(`fund ${b.id}`, chain.houseId, Promise.resolve(r));
     }
-    const res = await chain.createSeason(s.playerAccountId, buyerAccounts, s.days, config.bondYocto);
+    const res = await chain.createSeason(s.playerAccountId, buyerAccounts, s.days, config.bondYocto, s.payoutEvm ?? undefined);
     await ctx.recordTx('create_season', chain.houseId, res);
     if (!res.ok || res.seasonId === undefined) throw new AppError(res.errorCode ?? 'TX_FAILED', 'create_season failed');
     s.seasonId = res.seasonId;

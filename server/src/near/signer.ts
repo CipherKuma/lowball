@@ -13,6 +13,8 @@ export interface TxResult {
   failure?: string;
   /** base64 SuccessValue of the first receipt when ok */
   returnValue?: string;
+  /** every log line of every receipt in execution order (EVENT_JSON lines included) */
+  logs?: string[];
 }
 
 /** Walk a final execution outcome and report the first failure, if any. */
@@ -32,7 +34,9 @@ export function parseOutcome(hash: string, res: any): TxResult {
     return { hash, ok: false, errorCode: code ?? (broke ? 'TREASURY_LOW' : 'TX_FAILED'), failure: text.slice(0, 400) };
   }
   const sv = top?.status?.SuccessValue;
-  return { hash, ok: true, returnValue: typeof sv === 'string' ? sv : undefined };
+  const logs: string[] = [];
+  for (const r of top?.receipts_outcome ?? []) for (const l of r?.outcome?.logs ?? []) logs.push(String(l));
+  return { hash, ok: true, returnValue: typeof sv === 'string' ? sv : undefined, logs };
 }
 
 const queues = new Map<string, Promise<unknown>>();
@@ -48,6 +52,13 @@ export function enqueue<T>(key: string, job: () => Promise<T>): Promise<T> {
   });
   return run;
 }
+
+/**
+ * 'EXECUTED_OPTIMISTIC' (default) waits for every receipt. 'INCLUDED' returns once the tx is in a block: use it
+ * for a call that leaves a yielded (NEP-519) receipt pending, such as offer_leniency, which would otherwise hang
+ * until the 200-block timeout. An included tx reports ok: the function receipt's result is read from the contract.
+ */
+export type WaitUntil = 'EXECUTED_OPTIMISTIC' | 'INCLUDED';
 
 export interface SignerOptions {
   accountId: string;
@@ -77,9 +88,9 @@ export class NearSigner {
   }
 
   /** Sign and submit; never double-submits: a timeout is resolved by looking the tx hash up first. */
-  send(receiverId: string, actions: Action[]): Promise<TxResult> {
+  send(receiverId: string, actions: Action[], waitUntil: WaitUntil = 'EXECUTED_OPTIMISTIC'): Promise<TxResult> {
     const key = `${this.accountId}#${this.publicKey}`;
-    return enqueue(key, () => this.sendNow(key, receiverId, actions));
+    return enqueue(key, () => this.sendNow(key, receiverId, actions, waitUntil));
   }
 
   private async blockHash(force = false): Promise<string> {
@@ -99,7 +110,7 @@ export class NearSigner {
     return BigInt(ak.nonce);
   }
 
-  private async sendNow(key: string, receiverId: string, actions: Action[]): Promise<TxResult> {
+  private async sendNow(key: string, receiverId: string, actions: Action[], waitUntil: WaitUntil): Promise<TxResult> {
     let nonceFloor: bigint | null = null;
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
       let nonce = (await this.chainNonce()) + 1n;
@@ -111,11 +122,11 @@ export class NearSigner {
         this.kp,
       );
       try {
-        const res = await this.submit(signed.base64);
+        const res = await this.submit(signed.base64, waitUntil);
         lastNonce.set(key, nonce);
         return parseOutcome(signed.hash, res);
       } catch (e) {
-        const known = await this.lookup(signed.hash);
+        const known = await this.lookup(signed.hash, waitUntil);
         if (known) {
           lastNonce.set(key, nonce);
           return known; // it actually landed: do not resubmit
@@ -140,16 +151,16 @@ export class NearSigner {
     throw new AppError('TX_FAILED', 'transaction not accepted after retries');
   }
 
-  private async submit(base64: string): Promise<any> {
-    return this.rpc.call('send_tx', { signed_tx_base64: base64, wait_until: 'EXECUTED_OPTIMISTIC' });
+  private async submit(base64: string, waitUntil: WaitUntil): Promise<any> {
+    return this.rpc.call('send_tx', { signed_tx_base64: base64, wait_until: waitUntil });
   }
 
-  private async lookup(hash: string): Promise<TxResult | null> {
+  private async lookup(hash: string, waitUntil: WaitUntil): Promise<TxResult | null> {
     try {
       const res = await this.rpc.call('tx', {
         tx_hash: hash,
         sender_account_id: this.accountId,
-        wait_until: 'EXECUTED_OPTIMISTIC',
+        wait_until: waitUntil,
       });
       return parseOutcome(hash, res);
     } catch {

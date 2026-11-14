@@ -58,7 +58,7 @@ async function playSeason(mode: SeasonResult['mode'], llm: Llm): Promise<SeasonR
   }
   const chain = new MockChain(pubs);
   const store = new MemoryStore();
-  const deps: GameDeps = { store, chain, llm, pactKeys, config: { days: DAYS, bondYocto: BOND, minTreasuryYocto: 1n } };
+  const deps: GameDeps = { store, chain, llm, pactKeys, config: { days: DAYS, bondYocto: BOND, minTreasuryYocto: 1n }, sleep: async () => chain.advanceBlocks(60), pollMs: 1 };
   const r: SeasonResult = { mode, pact: false, signers: 0, cap: null, daysPlayed: 0, confessionDay: null, confessor: null, offers: 0, shortfallPerLot: 0, identicalRate: 0 };
   try {
     const s = await createSession(deps, formatPublicKey(generateKeyPair().publicKey), 'sim');

@@ -81,7 +81,9 @@ export function makeRig(policy: Partial<Policy> = {}, config: Partial<GameConfig
   const chain = new MockChain(pubs);
   const store = new MemoryStore();
   const llm = new ScriptedLlm({ ...DEFAULT_POLICY, ...policy });
-  return { deps: { store, chain, llm, pactKeys, config: { ...TEST_CONFIG, ...config } }, chain, store, llm };
+  // Time is simulated: every wait between chain polls advances the mock chain by 60 blocks (200 = the yield window).
+  const sleep = async () => chain.advanceBlocks(60);
+  return { deps: { store, chain, llm, pactKeys, config: { ...TEST_CONFIG, ...config }, sleep, pollMs: 1 }, chain, store, llm };
 }
 
 export const PLAYER_PK = formatPublicKey(generateKeyPair().publicKey);

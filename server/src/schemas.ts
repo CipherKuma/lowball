@@ -14,7 +14,10 @@ export const PublicKeySchema = z
     }
   }, 'playerPublicKey must be ed25519:<base58> (32 bytes)');
 
-export const CreateSessionSchema = z.object({ playerPublicKey: PublicKeySchema }).strict();
+/** Sepolia address: "0x" + 40 hex. Checked here and again by the contract (E_BAD_EVM). */
+export const EvmAddressSchema = z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'payoutEvm must be 0x followed by 40 hex characters');
+
+export const CreateSessionSchema = z.object({ playerPublicKey: PublicKeySchema, payoutEvm: EvmAddressSchema.optional() }).strict();
 
 export const StepSchema = z.object({ action: z.enum(['begin', 'sell', 'hold', 'next_day']) }).strict();
 

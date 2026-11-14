@@ -6,20 +6,17 @@ export interface LotSpec {
   fairValue: number;
 }
 
-/** [species, base marks per lot, kg range] */
-const SPECIES: [string, number, [number, number]][] = [
+/**
+ * [species, base marks per lot, kg range]. Exactly the six species that have art (art/final); a lot never
+ * names a fish the client cannot draw. The string is also the on-chain token title.
+ */
+export const SPECIES: [string, number, [number, number]][] = [
   ['Atlantic cod', 110, [180, 320]],
-  ['haddock', 90, [150, 260]],
+  ['halibut', 210, [60, 140]],
   ['monkfish', 140, [60, 120]],
-  ['turbot', 190, [40, 90]],
-  ['sea bass', 170, [50, 110]],
-  ['hake', 100, [160, 280]],
-  ['mackerel', 70, [260, 480]],
-  ['Dover sole', 160, [40, 80]],
-  ['John Dory', 150, [30, 70]],
   ['bluefin tuna', 260, [90, 200]],
+  ['sea bass', 170, [50, 110]],
   ['lobster', 230, [25, 60]],
-  ['king scallops', 200, [40, 90]],
 ];
 
 /** mulberry32 */
@@ -42,4 +39,4 @@ export function lotFor(seed: number, day: number): LotSpec {
   return { species, weightKg, fairValue };
 }
 
-export const FAIR_VALUE_RANGE = { min: 60, max: 300 };
+export const FAIR_VALUE_RANGE = { min: 60, max: 320 };

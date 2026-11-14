@@ -6,11 +6,14 @@ import { randomPlayerAccount, nearToYocto, type BuyerKeys } from '../near/accoun
 import { parseSecretKey, type KeyPair } from '../near/keys.js';
 import { toB64, utf8 } from '../near/bytes.js';
 import type { Action } from '../near/tx.js';
-import type { Chain, LeniencyCheck, PactJson, PactSigJson, SeasonView } from './types.js';
+import type { Chain, ConfessOptions, LeniencyCheck, PactJson, PactSigJson, SeasonView } from './types.js';
 
 const TGAS = 10n ** 12n;
 const GAS_DEFAULT = 100n * TGAS;
-const GAS_CONFESS = 250n * TGAS;
+/** confess forwards up to 200 Tgas to desk.pay_evm when the season has payout_evm (contract/INTERFACE.md) */
+export const GAS_CONFESS_EVM = 250n * TGAS;
+/** plain confess uses about 5 Tgas */
+export const GAS_CONFESS = 30n * TGAS;
 const PLAYER_FUNDING = nearToYocto('0.05');
 const PLAYER_ALLOWANCE = nearToYocto('0.04');
 const STORAGE_PRICE = 10n ** 19n;
@@ -21,6 +24,8 @@ export interface RealChainOptions {
   houseId: string;
   houseKey: string;
   buyerKeys: Record<BuyerId, BuyerKeys>;
+  /** wait between get_season polls while the leniency window opens (default 1500 ms) */
+  pollMs?: number;
 }
 
 function jsonArgs(o: unknown): Uint8Array {
@@ -34,9 +39,11 @@ export class RealChain implements Chain {
   private house: NearSigner;
   private buyers = {} as Record<BuyerId, NearSigner>;
   private buyerAccounts = {} as Record<BuyerId, string>;
+  private pollMs: number;
 
   constructor(o: RealChainOptions) {
     this.rpc = o.rpc;
+    this.pollMs = o.pollMs ?? 1500;
     this.contractId = o.contractId;
     this.houseId = o.houseId;
     const hk: KeyPair = parseSecretKey(o.houseKey);
@@ -87,10 +94,10 @@ export class RealChain implements Chain {
     return this.house.send(accountId, [{ kind: 'transfer', deposit: target - spendable }]);
   }
 
-  async createSeason(player: string, buyers: string[], days: number, bond: bigint) {
-    const r = await this.house.send(this.contractId, [
-      this.fn('create_season', { player, buyers, days, bond: bond.toString() }),
-    ]);
+  async createSeason(player: string, buyers: string[], days: number, bond: bigint, payoutEvm?: string) {
+    const args: Record<string, unknown> = { player, buyers, days, bond: bond.toString() };
+    if (payoutEvm) args.payout_evm = payoutEvm;
+    const r = await this.house.send(this.contractId, [this.fn('create_season', args)]);
     let seasonId: number | undefined;
     if (r.ok && r.returnValue) {
       try {
@@ -106,9 +113,9 @@ export class RealChain implements Chain {
   postBond(buyer: BuyerId, seasonId: number, bond: bigint) {
     return this.buyers[buyer].send(this.contractId, [this.fn('post_bond', { season_id: seasonId }, bond)]);
   }
-  openLot(seasonId: number, species: string, fairValue: number) {
+  openLot(seasonId: number, species: string, fairValue: number, weightKg: number) {
     return this.house.send(this.contractId, [
-      this.fn('open_lot', { season_id: seasonId, species, fair_value: fairValue }),
+      this.fn('open_lot', { season_id: seasonId, species, fair_value: fairValue, weight_kg: weightKg }),
     ]);
   }
   commitBid(buyer: BuyerId, seasonId: number, hash: Uint8Array) {
@@ -124,9 +131,10 @@ export class RealChain implements Chain {
   settleLot(seasonId: number) {
     return this.house.send(this.contractId, [this.fn('settle_lot', { season_id: seasonId })]);
   }
-  confess(buyer: BuyerId, seasonId: number, pact: PactJson, signatures: PactSigJson[]) {
+  confess(buyer: BuyerId, seasonId: number, pact: PactJson, signatures: PactSigJson[], opts: ConfessOptions = {}) {
+    // The race is real: every confessing buyer submits at once and the contract picks the first.
     return this.buyers[buyer].send(this.contractId, [
-      this.fn('confess', { season_id: seasonId, pact, signatures }, 0n, GAS_CONFESS),
+      this.fn('confess', { season_id: seasonId, pact, signatures }, 0n, opts.payoutEvm ? GAS_CONFESS_EVM : GAS_CONFESS),
     ]);
   }
   closeSeason(seasonId: number) {
@@ -149,22 +157,38 @@ export class RealChain implements Chain {
     return this.view<SeasonView>('get_season', { season_id: seasonId });
   }
 
+  async blockHeight(): Promise<number> {
+    const b = await this.rpc.call('block', { finality: 'optimistic' });
+    return Number(b.header.height);
+  }
+
+  private async blockHeightOf(blockHash: string): Promise<number | null> {
+    try {
+      const b = await this.rpc.call('block', { block_id: blockHash });
+      return Number(b.header.height);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * offer_leniency leaves a yielded receipt pending until a confession or the 200-block timeout, so a
+   * client (or this server) that waits for EXECUTED hangs. Confirm INCLUSION of the signed tx, check what it
+   * is, then read the window from get_season (the function receipt lands a block or two later).
+   */
   async verifyLeniencyTx(txHash: string, player: string, seasonId: number): Promise<LeniencyCheck> {
     let res: any = null;
     for (let i = 0; i < 12 && !res; i++) {
       try {
-        res = await this.rpc.call('tx', {
-          tx_hash: txHash,
-          sender_account_id: player,
-          wait_until: 'EXECUTED_OPTIMISTIC',
-        });
+        res = await this.rpc.call('tx', { tx_hash: txHash, sender_account_id: player, wait_until: 'INCLUDED' });
       } catch (e) {
         if (!(e instanceof RpcError)) throw e;
-        await new Promise((r) => setTimeout(r, 1500));
+        await new Promise((r) => setTimeout(r, this.pollMs));
       }
     }
     if (!res) return { ok: false, errorCode: 'TX_NOT_FOUND' };
-    const t = res.transaction ?? res.final_execution_outcome?.transaction;
+    const top = res.final_execution_outcome ?? res;
+    const t = top.transaction;
     const fc = t?.actions?.[0]?.FunctionCall;
     let args: any = null;
     try {
@@ -182,8 +206,23 @@ export class RealChain implements Chain {
     ) {
       return { ok: false, errorCode: 'TX_MISMATCH' };
     }
-    const out = parseOutcome(txHash, res);
-    if (!out.ok) return { ok: false, errorCode: out.errorCode, message: out.failure };
-    return { ok: true };
+    // A node may already attach outcomes: a failure there is definitive (the yield never opened).
+    if (top.transaction_outcome || top.receipts_outcome) {
+      const out = parseOutcome(txHash, top);
+      if (!out.ok) return { ok: false, errorCode: out.errorCode, message: out.failure };
+    }
+    const txBlock = top.transaction_outcome?.block_hash ? await this.blockHeightOf(top.transaction_outcome.block_hash) : null;
+    for (let i = 0; i < 24; i++) {
+      const v = await this.getSeason(seasonId).catch(() => null);
+      if (v?.leniency_open && v.leniency_open_block !== null && v.leniency_deadline_block !== null) {
+        // The window must be the one this tx opened, not an older live one (that tx would have failed E_LENIENCY_OPEN).
+        if (txBlock === null || (v.leniency_open_block >= txBlock && v.leniency_open_block <= txBlock + 25)) {
+          return { ok: true, openBlock: v.leniency_open_block, deadlineBlock: v.leniency_deadline_block };
+        }
+        return { ok: false, errorCode: 'E_LENIENCY_OPEN', message: 'A different leniency window is already open.' };
+      }
+      await new Promise((r) => setTimeout(r, this.pollMs));
+    }
+    return { ok: false, errorCode: 'TX_FAILED', message: 'The leniency window did not open on-chain.' };
   }
 }

@@ -14,18 +14,48 @@ src/near/*            tx builder, RPC failover,       src/chain/*  RealChain (te
 
 | route | purpose |
 |---|---|
-| `POST /api/session {playerPublicKey}` | creates the fisher account `p<6>.<house>` (function-call key, `offer_leniency` only, 0.05 NEAR). Returns `CreateSessionResponse`. |
+| `POST /api/session {playerPublicKey, payoutEvm?}` | creates the fisher account `p<6>.<house>` (function-call key, `offer_leniency` only, 0.05 NEAR). `payoutEvm` (optional, `0x` + 40 hex, zod-validated) makes the season pay out on Sepolia through Chain Signatures. Refused `402 BUDGET_EXHAUSTED` once NEAR AI spend reaches the cap. Returns `CreateSessionResponse`. |
 | `GET  /api/session/:id/events?after=n` | `{events, status}`; poll about every 700 ms. |
 | `POST /api/session/:id/step {action}` | `begin` (season, bonds, private cartel talk, day 1), `sell`, `hold`, `next_day`. Resumable: a failed step can simply be repeated. |
-| `POST /api/session/:id/leniency {txHash}` | verifies the player's `offer_leniency` tx on-chain, then runs the deliberation race. |
+| `POST /api/session/:id/leniency {txHash}` | confirms the player's `offer_leniency` tx is INCLUDED and the window is open on-chain (it is a pending NEP-519 yield, so it never waits for execution), then runs the deliberation race. Returns within about 60 s; a holdout or payout still pending then keeps `status.finalizing` true and is finished by the events polls. |
 | `GET  /api/session/:id/casefile` | sealed (409 `BAD_PHASE`) until the season is `closed`. |
-| `GET  /api/tts?session=&seq=` | mp3 of a `line` event, buyer voice from `audio/voices.json`, cached in the Cache API. |
+| `GET  /api/tts?session=&seq=` | mp3 of a `line` event, buyer voice from `audio/voices.json`, cached in the Cache API. At most `TTS_MAX_PER_SESSION` (40) upstream ElevenLabs calls per session (cache hits are free); then `429 TTS_LIMIT`. |
 
 Errors are always `{error, code}`. Contract refusals keep their stable `E_*` codes; server codes are in
 `ServerErrorCode`. Phases: `created -> lot_open <-> settled -> closed`. A step that is already running returns
 409 `BUSY` (D1 lock, 170 s TTL). Leniency is available in `lot_open` and `settled` (the contract opens a
 window per day). A confession closes the season. If fewer than two buyers sign the pact there is no cartel and
 leniency ends in `holdout` (honest outcome, no model call).
+
+### Contract upgrade (BRIEF-2): what the server does
+
+- `open_lot` sends `weight_kg`; the `mt_mint` EVENT_JSON in the receipt becomes `lot_minted`; `settle_lot`'s `mt_transfer` becomes
+  `lot_transferred`. No log, no event (nothing is guessed).
+- `offer_leniency` is a pending yield. `RealChain.verifyLeniencyTx` waits for INCLUSION (`wait_until: INCLUDED`), checks signer,
+  receiver, method and season, then polls `get_season` until `leniency_open` is true and reads `leniency_deadline_block`
+  (reported in `leniency_open.deadlineBlock`). Anything that waits for `EXECUTED` hangs for the 200-block timeout.
+  `NearSigner.send(..., 'INCLUDED')` is the same mode for scripts.
+- Holdout is decided by the contract. After deliberation, if nobody confessed, the server polls `get_season` (and the block
+  height) until `leniency_open` is false or the deadline block passed, then emits `holdout{reason:'timeout'}`. With fewer than two
+  signers there is nothing to confess, so `holdout{reason:'no_pact'}` is emitted at once. If the window outlasts the request
+  (about 40 s budget, Cloudflare cuts at 100 s) the request returns with `status.finalizing: true`; further steps are refused
+  (`BAD_PHASE`) so the next lot cannot kill the window, and every `GET .../events` poll resumes the wait.
+- `confess` attaches 250 Tgas when the season has `payoutEvm` (it forwards to `desk.pay_evm`), else 30 Tgas.
+- With `payoutEvm`: after `slashed` (`payoutRoute: 'evm_pending'`) the server waits for the desk callback (`payout_route`),
+  then calls the relayer in `src/chainsig` (signed MPC tx, Sepolia broadcast) and emits `payout_evm{to, amountWei, sepoliaTx, nearTx}`
+  before `season_closed`. Desk failed (`evm_failed_near`): the NEAR went to the player instead, reported as
+  `error{PAYOUT_EVM_FAILED, retryable:false}`. Relayer missing or failing: `error{PAYOUT_EVM_FAILED, retryable:true}`; a Sepolia
+  hash is never fabricated. The phase stays put (client keeps polling) until the payout story is told, then the season closes.
+
+### Spend caps (code, not prompts)
+
+- NEAR AI: every completion's `usage.prompt_tokens/completion_tokens` is priced from the model catalogue
+  (`src/pricing.ts`, source https://cloud-api.near.ai/v1/models; unknown model = high fallback price; no usage block = byte-size
+  upper bound, flagged estimated) and written to the D1 `spend` table. `POST /api/session` is refused with
+  `{error, code:'BUDGET_EXHAUSTED'}` (HTTP 402) once the sum reaches `NEARAI_BUDGET_USD` (default 8). A season already running
+  finishes (a season costs cents).
+- ElevenLabs: `reserveTts` in D1 claims a call per session before any upstream request (40 default), a failed upstream call
+  gives the slot back, and responses are cached by voice and text hash.
 
 Public events never reveal whether a pact exists before leniency: `rumour` is emitted every season. The
 private channel, pact, signatures and every NEAR AI receipt live in the Case File.
@@ -40,6 +70,9 @@ npm run db:migrate            # local D1 in .wrangler/state
 cp .dev.vars.example .dev.vars   # fill from the vault (see below); .dev.vars is gitignored
 npm run dev                   # wrangler dev --local on http://localhost:8787
 ```
+
+Optional vars (wrangler.toml): `NEARAI_BUDGET_USD`, `TTS_MAX_PER_SESSION`, `DESK_ACCOUNT_ID` (default `desk.<contract>`),
+`SEPOLIA_RPC_URLS`.
 
 Secrets (names only): `HOUSE_PRIVATE_KEY`, `BUYER_KEYS_JSON`, `NEARAI_API_KEY`, `ELEVENLABS_API_KEY`.
 `~/.claude/vault/inject.sh get NEARAI_API_KEY ELEVENLABS_API_KEY --dir server` writes `.env.local`; copy the
@@ -70,7 +103,7 @@ npm run e2e -- --in-process   # real testnet, SCRIPTED buyers: checks the chain 
 
 Not deployed from here. Needs the Workers Paid plan: one `begin` makes roughly 50 to 60 subrequests
 (RPC + NEAR AI + signatures), above the free plan's limit of 50. `wrangler d1 create lowball`, put the id in
-`wrangler.toml`, `wrangler d1 migrations apply lowball --remote`, `wrangler secret put ...`, `wrangler deploy`.
+`wrangler.toml`, `wrangler d1 migrations apply lowball --remote` (applies `0001_init` and `0002_spend`), `wrangler secret put ...`, `wrangler deploy`.
 Set `ALLOWED_ORIGIN` to the Pages origin. A `begin` takes tens of seconds; keep it under Cloudflare's 100 s
 proxy timeout (it is resumable if it ever is not).
 

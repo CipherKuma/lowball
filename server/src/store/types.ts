@@ -3,6 +3,13 @@ import type { SessionState } from '../game/state.js';
 
 export type ArtifactKind = 'receipt' | 'tx';
 
+export interface SpendEntry {
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  usd: number;
+}
+
 export interface Store {
   createSession(id: string, state: SessionState, ip: string): Promise<void>;
   loadState(id: string): Promise<SessionState | null>;
@@ -18,4 +25,11 @@ export interface Store {
   addArtifact(id: string, kind: ArtifactKind, key: string, value: unknown): Promise<void>;
   listArtifacts<T = unknown>(id: string, kind: ArtifactKind): Promise<T[]>;
   countSessionsSince(ip: string, sinceMs: number): Promise<number>;
+  /** one row per NEAR AI completion (cumulative, all sessions) */
+  addSpend(e: SpendEntry): Promise<void>;
+  totalSpendUsd(): Promise<number>;
+  /** claim one upstream ElevenLabs call for this session; false when the session already used `max` */
+  reserveTts(sessionId: string, max: number): Promise<boolean>;
+  /** give a claimed call back (the upstream call failed and was not billed) */
+  releaseTts(sessionId: string): Promise<void>;
 }

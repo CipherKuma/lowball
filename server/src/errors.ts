@@ -41,6 +41,14 @@ export const CONTRACT_ERRORS: Record<ContractErrorCode, ErrorInfo> = {
   E_SEASON_OPEN: { message: 'The season is still open.', retryable: false, status: 409 },
   E_SLASHED: { message: 'That bond was slashed.', retryable: false, status: 409 },
   E_ALREADY_WITHDRAWN: { message: 'The bond is already withdrawn.', retryable: false, status: 409 },
+  E_LENIENCY_OPEN: { message: 'A leniency window is already open.', retryable: false, status: 409 },
+  E_BAD_EVM: { message: 'That payout address is not a valid 0x address.', retryable: false, status: 400 },
+  E_NO_TOKEN: { message: 'That catch token does not exist.', retryable: false, status: 404 },
+  E_NOT_TOKEN_OWNER: { message: 'That account does not hold the catch token.', retryable: false, status: 403 },
+  E_MT_PARTIAL: { message: 'A catch lot can only be moved whole.', retryable: false, status: 400 },
+  E_NEED_1_YOCTO: { message: 'The transfer needs exactly 1 yoctoNEAR attached.', retryable: false, status: 400 },
+  E_SELF_TRANSFER: { message: 'A lot cannot be transferred to its own holder.', retryable: false, status: 400 },
+  E_NOT_CONTRACT: { message: 'Only the contract account may do that.', retryable: false, status: 403 },
 };
 
 export const SERVER_ERRORS: Record<string, ErrorInfo> = {
@@ -58,6 +66,9 @@ export const SERVER_ERRORS: Record<string, ErrorInfo> = {
   MODEL_BAD_OUTPUT: { message: 'The buyer model returned unusable output.', retryable: true, status: 502 },
   TTS_UNAVAILABLE: { message: 'Voice synthesis is unavailable.', retryable: true, status: 502 },
   INTERNAL: { message: 'Internal error.', retryable: true, status: 500 },
+  BUDGET_EXHAUSTED: { message: 'The harbour has spent its buyer-model budget. No new seasons can start.', retryable: false, status: 402 },
+  TTS_LIMIT: { message: 'This session has used its voice budget.', retryable: false, status: 429 },
+  PAYOUT_EVM_FAILED: { message: 'The cross-chain payout did not complete.', retryable: true, status: 502 },
 };
 
 export class AppError extends Error {
@@ -87,7 +98,7 @@ export function isContractCode(s: string): s is ContractErrorCode {
 
 /** Find a stable contract error code inside a panic/failure string. */
 export function extractContractCode(text: string): ContractErrorCode | null {
-  const m = /E_[A-Z_]+/.exec(text);
+  const m = /E_[A-Z0-9_]+/.exec(text);
   return m && isContractCode(m[0]) ? m[0] : null;
 }
 

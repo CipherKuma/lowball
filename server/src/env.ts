@@ -16,5 +16,12 @@ export interface Env {
   MIN_TREASURY_NEAR?: string;
   ALLOWED_ORIGIN?: string;
   MAX_SESSIONS_PER_IP_HOUR?: string;
+  /** cumulative NEAR AI spend cap in USD (default 8, src/pricing.ts) */
+  NEARAI_BUDGET_USD?: string;
+  /** upstream ElevenLabs calls per session (default 40) */
+  TTS_MAX_PER_SESSION?: string;
+  /** payout desk account (default desk.<contract>) and Sepolia RPC urls, comma separated */
+  DESK_ACCOUNT_ID?: string;
+  SEPOLIA_RPC_URLS?: string;
   DEBUG?: string;
 }

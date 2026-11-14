@@ -1,8 +1,10 @@
 import { sha256 } from '@noble/hashes/sha256';
 import { BUYER_IDS, type BuyerId } from '../../../shared/api.js';
 import { AppError } from '../errors.js';
+import { debug } from '../log.js';
 import { BidOut, JSON_SCHEMAS, ReactOut } from '../llm/schemas.js';
 import { concat, fromHex, toHex } from '../near/bytes.js';
+import { mintsOf, transfersOf } from '../near/events.js';
 import { newSalt } from '../near/signer.js';
 import type { GameCtx } from './ctx.js';
 import { lotFor } from './lots.js';
@@ -32,12 +34,17 @@ export async function openNextLot(ctx: GameCtx): Promise<void> {
   if (s.seasonId === null) throw new AppError('BAD_PHASE');
   const day = s.day + 1;
   const lot = lotFor(s.seed, day);
-  const tx = await ctx.must(`open_lot day ${day}`, ctx.chain.houseId, ctx.chain.openLot(s.seasonId, lot.species, lot.fairValue));
+  const opened = await ctx.mustTx(`open_lot day ${day}`, ctx.chain.houseId, ctx.chain.openLot(s.seasonId, lot.species, lot.fairValue, lot.weightKg));
+  const tx = opened.hash;
   s.day = day;
   s.lots.push({ day, ...lot, reveals: [], identical: false, winner: null, price: 0, shortfall: 0, settled: false });
   s.phase = 'lot_open';
   s.auction = null;
   await ctx.emit({ type: 'day_opened', day, species: lot.species, weightKg: lot.weightKg, fairValue: lot.fairValue, tx });
+  // The catch is a NEP-245 token minted into escrow by open_lot: report what the receipt says, never a guess.
+  const mint = mintsOf(opened.logs)[0];
+  if (mint) await ctx.emit({ type: 'lot_minted', tokenId: mint.tokenId, amount: mint.amount, tx });
+  else debug('days', 'open_lot receipt carried no mt_mint event');
   await ctx.save();
 }
 
@@ -132,7 +139,10 @@ export async function sell(ctx: GameCtx): Promise<void> {
 
   // 4. settle
   if (!auction.settleTx) {
-    auction.settleTx = await ctx.must(`settle_lot d${s.day}`, ctx.chain.houseId, ctx.chain.settleLot(seasonId));
+    const settled = await ctx.mustTx(`settle_lot d${s.day}`, ctx.chain.houseId, ctx.chain.settleLot(seasonId));
+    auction.settleTx = settled.hash;
+    const t = transfersOf(settled.logs)[0];
+    if (t) auction.transfer = { tokenId: t.tokenId, to: t.to, memo: t.memo };
     await ctx.save();
   }
   const view = await ctx.chain.getSeason(seasonId);
@@ -144,6 +154,11 @@ export async function sell(ctx: GameCtx): Promise<void> {
   await ctx.emit({ type: 'bids_revealed', reveals: revealList, identical });
   for (const id of BUYER_IDS) await ctx.say(id, auction.decisions[id]!.say, auction.decisions[id]!.mood);
   await ctx.emit({ type: 'lot_settled', winner, price: lv.price, shortfall, tx: auction.settleTx });
+  if (auction.transfer) {
+    const to = auction.transfer.to;
+    const buyer = BUYER_IDS.find((id) => s.buyers.find((b) => b.id === id)!.accountId === to) ?? null;
+    await ctx.emit({ type: 'lot_transferred', tokenId: auction.transfer.tokenId, to, buyer, memo: auction.transfer.memo, tx: auction.settleTx });
+  }
   lot.reveals = revealList.map((r) => ({ buyer: r.buyer, amount: r.amount }));
   lot.identical = lv.identical;
   lot.winner = winner;

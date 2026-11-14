@@ -1,6 +1,6 @@
 import type { GameEvent } from '../../../shared/api.js';
 import type { SessionState } from '../game/state.js';
-import type { ArtifactKind, Store } from './types.js';
+import type { ArtifactKind, SpendEntry, Store } from './types.js';
 
 export class D1Store implements Store {
   constructor(private db: D1Database) {}
@@ -75,6 +75,24 @@ export class D1Store implements Store {
       .bind(id, kind)
       .all<{ body: string }>();
     return r.results.map((x) => JSON.parse(x.body) as T);
+  }
+  async addSpend(e: SpendEntry) {
+    await this.db
+      .prepare('INSERT INTO spend (at, model, prompt_tokens, completion_tokens, usd) VALUES (?, ?, ?, ?, ?)')
+      .bind(Date.now(), e.model, e.promptTokens, e.completionTokens, e.usd)
+      .run();
+  }
+  async totalSpendUsd() {
+    const row = await this.db.prepare('SELECT COALESCE(SUM(usd), 0) AS t FROM spend').first<{ t: number }>();
+    return Number(row?.t ?? 0);
+  }
+  async reserveTts(sessionId: string, max: number) {
+    await this.db.prepare('INSERT INTO tts_usage (session_id, n) VALUES (?, 0) ON CONFLICT(session_id) DO NOTHING').bind(sessionId).run();
+    const r = await this.db.prepare('UPDATE tts_usage SET n = n + 1 WHERE session_id = ? AND n < ?').bind(sessionId, max).run();
+    return (r.meta.changes ?? 0) > 0;
+  }
+  async releaseTts(sessionId: string) {
+    await this.db.prepare('UPDATE tts_usage SET n = MAX(0, n - 1) WHERE session_id = ?').bind(sessionId).run();
   }
   async countSessionsSince(ip: string, since: number) {
     const row = await this.db

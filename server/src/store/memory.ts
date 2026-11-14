@@ -1,6 +1,6 @@
 import type { GameEvent } from '../../../shared/api.js';
 import type { SessionState } from '../game/state.js';
-import type { ArtifactKind, Store } from './types.js';
+import type { ArtifactKind, SpendEntry, Store } from './types.js';
 
 /** In-memory Store used by tests and the sim harness. */
 export class MemoryStore implements Store {
@@ -9,6 +9,8 @@ export class MemoryStore implements Store {
   events = new Map<string, GameEvent[]>();
   artifacts = new Map<string, { kind: ArtifactKind; key: string; value: unknown }[]>();
   sessions: { ip: string; at: number }[] = [];
+  spend: SpendEntry[] = [];
+  tts = new Map<string, number>();
 
   async createSession(id: string, state: SessionState, ip: string) {
     this.states.set(id, structuredClone(state));
@@ -58,6 +60,21 @@ export class MemoryStore implements Store {
   }
   async listArtifacts<T>(id: string, kind: ArtifactKind) {
     return (this.artifacts.get(id) ?? []).filter((a) => a.kind === kind).map((a) => a.value as T);
+  }
+  async addSpend(e: SpendEntry) {
+    this.spend.push({ ...e });
+  }
+  async totalSpendUsd() {
+    return this.spend.reduce((a, e) => a + e.usd, 0);
+  }
+  async reserveTts(sessionId: string, max: number) {
+    const n = this.tts.get(sessionId) ?? 0;
+    if (n >= max) return false;
+    this.tts.set(sessionId, n + 1);
+    return true;
+  }
+  async releaseTts(sessionId: string) {
+    this.tts.set(sessionId, Math.max(0, (this.tts.get(sessionId) ?? 0) - 1));
   }
   async countSessionsSince(ip: string, since: number) {
     return this.sessions.filter((s) => s.ip === ip && s.at >= since).length;

@@ -25,10 +25,19 @@ async function main() {
   const chain = new Proxy(real, {
     get(t, k, r) {
       if (k === 'playerOffersLeniency') {
-        return async (seasonId: number): Promise<TxResult> =>
-          signer.send(contractId, [
-            { kind: 'functionCall', method: 'offer_leniency', args: new TextEncoder().encode(JSON.stringify({ season_id: seasonId })), gas: 30n * 10n ** 12n, deposit: 0n },
-          ]);
+        // offer_leniency leaves a yielded receipt pending: wait for inclusion, then for the window to be live
+        return async (seasonId: number): Promise<TxResult> => {
+          const r = await signer.send(
+            contractId,
+            [{ kind: 'functionCall', method: 'offer_leniency', args: new TextEncoder().encode(JSON.stringify({ season_id: seasonId })), gas: 30n * 10n ** 12n, deposit: 0n }],
+            'INCLUDED',
+          );
+          for (let i = 0; r.ok && i < 20; i++) {
+            if ((await real.getSeason(seasonId)).leniency_open) break;
+            await new Promise((x) => setTimeout(x, 1500));
+          }
+          return r;
+        };
       }
       const v = Reflect.get(t, k, r);
       return typeof v === 'function' ? v.bind(t) : v;
