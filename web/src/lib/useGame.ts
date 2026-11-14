@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import type { BuyerId, GameEvent, SessionStatus, StepAction } from '../../../shared/api';
 import { ApiFailure } from './api';
 import { audio } from './audio';
-import { LiveDriver, type Driver, type SessionMeta } from './driver';
+import { LiveDriver, type Driver, type LeniencyState, type SessionMeta, type StartOptions } from './driver';
+import { getIdentity } from './identity/store';
 import { PreviewDriver } from './preview';
 import { apply, initialView, type View } from './state';
 
@@ -94,6 +95,7 @@ export function useGame() {
   const [pending, setPending] = useState<Pending>(null);
   const [failure, setFailure] = useState<{ message: string; code: string; retry?: () => void } | null>(null);
   const firstDay = useRef({ done: false });
+  const [leniencyState, setLeniencyState] = useState<LeniencyState>('idle');
 
   const run = useCallback(async (label: Pending, fn: () => Promise<unknown>, retry?: () => void) => {
     setPending(label);
@@ -109,8 +111,11 @@ export function useGame() {
     }
   }, []);
 
-  const start = useCallback(() => {
-    const d: Driver = preview ? new PreviewDriver() : new LiveDriver();
+  /** `mode` defaults to the signed-in identity: a connected wallet plays as the wallet, anything else as a guest. */
+  const start = useCallback((opts: StartOptions = {}) => {
+    const mode = opts.mode ?? (getIdentity().kind === 'wallet' ? 'wallet' : 'guest');
+    const d: Driver = preview ? new PreviewDriver() : new LiveDriver({ ...opts, mode });
+    setLeniencyState('idle');
     driverRef.current = d;
     firstDay.current.done = false;
     dispatch({ type: 'reset' });
@@ -141,7 +146,20 @@ export function useGame() {
     const d = driverRef.current;
     const season = view.seasonId ?? view.status?.seasonId;
     if (!d || season == null) return;
-    const go = () => run('leniency', () => d.leniency(season), go);
+    const go = () =>
+      run(
+        'leniency',
+        async () => {
+          setLeniencyState('submitted');
+          try {
+            await d.leniency(season, setLeniencyState);
+          } catch (e) {
+            setLeniencyState('failed');
+            throw e;
+          }
+        },
+        go,
+      );
     void go();
   }, [run, view.seasonId, view.status?.seasonId]);
 
@@ -193,6 +211,8 @@ export function useGame() {
     start,
     act,
     offerLeniency,
+    /** idle | awaiting-wallet | submitted | open | rejected | failed */
+    leniencyState,
     loadCasefile,
     confessor,
     dismissFailure: () => setFailure(null),

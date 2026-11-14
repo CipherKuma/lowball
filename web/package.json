@@ -10,6 +10,7 @@
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
+    "@hot-labs/near-connect": "^0.12.0",
     "@noble/curves": "1.9.7",
     "howler": "^2.2.4",
     "motion": "^14.13.0",

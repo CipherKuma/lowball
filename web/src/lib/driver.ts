@@ -7,12 +7,25 @@ import type {
   SessionStatus,
   StepAction,
 } from '../../../shared/api';
-import { api } from './api';
+import { ApiFailure, api } from './api';
+import { expireSession, walletAuth } from './identity';
+import { offerLeniencyWithWallet, type LeniencyState } from './identity/walletLeniency';
 import { freshFisherKey, signOfferLeniency } from './wallet';
+
+export type { LeniencyState } from './identity/walletLeniency';
+
+/** guest: a throwaway key signs; wallet: the signed-in NEAR account is the player and signs offer_leniency itself */
+export interface StartOptions {
+  mode?: 'guest' | 'wallet';
+  /** "pay me on Sepolia": slashed NEAR is paid cross-chain to this 0x address */
+  payoutEvm?: string;
+}
 
 export interface SessionMeta {
   sessionId: string;
   playerAccountId: string;
+  /** who signs offer_leniency */
+  playerKind?: 'guest' | 'wallet';
   contractId: string;
   buyers: BuyerInfo[];
   days: number;
@@ -23,8 +36,11 @@ export interface Driver {
   readonly kind: 'live' | 'preview';
   start(): Promise<SessionMeta>;
   step(action: StepAction): Promise<void>;
-  /** Sign offer_leniency in the browser, then let the buyers deliberate. */
-  leniency(seasonId: number): Promise<BuyerId | null>;
+  /**
+   * Sign offer_leniency (guest key or the connected wallet), then let the buyers deliberate. `onState` reports
+   * awaiting-wallet / submitted / open. A wallet rejection resolves null after reporting 'rejected'.
+   */
+  leniency(seasonId: number, onState?: (s: LeniencyState) => void): Promise<BuyerId | null>;
   casefile(): Promise<CasefileResponse>;
   ttsUrl(seq: number): string | null;
   /** Corner one buyer in the back room: recorded speech or typed text. The answer arrives as an event. */
@@ -45,12 +61,27 @@ export class LiveDriver implements Driver {
   private timer: number | null = null;
   private polling = false;
 
+  constructor(private readonly opts: StartOptions = {}) {}
+
   async start(): Promise<SessionMeta> {
-    const key = freshFisherKey();
-    const s = await api.createSession(key.publicKey);
+    let s;
+    if (this.opts.mode === 'wallet') {
+      const auth = await walletAuth();
+      try {
+        s = await api.createWalletSession(auth.token, this.opts.payoutEvm);
+      } catch (e) {
+        if (e instanceof ApiFailure && e.code === 'AUTH_REQUIRED') {
+          expireSession('Your sign-in expired. Sign in with your wallet again.', true);
+        }
+        throw e;
+      }
+    } else {
+      s = await api.createSession(freshFisherKey().publicKey, this.opts.payoutEvm);
+    }
     this.meta = {
       sessionId: s.sessionId,
       playerAccountId: s.playerAccountId,
+      playerKind: s.playerKind ?? (this.opts.mode === 'wallet' ? 'wallet' : 'guest'),
       contractId: s.contractId,
       buyers: s.buyers,
       days: s.days,
@@ -95,12 +126,29 @@ export class LiveDriver implements Driver {
     await api.step(this.id(), action);
   }
 
-  async leniency(seasonId: number): Promise<BuyerId | null> {
+  async leniency(seasonId: number, onState: (s: LeniencyState) => void = () => undefined): Promise<BuyerId | null> {
     if (!this.meta) throw new Error('No session');
-    const hash = await signOfferLeniency(this.meta.playerAccountId, this.meta.contractId, seasonId);
+    let hash: string | null;
+    if (this.meta.playerKind === 'wallet') {
+      const auth = await walletAuth();
+      if (auth.accountId !== this.meta.playerAccountId) throw new Error('This season belongs to another account. Switch back or start a new season.');
+      const r = await offerLeniencyWithWallet(auth.wallet, auth.accountId, this.meta.contractId, seasonId, onState);
+      if (r.kind === 'rejected') return null;
+      if (r.kind === 'failed') throw new Error(r.message);
+      hash = r.txHash;
+    } else {
+      onState('submitted');
+      hash = await signOfferLeniency(this.meta.playerAccountId, this.meta.contractId, seasonId);
+      onState('open');
+    }
     this.loop();
-    const r = await api.leniency(this.id(), hash);
-    return r.confessor;
+    try {
+      const r = await api.leniency(this.id(), hash ?? undefined);
+      return r.confessor;
+    } catch (e) {
+      if (e instanceof ApiFailure && e.code === 'AUTH_REQUIRED') expireSession('Your sign-in expired. Sign in with your wallet again.', true);
+      throw e;
+    }
   }
 
   casefile() {

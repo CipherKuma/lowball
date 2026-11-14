@@ -1,5 +1,8 @@
 import type {
   ApiError,
+  AuthNonceResponse,
+  AuthVerifyRequest,
+  AuthVerifyResponse,
   CasefileResponse,
   CreateSessionResponse,
   ErrorCode,
@@ -44,14 +47,32 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
+
 export const api = {
-  createSession: (playerPublicKey: string) =>
-    call<CreateSessionResponse>('/api/session', { method: 'POST', body: JSON.stringify({ playerPublicKey }) }),
+  authNonce: () => call<AuthNonceResponse>('/api/auth/nonce', { method: 'POST', body: '{}' }),
+  authVerify: (body: AuthVerifyRequest) =>
+    call<AuthVerifyResponse>('/api/auth/verify', { method: 'POST', body: JSON.stringify(body) }),
+  authMe: (token: string) => call<{ accountId: string }>('/api/auth/me', { headers: bearer(token) }),
+  authLogout: (token: string) => call<unknown>('/api/auth/logout', { method: 'POST', body: '{}', headers: bearer(token) }),
+  /** wallet season: the signed-in account is the player; nothing is created or funded for it */
+  createWalletSession: (token: string, payoutEvm?: string) =>
+    call<CreateSessionResponse>('/api/session', {
+      method: 'POST',
+      headers: bearer(token),
+      body: JSON.stringify({ mode: 'wallet', ...(payoutEvm ? { payoutEvm } : {}) }),
+    }),
+  createSession: (playerPublicKey: string, payoutEvm?: string) =>
+    call<CreateSessionResponse>('/api/session', {
+      method: 'POST',
+      body: JSON.stringify({ playerPublicKey, ...(payoutEvm ? { payoutEvm } : {}) }),
+    }),
   events: (id: string, after: number) => call<EventsResponse>(`/api/session/${id}/events?after=${after}`),
   step: (id: string, action: StepAction) =>
     call<StepResponse>(`/api/session/${id}/step`, { method: 'POST', body: JSON.stringify({ action }) }),
-  leniency: (id: string, txHash: string) =>
-    call<LeniencyResponse>(`/api/session/${id}/leniency`, { method: 'POST', body: JSON.stringify({ txHash }) }),
+  /** guests send the tx hash; wallet seasons may send none and the server confirms the open window on chain */
+  leniency: (id: string, txHash?: string) =>
+    call<LeniencyResponse>(`/api/session/${id}/leniency`, { method: 'POST', body: JSON.stringify(txHash ? { txHash } : {}) }),
   casefile: (id: string) => call<CasefileResponse>(`/api/session/${id}/casefile`),
   ttsUrl: (id: string, seq: number) => `${BASE}/api/tts?session=${encodeURIComponent(id)}&seq=${seq}`,
   wiretapUrl: (id: string) => `${BASE}/api/session/${encodeURIComponent(id)}/wiretap`,
