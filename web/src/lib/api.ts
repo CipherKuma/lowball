@@ -4,6 +4,7 @@ import type {
   CreateSessionResponse,
   ErrorCode,
   EventsResponse,
+  ForgeResponse,
   LeniencyResponse,
   StepAction,
   StepResponse,
@@ -54,6 +55,7 @@ export const api = {
   casefile: (id: string) => call<CasefileResponse>(`/api/session/${id}/casefile`),
   ttsUrl: (id: string, seq: number) => `${BASE}/api/tts?session=${encodeURIComponent(id)}&seq=${seq}`,
   wiretapUrl: (id: string) => `${BASE}/api/session/${encodeURIComponent(id)}/wiretap`,
+  forge: (id: string) => call<ForgeResponse>(`/api/session/${id}/forge`, { method: 'POST', body: '{}' }),
   interrogate: async (id: string, buyer: string, input: { audio?: Blob; text?: string }) => {
     const form = new FormData();
     form.set('buyer', buyer);

@@ -2,6 +2,7 @@ import type {
   BuyerId,
   BuyerInfo,
   CasefileResponse,
+  ForgeResponse,
   GameEvent,
   SessionStatus,
   StepAction,
@@ -30,6 +31,8 @@ export interface Driver {
   interrogate(buyer: BuyerId, input: { audio?: Blob; text?: string }): Promise<void>;
   /** The cartel's private channel performed as audio (Case File, season closed). */
   wiretapUrl(): string | null;
+  /** Case File drill: real forged/replayed/late confessions the contract must refuse. */
+  forge(): Promise<ForgeResponse>;
   subscribe(onEvents: (events: GameEvent[], status: SessionStatus | null) => void): () => void;
 }
 
@@ -115,6 +118,10 @@ export class LiveDriver implements Driver {
 
   wiretapUrl() {
     return this.meta ? api.wiretapUrl(this.meta.sessionId) : null;
+  }
+
+  forge() {
+    return api.forge(this.id());
   }
 
   subscribe(fn: (e: GameEvent[], s: SessionStatus | null) => void) {

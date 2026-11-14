@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import type { BuyerId, CasefileResponse } from '../../../shared/api';
+import type { BuyerId, CasefileResponse, ForgeResponse } from '../../../shared/api';
+import { ForgeryDrill } from './ForgeryDrill';
 import { BUYER_NAMES } from '../../../shared/api';
 import { audio } from '../lib/audio';
 import type { View } from '../lib/state';
@@ -8,18 +9,20 @@ import { accountUrl, txUrl } from '../lib/wallet';
 import { recheckPact, type SigResult } from '../lib/sigcheck';
 import { Wiretap } from './Wiretap';
 
-type Tab = 'pact' | 'room' | 'chain';
+type Tab = 'pact' | 'room' | 'chain' | 'cheat';
 const ease = [0.23, 1, 0.32, 1] as const;
 
 export function CaseFile({
   load,
   view,
   wiretapUrl,
+  forge,
   onReplay,
 }: {
   load: () => Promise<CasefileResponse>;
   view: View;
   wiretapUrl: string | null;
+  forge: () => Promise<ForgeResponse>;
   onReplay: () => void;
 }) {
   const [data, setData] = useState<CasefileResponse | null>(null);
@@ -55,6 +58,7 @@ export function CaseFile({
               ['pact', 'The pact'],
               ['room', 'The back room'],
               ['chain', 'On-chain record'],
+              ['cheat', 'Try to cheat'],
             ] as const
           ).map(([k, label]) => (
             <button key={k} role="tab" aria-selected={tab === k} onClick={() => { audio.sfx('paper_slide', 0.4); setTab(k); }}>
@@ -73,6 +77,7 @@ export function CaseFile({
             </>
           )}
           {data && tab === 'chain' && <Chain data={data} view={view} />}
+          {tab === 'cheat' && <ForgeryDrill run={forge} />}
         </section>
         <footer className="folder-foot">
           <button className="btn btn-amber" onClick={onReplay}>Play another season</button>

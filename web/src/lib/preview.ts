@@ -1,6 +1,7 @@
 import type {
   BuyerId,
   CasefileResponse,
+  ForgeResponse,
   GameEvent,
   GameEventBody,
   SessionStatus,
@@ -177,6 +178,29 @@ export class PreviewDriver implements Driver {
 
   wiretapUrl() {
     return null;
+  }
+
+  async forge(): Promise<ForgeResponse> {
+    await wait(2200);
+    const kinds: Array<[ForgeResponse['attempts'][number]['kind'], string]> = [
+      ['forge', 'E_BAD_CONFESSION_SIG'],
+      ['replay', 'E_SEASON_MISMATCH'],
+      ['late', 'E_CLOSED'],
+    ];
+    return {
+      ok: true,
+      drillSeasonId: 8,
+      seq: ++this.seq,
+      attempts: kinds.map(([kind, code]) => ({
+        kind,
+        buyer: 'ines',
+        seasonId: kind === 'late' ? 7 : 8,
+        tx: fakeTx(),
+        errorCode: code as ForgeResponse['attempts'][number]['errorCode'],
+        ok: false,
+        note: 'preview',
+      })),
+    };
   }
 
   async interrogate(buyer: BuyerId, input: { audio?: Blob; text?: string }): Promise<void> {

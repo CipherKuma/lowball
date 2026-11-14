@@ -202,5 +202,9 @@ export function useGame() {
     interroError,
     clearInterroError: () => setInterroError(null),
     wiretapUrl: () => driverRef.current?.wiretapUrl() ?? null,
+    forge: () => {
+      const d = driverRef.current;
+      return d ? d.forge() : Promise.reject(new Error('No session'));
+    },
   };
 }

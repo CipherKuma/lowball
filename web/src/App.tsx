@@ -77,6 +77,7 @@ export function App() {
                 load={g.loadCasefile}
                 view={view}
                 wiretapUrl={g.wiretapUrl()}
+                forge={g.forge}
                 onReplay={() => {
                   setScreen('setup');
                   g.start();
