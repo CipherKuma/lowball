@@ -1,4 +1,4 @@
-// End-to-end season against NEAR testnet; offers leniency on day 2 from the player's own key.
+// End-to-end season against NEAR testnet; offers leniency once two identical-bid days are on record, from the player's own key.
 //   HTTP mode (real NEAR AI, real Worker):  npm run e2e -- --base http://localhost:8787 [--payout-evm 0x...]
 //   In-process (real chain, SCRIPTED model; chain-path check only, never a model result):
 //                                            npm run e2e -- --in-process
@@ -113,8 +113,15 @@ async function main() {
   };
 
   await run('begin');
-  await run('sell'); // day 1
-  await run('next_day'); // day 2 opens
+  // Leniency needs a case on the record: two settled days with identical bids (the server refuses it earlier).
+  const identicalDays = () => seen.filter((e) => e.type === 'bids_revealed' && e.identical).length;
+  for (let d = 1; d < 5; d++) {
+    await run('sell');
+    if (identicalDays() >= 2) break;
+    await run('next_day');
+  }
+  if (identicalDays() < 2) throw new Error('the buyers did not bid identically on two days, so leniency is not available');
+  await run('next_day');
 
   // The player signs offer_leniency with their own function-call key, exactly as the browser does.
   const rpc = makeRpc();
@@ -152,7 +159,7 @@ async function main() {
     `- date: ${new Date().toISOString()}, duration ${Math.round((Date.now() - t0) / 1000)}s`,
     `- contract: \`${cf.contractId}\`, season ${cf.seasonId}, player \`${cf.playerAccountId}\``,
     `- buyer decisions: ${api.model}`,
-    `- leniency offered on day 2 by the player key; confessor: **${res.confessor ?? 'nobody (holdout)'}**`,
+    `- leniency offered by the player key after two identical-bid days; confessor: **${res.confessor ?? 'nobody (holdout)'}**`,
     `- payout address: ${payoutEvm ?? 'none (NEAR payout)'}`,
     `- pact: ${cf.pact ? `cap ${cf.pact.cap}, members ${cf.pact.members.length}` : 'none formed'}`,
     `- NEAR AI receipts: ${cf.receipts.length}, verified ${cf.receipts.filter((r) => r.verification.verified).length}`,
@@ -163,6 +170,18 @@ async function main() {
     '|---|---|---|---|',
     ...cf.txs.map((t) => `| ${t.label} | ${t.signer} | ${t.ok ? 'yes' : `no (${t.errorCode})`} | [${t.hash}](${explorer(t.hash)}) |`),
     `| offer_leniency (browser-signed) | ${cf.playerAccountId} | ${offer.ok ? 'yes' : 'no'} | [${offer.hash}](${explorer(offer.hash)}) |`,
+    ...(cf.tee
+      ? [
+          '',
+          '## Acts signed inside OutLayer TDX enclaves',
+          '',
+          '| act | buyer | decision | job | request tx | ms | NEAR AI sig (text/ecdsa) | attestation |',
+          '|---|---|---|---|---|---|---|---|',
+          ...cf.tee.map(
+            (t) => `| ${t.act} | ${t.buyer} | ${t.decision} | ${t.jobId} | [${t.txHash}](${explorer(t.txHash)}) | ${t.ms} | ${t.nearAi ? `${t.nearAi.textMatches}/${t.nearAi.signatureValid}` : 'n/a'} | ${t.attestationUrl} |`,
+          ),
+        ]
+      : []),
     '',
     '## Event types in order',
     '',
@@ -177,7 +196,7 @@ async function main() {
     '```',
     '',
   ];
-  const file = inProcess ? 'E2E-RUN.in-process.md' : 'E2E-RUN.result.md';
+  const file = arg('--out') ?? (inProcess ? 'E2E-RUN.in-process.md' : 'E2E-RUN.result.md');
   writeFileSync(new URL(`../${file}`, import.meta.url), lines.join('\n'));
   out(`wrote server/${file}`);
 }

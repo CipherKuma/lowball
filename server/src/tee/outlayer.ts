@@ -19,7 +19,7 @@ export interface OutlayerOptions {
   signer: NearSigner;
   rpc: Rpc;
   sleep?: (ms: number) => Promise<void>;
-  /** give up waiting for a job result after this long (default 170 s) */
+  /** give up waiting for a job result after this long (default 100 s); the caller retries once */
   timeoutMs?: number;
   pollMs?: number;
   now?: () => number;
@@ -62,7 +62,7 @@ export class OutlayerTransport implements TeeTransport {
   }
 
   private async result(txHash: string, started: number): Promise<unknown> {
-    const timeout = this.o.timeoutMs ?? 170_000;
+    const timeout = this.o.timeoutMs ?? 100_000;
     const poll = this.o.pollMs ?? 3000;
     await this.sleep(poll);
     while (this.now() - started < timeout) {

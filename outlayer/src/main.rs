@@ -83,8 +83,14 @@ fn main() {
         Err(e) => Err(format!("bad input: {e}")),
     };
     let v = out.unwrap_or_else(|e| json!({"ok": false, "error": e}));
-    print!("{v}");
-    let _ = std::io::stdout().flush();
+    // wasi:cli stdout traps on one write above 4096 bytes ("Buffer too large for blocking-write-and-flush"),
+    // and a decision with a long reply is bigger than that: write in small chunks.
+    let text = v.to_string();
+    let mut stdout = std::io::stdout();
+    for chunk in text.as_bytes().chunks(2048) {
+        let _ = stdout.write_all(chunk);
+        let _ = stdout.flush();
+    }
 }
 
 fn b64(b: &[u8]) -> String {

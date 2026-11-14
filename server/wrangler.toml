@@ -32,4 +32,4 @@ ALLOWED_ORIGIN = "*"
 # OutLayer TEE buyers: "1" runs each buyer's pact decision and signature, and its confession, inside an Intel TDX
 # enclave (src/tee/, outlayer/deployed.json). The contract must hold the enclave keys (register_buyer_key); with "1"
 # the Worker holds no pact key that matters and never falls back to one. "0": server-held pact keys (BUYER_KEYS_JSON).
-TEE_BUYERS = "0"
+TEE_BUYERS = "1"

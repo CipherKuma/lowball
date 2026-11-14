@@ -148,6 +148,20 @@ describe('TEE_BUYERS=1', () => {
     expect(enclave.calls.filter((c) => c.op === 'sign_pact').length).toBeGreaterThanOrEqual(10);
   });
 
+  it('one retry per job: a transient failure or an empty result is absorbed and counted; two in a row fail the job', async () => {
+    const seen = new Set<string>();
+    const { rig, enclave } = rigWithTee({ fail: (b, op) => b === 'ines' && !seen.has(op) && !!seen.add(op) });
+    const created = await createSession(rig.deps, PLAYER_PK, '1.2.3.4');
+    await step(rig.deps, created.sessionId, 'begin');
+    expect((await rig.store.loadState(created.sessionId))!.pact!.members).toHaveLength(5);
+    expect(enclave.calls.filter((c) => c.buyer === 'ines')).toHaveLength(2);
+    const stats = rig.deps.tee!.stats;
+    expect(stats).toMatchObject({ jobs: 5, failedAttempts: 1, failedJobs: 0 });
+    const records = await rig.store.listArtifacts<{ buyer: string; attempts: number }>(created.sessionId, 'tee');
+    expect(records.find((r) => r.buyer === 'ines')!.attempts).toBe(2);
+    expect(records.find((r) => r.buyer === 'odile')!.attempts).toBe(1);
+  });
+
   it.each([
     ['a signature from another key', (_b: BuyerId, o: Record<string, any>) => { o.signature = toB64(new Uint8Array(64).fill(7)); }],
     ['an enclave that is not the registered key', (_b: BuyerId, o: Record<string, any>) => { o.public_key_b64 = toB64(new Uint8Array(32).fill(1)); }],

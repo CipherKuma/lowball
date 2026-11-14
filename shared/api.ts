@@ -331,6 +331,8 @@ export interface TeeActRecord {
   } | null;
   /** ms from sending the job to reading its result */
   ms: number;
+  /** 1, or 2 when the first attempt failed and the job was retried once */
+  attempts?: number;
   /** the server checked the signature and the receipt against the registered TEE key */
   signatureVerified: boolean;
   at: number;

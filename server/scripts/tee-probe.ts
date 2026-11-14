@@ -17,10 +17,12 @@ const rpc = makeRpc();
 const signer = new NearSigner({ accountId: houseId, keyPair: loadNearCredential(houseId), rpc });
 const transport = new OutlayerTransport({ deployment, signer, rpc });
 
+const only = process.argv.slice(2).filter((a) => (BUYER_IDS as readonly string[]).includes(a));
+const targets = only.length ? (only as typeof BUYER_IDS[number][]) : [...BUYER_IDS];
 const passes: Record<string, { pass: number; tx: string; ms: number; key: string; hasApiKey: boolean; modelListed: boolean | null; allowed: string }[]> = {};
 for (let pass = 1; pass <= 2; pass++) {
   const rs = await Promise.allSettled(
-    BUYER_IDS.map(async (b) => {
+    targets.map(async (b) => {
       const r = await transport.run(b, { op: 'probe', nonce: `p${pass}${b}` });
       const o = r.output as Record<string, unknown> | null;
       if (!o || o.ok !== true) throw new Error(`${b}: ${JSON.stringify(o)?.slice(0, 200)}`);
@@ -30,7 +32,7 @@ for (let pass = 1; pass <= 2; pass++) {
   );
   for (const r of rs) if (r.status === 'rejected') out(`FAILED: ${String(r.reason)}`);
 }
-for (const b of BUYER_IDS) {
+for (const b of targets) {
   const ps = passes[b] ?? [];
   if (ps.length === 2 && ps[0]!.key === ps[1]!.key) {
     const hex = Buffer.from(ps[0]!.key, 'base64').toString('hex');

@@ -7,7 +7,7 @@ import { checkSignatureCrypto, sha256Hex, type SignaturePayload } from '../llm/v
 import { fromB64, utf8 } from '../near/bytes.js';
 import { verify } from '../near/keys.js';
 import { confessionMessage, pactMessage } from '../near/pact.js';
-import type { TeeDeployment, TeeTransport } from './types.js';
+import type { TeeDeployment, TeeRun, TeeTransport } from './types.js';
 
 const NearAiSig = z
   .object({ text: z.string(), signature: z.string(), signing_address: z.string(), signing_algo: z.string(), signature_kind: z.string().optional() })
@@ -60,12 +60,44 @@ function fail(msg: string): never {
   throw new AppError('TEE_UNAVAILABLE', msg);
 }
 
+export interface TeeStats {
+  /** jobs started (retries counted once each) */
+  jobs: number;
+  /** attempts that failed or came back empty and were retried or given up on */
+  failedAttempts: number;
+  /** jobs that ended without a usable result after their retry */
+  failedJobs: number;
+  /** wall clock ms of every attempt that returned */
+  latenciesMs: number[];
+}
+
 /** Calls the buyers' enclave jobs, checks everything they return against the registered keys, records the evidence. */
 export class TeeActs {
+  readonly stats: TeeStats = { jobs: 0, failedAttempts: 0, failedJobs: 0, latenciesMs: [] };
+
   constructor(
     readonly deployment: TeeDeployment,
     private transport: TeeTransport,
   ) {}
+
+  /** One job with one retry: a transport error, a timeout or an empty result (a guest trap) is tried again once. */
+  private async runJob(buyer: BuyerId, input: Record<string, unknown>): Promise<{ run: TeeRun; attempts: number }> {
+    this.stats.jobs++;
+    let last: unknown = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const run = await this.transport.run(buyer, input);
+        this.stats.latenciesMs.push(run.ms);
+        if (run.output !== null && run.output !== undefined) return { run, attempts: attempt };
+        last = new AppError('TEE_UNAVAILABLE', `${buyer}'s enclave job returned nothing`);
+      } catch (e) {
+        last = e;
+      }
+      this.stats.failedAttempts++;
+    }
+    this.stats.failedJobs++;
+    throw last instanceof AppError ? last : new AppError('TEE_UNAVAILABLE', String(last).slice(0, 160));
+  }
 
   private async checked<O extends CommonOut>(
     ctx: GameCtx,
@@ -79,8 +111,7 @@ export class TeeActs {
     decisionOf: (o: O) => string,
   ): Promise<O> {
     const dep = this.deployment.buyers[buyer];
-    const run = await this.transport.run(buyer, input);
-    if (run.output === null || run.output === undefined) fail(`${buyer}'s enclave job returned nothing`);
+    const { run, attempts } = await this.runJob(buyer, input);
     const parsed = schema.safeParse(run.output);
     if (!parsed.success) {
       const err = (run.output as { error?: unknown })?.error;
@@ -134,6 +165,7 @@ export class TeeActs {
       },
       signatureVerified: true,
       ms: run.ms,
+      attempts,
       at: Date.now(),
     };
     await ctx.deps.store.addArtifact(ctx.id, 'tee', `${rec.at}:${buyer}:${act}`, rec);
