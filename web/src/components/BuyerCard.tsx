@@ -1,12 +1,14 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import type { BuyerId, ErrorCode } from '../../../shared/api';
 import type { Line } from '../lib/state';
+import { Slam } from './table/Slam';
+import { Tally } from './table/Tally';
 
 export type BondState = 'pending' | 'posted' | 'slashed' | 'immune' | 'kept';
 export type Outcome = { kind: 'confessed' } | { kind: 'refused'; code?: ErrorCode } | null;
 
-const TITLES: Record<BuyerId, string> = {
+export const TITLES: Record<BuyerId, string> = {
   marlow: 'Harbour boss',
   odile: 'Cannery books',
   sully: 'Dock buyer',
@@ -14,52 +16,10 @@ const TITLES: Record<BuyerId, string> = {
   deacon: 'Middleman',
 };
 
-function useTypewriter(text: string | undefined, speed = 26) {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    setN(0);
-    if (!text) return;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
-      setN(text.length);
-      return;
-    }
-    const id = window.setInterval(() => setN((c) => (c >= text.length ? (window.clearInterval(id), c) : c + 1)), speed);
-    return () => window.clearInterval(id);
-  }, [text, speed]);
-  return text ? text.slice(0, n) : '';
-}
-
-function Bubble({ line }: { line: Line | undefined }) {
-  const [visible, setVisible] = useState<Line | undefined>(undefined);
-  useEffect(() => {
-    if (!line) return;
-    setVisible(line);
-    const t = window.setTimeout(() => setVisible(undefined), Math.max(5200, line.text.length * 70));
-    return () => window.clearTimeout(t);
-  }, [line]);
-  const typed = useTypewriter(visible?.text);
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          key={visible.seq}
-          className="bubble"
-          data-mood={visible.mood}
-          initial={{ opacity: 0, y: 8, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -4, transition: { duration: 0.18 } }}
-          transition={{ duration: 0.26, ease: [0.23, 1, 0.32, 1] }}
-        >
-          <span>{typed}</span>
-          <span className="bubble-ghost" aria-hidden>
-            {visible.text}
-          </span>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
+const TILTS = [-1.8, 1.2, -0.6, 1.9, -1.3];
+const REFUSAL: Partial<Record<ErrorCode, string>> = {
+  E_ALREADY_CONFESSED: 'too late · someone talked first',
+};
 
 export interface BuyerCardProps {
   id: BuyerId;
@@ -77,127 +37,157 @@ export interface BuyerCardProps {
   teeUrl?: string;
   /** pressure from interrogations, 0..6 */
   pressure?: number;
-  /** when set, clicking the portrait opens the back room for this buyer */
+  /** when set, clicking the poster opens the back room for this buyer */
   onLean?: () => void;
+  /** lots this buyer has won this season */
+  wins?: number;
+  /** typed note pinned to the poster when the back room is shut ("back room closed till tomorrow") */
+  closedNote?: string;
 }
 
+function bondText(bond: BondState, near: string) {
+  switch (bond) {
+    case 'pending':
+      return 'bond not posted yet';
+    case 'posted':
+      return `${near} Ⓝ held by the contract`;
+    case 'slashed':
+      return `${near} Ⓝ slashed · paid to you`;
+    case 'immune':
+      return `${near} Ⓝ returned · immune`;
+    case 'kept':
+      return `${near} Ⓝ returned`;
+  }
+}
+
+/** True for a few seconds after this buyer says something, so the poster lifts toward the dispatch slip. */
+function useSpeaking(line: Line | undefined) {
+  const [seq, setSeq] = useState<number | null>(null);
+  useEffect(() => {
+    if (!line) return;
+    setSeq(line.seq);
+    const t = window.setTimeout(() => setSeq(null), Math.min(6000, 2400 + line.text.length * 40));
+    return () => window.clearTimeout(t);
+  }, [line]);
+  return seq !== null;
+}
+
+/** A buyer's wanted poster pinned to the wall above the desk. */
 export function BuyerCard(p: BuyerCardProps) {
-  const cracked = p.outcome?.kind === 'confessed' || p.bond === 'slashed';
-  const revealed = typeof p.bid === 'number';
+  const still = useReducedMotion();
+  const speaking = useSpeaking(p.line);
+  const cracked = p.outcome?.kind === 'confessed' || p.bond === 'slashed' || (p.pressure ?? 0) >= 3;
+  const first = p.name.split(' ')[0] === 'The' ? p.name : p.name.split(' ')[0];
+  const tilt = TILTS[p.index % TILTS.length];
   return (
     <motion.article
-      className="buyer"
+      className="poster-slot"
       data-bond={p.bond}
-      data-deliberating={p.deliberating || undefined}
       data-outcome={p.outcome?.kind}
-      initial={{ opacity: 0, y: 18 }}
-      animate={p.outcome?.kind === 'refused' ? { opacity: 1, y: 0, x: [0, -7, 6, -4, 3, 0] } : { opacity: 1, y: 0, x: 0 }}
-      transition={{ delay: p.index * 0.07, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+      data-deliberating={p.deliberating || undefined}
+      data-speaking={speaking || undefined}
+      data-leanable={p.onLean ? true : undefined}
+      initial={still ? false : { opacity: 0, y: -14, rotate: tilt * 2 }}
+      animate={p.outcome?.kind === 'refused' && !still ? { opacity: 1, y: 0, rotate: 0, x: [0, -6, 5, -3, 2, 0] } : { opacity: 1, y: 0, rotate: 0, x: 0 }}
+      transition={{ delay: 0.05 + p.index * (0.075 - p.index * 0.008), duration: 0.42, ease: [0.2, 0.9, 0.25, 1.15] }}
       aria-label={`${p.name}, ${TITLES[p.id]}`}
     >
-      <Bubble line={p.line} />
-      <div className="portrait" data-leanable={p.onLean ? true : undefined}>
-        {p.onLean && (
-          <button className="lean-btn" onClick={p.onLean} aria-label={`Lean on ${p.name}`}>
-            <span>Lean on {p.name.split(' ')[0] === 'The' ? 'him' : p.name.split(' ')[0]}</span>
-          </button>
-        )}
-        <img className="portrait-calm" src={`/art/${p.id}_calm.webp`} alt="" draggable={false} />
-        <img
-          className="portrait-cracked"
-          src={`/art/${p.id}_cracked.webp`}
-          alt=""
-          draggable={false}
-          style={{ opacity: cracked ? 1 : 0 }}
-        />
-        {p.deliberating && <div className="think" aria-label="Deliberating" />}
-        {p.teeUrl && (
-          <a
-            className="tee-badge"
-            href={p.teeUrl}
-            target="_blank"
-            rel="noreferrer"
-            title="This buyer's last signature was made inside an Intel TDX enclave on OutLayer. Open the attestation."
-          >
-            <svg width="10" height="12" viewBox="0 0 10 12" aria-hidden>
-              <rect x="1" y="5" width="8" height="6.5" rx="1.2" fill="currentColor" />
-              <path d="M3 5V3.6a2 2 0 014 0V5" fill="none" stroke="currentColor" strokeWidth="1.3" />
-            </svg>
-            TEE
-          </a>
-        )}
-        <AnimatePresence>
-          {p.outcome?.kind === 'confessed' && (
-            <motion.div
-              className="stamp stamp-immune"
-              initial={{ opacity: 0, scale: 1.8, rotate: -14 }}
-              animate={{ opacity: 1, scale: 1, rotate: -8 }}
-              transition={{ type: 'spring', duration: 0.45, bounce: 0.25 }}
-            >
-              Immune
-            </motion.div>
-          )}
-          {p.outcome?.kind === 'refused' && (
-            <motion.div
-              className="stamp stamp-refused"
-              initial={{ opacity: 0, scale: 1.8, rotate: 10 }}
-              animate={{ opacity: 1, scale: 1, rotate: 6 }}
-              transition={{ type: 'spring', duration: 0.45, bounce: 0.2 }}
-            >
-              Refused
-              <small>{p.outcome.code ?? 'rejected on-chain'}</small>
-            </motion.div>
-          )}
-          {p.bond === 'slashed' && p.outcome?.kind !== 'refused' && (
-            <motion.div
-              className="stamp stamp-slashed"
-              initial={{ opacity: 0, scale: 1.6, rotate: 8 }}
-              animate={{ opacity: 1, scale: 1, rotate: 4 }}
-              transition={{ type: 'spring', duration: 0.45, bounce: 0.2, delay: 0.25 }}
-            >
-              Slashed
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      <div className="buyer-meta">
-      <header className="nameplate">
-        <h3 className="display">{p.name}</h3>
-        <p>
-          {TITLES[p.id]}
-          {!!p.pressure && (
-            <span className="pressure-pips" aria-label={`Pressure ${p.pressure} of 6`}>
-              {Array.from({ length: 6 }, (_, i) => (
-                <i key={i} data-on={i < (p.pressure ?? 0) || undefined} />
-              ))}
+      <figure className="poster pin" style={{ ['--tilt' as string]: `${tilt}deg` }}>
+        <p className="poster-wanted stencil" aria-hidden>
+          Wanted
+        </p>
+        <div className="poster-frame">
+          <img className="poster-photo" src={`/art/${p.id}_calm.webp`} alt="" draggable={false} />
+          <img
+            className="poster-photo poster-photo--cracked"
+            src={`/art/${p.id}_cracked.webp`}
+            alt=""
+            draggable={false}
+            style={{ opacity: cracked ? 1 : 0 }}
+          />
+          {p.deliberating && (
+            <span className="poster-deciding typed" aria-label="Deciding">
+              deciding<i>.</i>
+              <i>.</i>
+              <i>.</i>
             </span>
           )}
-        </p>
-      </header>
-      <div className="bond" title="Bond held by the Lowball contract">
-        <span className="bond-box" aria-hidden />
-        <span className="mono">{p.bond === 'pending' ? '—' : `${p.bondNear} Ⓝ`}</span>
-        <span className="bond-state">
-          {p.bond === 'pending' && 'no bond'}
-          {p.bond === 'posted' && 'bonded'}
-          {p.bond === 'slashed' && 'lost'}
-          {p.bond === 'immune' && 'refunded'}
-          {p.bond === 'kept' && 'kept'}
-        </span>
-      </div>
-      </div>
-      <div className="bid" data-state={revealed ? 'open' : p.bid} data-identical={(revealed && p.identical) || undefined}>
-        <div className="bid-inner" style={{ transform: revealed ? 'rotateY(180deg)' : 'none' }}>
-          <div className="bid-face bid-back">
-            {p.bid === 'none' ? <span className="bid-empty">no bid</span> : <span className="seal" />}
-          </div>
-          <div className="bid-face bid-front">
-            <span className="mono">{revealed ? p.bid : ''}</span>
-            <small>marks</small>
-            {p.isWinner && <em className="winner">wins</em>}
+          {p.isWinner && <span className="poster-took typed">took today's lot</span>}
+          <div className="poster-stamps">
+            {p.outcome?.kind === 'confessed' && (
+              <Slam tone="verified" angle={-9}>
+                Confessed
+              </Slam>
+            )}
+            {p.bond === 'slashed' && (
+              <Slam angle={7} delay={0.25}>
+                Slashed
+              </Slam>
+            )}
           </div>
         </div>
-      </div>
+        <figcaption>
+          <h3 className="poster-name">{p.name}</h3>
+          <p className="poster-role">{TITLES[p.id]}</p>
+          <dl className="poster-tallies">
+            <div>
+              <dt>Lots won</dt>
+              <dd>
+                <Tally n={p.wins ?? 0} label="Lots won" />
+              </dd>
+            </div>
+            <div>
+              <dt>Pressure</dt>
+              <dd>
+                <Tally n={p.pressure ?? 0} max={6} label="Pressure" />
+              </dd>
+            </div>
+          </dl>
+          <p className="poster-bond typed" title="Bond held by the Lowball contract on NEAR">
+            {bondText(p.bond, p.bondNear)}
+          </p>
+          {p.outcome?.kind === 'refused' && (
+            <p className="poster-refused typed">
+              confession refused · {REFUSAL[p.outcome.code as ErrorCode] ?? p.outcome.code ?? 'rejected on NEAR'}
+            </p>
+          )}
+          {p.closedNote && <p className="poster-note typed">{p.closedNote}</p>}
+        </figcaption>
+      </figure>
+      <AnimatePresence>
+        {speaking && p.line && (
+          <motion.p
+            key={p.line.seq}
+            className="poster-said spoken"
+            data-mood={p.line.mood}
+            initial={still ? false : { opacity: 0, y: -10, rotate: -4 }}
+            animate={{ opacity: 1, y: 0, rotate: tilt * -0.8 }}
+            exit={{ opacity: 0, y: 6, transition: { duration: 0.18 } }}
+            transition={{ duration: 0.32, ease: [0.2, 0.9, 0.25, 1.15] }}
+            aria-hidden
+          >
+            “{p.line.text}”
+          </motion.p>
+        )}
+      </AnimatePresence>
+      {p.onLean && (
+        <button className="poster-lean" onClick={p.onLean} aria-label={`Lean on ${p.name}`}>
+          <span className="poster-lean-tag" aria-hidden>
+            Lean on {first} <b>→</b>
+          </span>
+        </button>
+      )}
+      {p.teeUrl && (
+        <a
+          className="poster-tee typed"
+          href={p.teeUrl}
+          target="_blank"
+          rel="noreferrer"
+          title="This buyer's last signature was made inside an Intel TDX enclave on OutLayer. Open the attestation."
+        >
+          signed in enclave ↗
+        </a>
+      )}
     </motion.article>
   );
 }

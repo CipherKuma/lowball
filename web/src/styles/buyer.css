@@ -1,308 +1,249 @@
-.buyers {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: clamp(10px, 1.6vw, 24px);
-  width: min(100%, 1060px);
-  margin: 0 auto;
-  align-items: end;
-}
-.buyer {
+/* The buyers: wanted posters pinned along the wall above the desk. Built on .poster/.pin from objects.css. */
+
+.poster-slot {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
+  flex: 0 1 var(--poster-w);
+  width: var(--poster-w);
   min-width: 0;
 }
-.portrait {
-  position: relative;
-  aspect-ratio: 4 / 5;
-  border-radius: var(--r-md);
-  overflow: hidden;
-  background: var(--ink-2);
-  box-shadow: 0 0 0 1px rgba(232, 163, 61, 0.22), var(--shadow-deep);
-  transition: box-shadow 400ms var(--ease-out), filter 700ms var(--ease-out), transform 300ms var(--ease-out);
-}
-.portrait img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 18%;
-  user-select: none;
-}
-.portrait-cracked {
-  transition: opacity 260ms var(--ease-out);
-}
-.buyer[data-deliberating] .portrait {
-  box-shadow: 0 0 0 1px rgba(232, 163, 61, 0.65), 0 0 34px -4px rgba(232, 163, 61, 0.55), var(--shadow-deep);
-  animation: breathe 1.6s var(--ease-in-out) infinite;
-}
-@keyframes breathe {
-  50% { transform: translateY(-2px); }
-}
-.buyer[data-outcome='confessed'] .portrait {
-  box-shadow: 0 0 0 2px var(--amber), 0 0 48px -6px rgba(255, 194, 102, 0.75), var(--shadow-deep);
-}
-.buyer[data-bond='slashed'] .portrait {
-  filter: grayscale(0.85) brightness(0.7);
-  box-shadow: 0 0 0 1px rgba(184, 57, 44, 0.6), var(--shadow-deep);
-}
-.think {
-  position: absolute;
-  inset: auto 10px 10px auto;
-  width: 30px;
-  height: 10px;
-  background: radial-gradient(circle, var(--amber) 2.4px, transparent 3px) 0 50% / 10px 10px repeat-x;
-  animation: dots 1.1s steps(3) infinite;
-  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.8));
-}
-@keyframes dots {
-  0% { clip-path: inset(0 66% 0 0); }
-  100% { clip-path: inset(0 0 0 0); }
-}
-
-.lean-btn {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 14px;
-  background: linear-gradient(180deg, transparent 55%, rgba(8, 13, 15, 0.82));
-  opacity: 0;
-  transition: opacity 180ms var(--ease-out);
-}
-.lean-btn span {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(232, 163, 61, 0.6);
-  background: rgba(11, 20, 24, 0.85);
-  color: var(--amber);
-  font: 600 12px/1 var(--font-ui);
-  letter-spacing: 0.04em;
-}
-.portrait[data-leanable]:hover .lean-btn,
-.lean-btn:focus-visible {
-  opacity: 1;
-}
-@media (hover: none) {
-  .lean-btn {
-    opacity: 1;
-    background: none;
-  }
-}
-.pressure-pips {
-  display: inline-flex;
-  gap: 2px;
-  margin-left: 8px;
-  vertical-align: middle;
-}
-.pressure-pips i {
-  width: 5px;
-  height: 5px;
-  border-radius: 1px;
-  background: rgba(200, 209, 201, 0.18);
-}
-.pressure-pips i[data-on] {
-  background: var(--rust-hot);
-}
-.tee-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  background: rgba(8, 13, 15, 0.82);
-  border: 1px solid rgba(127, 181, 154, 0.55);
-  color: var(--ok);
-  font: 600 10px/1 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-decoration: none;
-  transition: border-color 160ms ease, transform 140ms var(--ease-out);
-}
-.tee-badge:hover {
-  border-color: var(--ok);
-  text-decoration: none;
-}
-.tee-badge:active {
-  transform: scale(0.96);
-}
-.stamp {
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  translate: -50% -50%;
-  padding: 6px 12px 7px;
-  border: 3px solid currentColor;
-  border-radius: 4px;
-  font: 800 clamp(13px, 1.4vw, 19px) / 1 var(--font-display);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-align: center;
-  background: rgba(10, 8, 6, 0.35);
-  backdrop-filter: blur(1px);
-  mix-blend-mode: normal;
-  white-space: nowrap;
-}
-.stamp small {
-  display: block;
-  margin-top: 4px;
-  font: 600 9px/1 var(--font-mono);
-  letter-spacing: 0.04em;
-  text-transform: none;
-}
-.stamp-immune { color: var(--amber-hot); }
-.stamp-refused { color: #ff6b5a; }
-.stamp-slashed { color: #e0574a; }
-
-.buyer-meta {
-  display: grid;
-  gap: 6px;
-  padding: 8px 10px 9px;
-  border-radius: var(--r-sm);
-  background: linear-gradient(180deg, rgba(8, 13, 15, 0.86), rgba(8, 13, 15, 0.74));
-  border: 1px solid rgba(200, 209, 201, 0.08);
-  backdrop-filter: blur(6px);
-}
-.nameplate h3 {
+.poster-slot .poster {
   margin: 0;
-  font-size: clamp(14px, 1.25vw, 18px);
-  font-weight: 650;
-  line-height: 1.15;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.nameplate p {
-  margin: 1px 0 0;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.bond {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--fog);
-}
-.bond-box {
-  width: 12px;
-  height: 10px;
-  border-radius: 2px;
-  background: linear-gradient(#6f7a77, #3f4847);
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
-}
-.bond-state {
-  margin-left: auto;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-}
-.buyer[data-bond='slashed'] .bond { color: #e0574a; text-decoration: line-through; }
-.buyer[data-bond='immune'] .bond-state { color: var(--amber); }
-
-/* Sealed bid envelope that flips open */
-.bid {
-  height: 58px;
-  perspective: 700px;
-}
-.bid-inner {
-  position: relative;
+  padding: 22px 9px 10px;
   height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 620ms var(--ease-in-out);
 }
-.bid-face {
+.poster-wanted {
+  margin: 0 0 5px;
+  font-size: 13px;
+  line-height: 1;
+  text-align: center;
+  letter-spacing: 0.32em;
+  color: var(--paper-ink-2);
+}
+.poster-frame {
+  position: relative;
+  overflow: hidden;
+  background: #2a2016;
+}
+.poster-frame .poster-photo--cracked {
   position: absolute;
   inset: 0;
+  height: 100%;
+  transition: opacity 600ms var(--ease-out);
+}
+.poster-slot .poster-name {
+  margin-top: 7px;
+  font-size: clamp(16px, 1.45vw, 21px);
+  overflow-wrap: anywhere;
+}
+.poster-slot .poster-role {
+  margin-top: 2px;
+}
+
+/* tallies: typed label, cut marks */
+.poster-tallies {
+  display: grid;
+  gap: 1px;
+  margin: 6px 0 0;
+  padding: 5px 0 0;
+  border-top: 1px dashed rgba(91, 74, 51, 0.45);
+}
+.poster-tallies > div {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 6px;
-  border-radius: var(--r-sm);
-  backface-visibility: hidden;
+  min-height: 17px;
 }
-.bid-back {
-  background: linear-gradient(160deg, #d9ccae, #b9a983);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15), 0 8px 20px -10px rgba(0, 0, 0, 0.9);
+.poster-tallies dt {
+  font-family: var(--font-typed);
+  font-size: 12px;
+  color: var(--paper-ink-2);
 }
-.bid[data-state='none'] .bid-back {
-  background: rgba(11, 20, 24, 0.55);
-  border: 1px dashed var(--line);
-  box-shadow: none;
+.poster-tallies dd {
+  margin: 0;
 }
-.bid-empty { font-size: 11px; color: var(--muted); }
-.seal {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #c2463a, var(--rust) 60%, #5c1a14);
+.tally {
+  display: inline-flex;
+  color: var(--paper-ink);
+}
+.tally svg path {
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  fill: none;
+}
+.tally--none {
+  font-family: var(--font-typed);
+  font-size: 12px;
+  color: rgba(91, 74, 51, 0.7);
+}
+.poster-tallies > div:last-child .tally:not(.tally--none) { color: var(--stamp); }
+
+/* bond tag: a strip of typed paper tied to the poster */
+.poster-bond {
+  margin: 6px -4px 0;
+  padding: 3px 6px 2px;
+  font-size: 12px;
+  line-height: 1.25;
+  background: rgba(239, 227, 176, 0.75);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  color: var(--paper-ink);
+}
+.poster-slot[data-bond='slashed'] .poster-bond { color: var(--stamp); text-decoration: line-through; text-decoration-thickness: 1px; }
+.poster-slot[data-bond='immune'] .poster-bond { color: var(--verified); }
+.poster-slot[data-bond='pending'] .poster-bond { color: var(--paper-ink-2); background: transparent; box-shadow: inset 0 0 0 1px rgba(91, 74, 51, 0.35); }
+
+.poster-refused,
+.poster-note {
+  margin: 5px 0 0;
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--stamp);
+}
+.poster-note {
+  color: var(--paper-ink-2);
+  font-style: normal;
+  padding-top: 4px;
+  border-top: 1px dotted rgba(91, 74, 51, 0.5);
+}
+
+/* stamps across the portrait */
+.poster-stamps {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: end center;
+  padding-bottom: 14%;
+  gap: 6px;
+  pointer-events: none;
+}
+.poster-stamps .stamp {
+  font-size: clamp(15px, 1.4vw, 20px);
+  font-weight: 700;
+  padding: 3px 8px 2px;
+  border-width: 3px;
+  background: rgba(235, 225, 200, 0.92);
+  mix-blend-mode: normal;
+  -webkit-mask-image: none;
+  mask-image: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.poster-stamps .stamp:not(.stamp--verified) { color: var(--stamp); }
+.poster-stamps .stamp--verified { color: var(--verified); }
+.slam { display: inline-block; }
+
+/* deciding, took the lot: typed slips on the photo */
+.poster-deciding,
+.poster-took {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 2px 6px 1px;
+  font-size: 12px;
+  color: var(--paper-ink);
+  background: var(--telegram);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
 }
-.bid-front {
-  transform: rotateY(180deg);
-  background: var(--paper);
-  color: var(--paper-ink);
-}
-.bid-front .mono { font-size: 26px; font-weight: 600; }
-.bid-front small { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; }
-.bid[data-identical] .bid-front {
-  box-shadow: 0 0 0 2px var(--rust-hot), 0 0 22px -2px rgba(184, 57, 44, 0.8);
-}
-.winner {
-  position: absolute;
-  top: -8px;
-  right: -6px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--amber);
-  color: #1a1208;
-  font: 700 9px/1.2 var(--font-ui);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.poster-took { left: auto; right: 6px; background: var(--lamp-hot); }
+.poster-deciding i {
   font-style: normal;
+  animation: tick 1.2s steps(1) infinite;
+}
+.poster-deciding i:nth-child(2) { animation-delay: 0.2s; }
+.poster-deciding i:nth-child(3) { animation-delay: 0.4s; }
+@keyframes tick { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+
+/* states */
+.poster-slot[data-deliberating] .poster { box-shadow: 0 0 0 2px rgba(242, 183, 92, 0.65), var(--shadow-lift); }
+.poster-slot[data-speaking] .poster { transform: rotate(0deg) translateY(-3px); box-shadow: 0 0 0 1px rgba(255, 208, 138, 0.55), var(--shadow-lift); }
+.poster-slot[data-bond='slashed'] .poster-photo { filter: grayscale(0.9) sepia(0.3) contrast(1.1) brightness(0.72); }
+.poster-slot[data-outcome='confessed'] .poster { box-shadow: 0 0 0 2px rgba(63, 140, 98, 0.8), var(--shadow-lift); }
+
+/* lean: the whole poster is the button; the tag says so on hover and focus */
+.poster-lean {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.poster-lean:focus-visible { outline: 2px solid var(--lamp-hot); outline-offset: 4px; }
+.poster-slot:has(.poster-lean:hover) .poster,
+.poster-slot:has(.poster-lean:focus-visible) .poster {
+  transform: rotate(0deg) translateY(-5px);
+  box-shadow: var(--shadow-lift);
+}
+.poster-slot:has(.poster-lean:active) .poster { transform: rotate(0deg) translateY(-2px); transition-duration: 80ms; }
+.poster-lean-tag {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  translate: -50% 0;
+  padding: 7px 12px 6px;
+  white-space: nowrap;
+  font-family: var(--font-sign);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1c1106;
+  background: linear-gradient(180deg, var(--lamp-hot), var(--lamp));
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+.poster-lean-tag b { font-weight: 900; }
+.poster-lean:hover .poster-lean-tag,
+.poster-lean:focus-visible .poster-lean-tag { opacity: 1; transform: none; }
+@media (hover: none) {
+  .poster-lean-tag {
+    opacity: 1;
+    transform: none;
+    top: auto;
+    bottom: -12px;
+    font-size: 13px;
+    padding: 5px 9px 4px;
+  }
 }
 
-/* Speech bubble */
-.bubble {
+.poster-tee {
   position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  translate: -50% 0;
-  width: max(180px, 115%);
-  z-index: 20;
-  padding: 10px 12px;
-  border-radius: var(--r-md);
-  background: rgba(233, 226, 207, 0.96);
+  z-index: 4;
+  top: 2px;
+  right: 6px;
+  font-size: 12px;
+  color: var(--verified);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.poster-tee:hover { color: var(--carbon); }
+
+@media (prefers-reduced-motion: reduce) {
+  .poster-deciding i { animation: none; }
+  .poster-lean-tag, .poster-frame .poster-photo--cracked { transition: none; }
+}
+
+/* what the buyer just said, pinned over the lower half of the poster for a few seconds */
+.poster-said {
+  position: absolute;
+  z-index: 5;
+  left: -6px;
+  right: -6px;
+  bottom: 6px;
+  min-height: 24%;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 8px 10px 9px;
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.22;
   color: var(--paper-ink);
-  font: italic 500 14px/1.35 var(--font-display);
-  box-shadow: var(--shadow-deep);
-  display: grid;
+  background-color: var(--paper);
+  background-image: var(--fibres), var(--noise);
+  box-shadow: var(--shadow-lift);
+  pointer-events: none;
 }
-.bubble > * { grid-area: 1 / 1; }
-.bubble-ghost { visibility: hidden; }
-.bubble::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  translate: -50% 0;
-  border: 7px solid transparent;
-  border-top-color: rgba(233, 226, 207, 0.96);
-}
-.bubble[data-mood='cracking'] { background: #f3d9b0; }
-.bubble[data-mood='cold'] { background: #cfd8d3; }
-.buyer:first-child .bubble { left: 0; translate: 0 0; }
-.buyer:first-child .bubble::after { left: 24px; }
-.buyer:last-child .bubble { left: auto; right: 0; translate: 0 0; }
-.buyer:last-child .bubble::after { left: auto; right: 18px; translate: 0 0; }
+.poster-said[data-mood='cracking'] { background-color: #f1d7a8; }
+.poster-said[data-mood='cold'] { background-color: #d8d6c8; }

@@ -1,141 +1,171 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import type { ReactNode } from 'react';
 import type { SessionMeta } from '../lib/driver';
 import type { View } from '../lib/state';
 import { txUrl, yoctoToNear } from '../lib/wallet';
+import { Slam } from './table/Slam';
 
-const ease = [0.23, 1, 0.32, 1] as const;
+const ease = [0.2, 0.9, 0.25, 1.15] as const;
 
-const FRIENDLY: Record<string, string> = {
-  TREASURY_LOW: "The harbour's testnet treasury is running dry right now, so no new season can open. Try again later, or play the scripted preview.",
-  BUDGET_EXHAUSTED: "The buyers' AI budget for this demo is spent, so no new season can open. You can still play the scripted preview.",
-  RATE_LIMITED: 'You have opened a lot of seasons this hour. Give the pier a few minutes, or play the scripted preview.',
-  NETWORK: 'The harbour line is down. Check your connection and try again.',
+const NOTICES: Record<string, { head: string; next: string }> = {
+  TREASURY_LOW: { head: "The harbour's testnet treasury is running dry.", next: 'No new season can open right now. Try again later, or play the scripted preview.' },
+  BUDGET_EXHAUSTED: { head: "The buyers' AI budget for this demo is spent.", next: 'No new season can open today. The scripted preview still plays end to end.' },
+  RATE_LIMITED: { head: 'You have opened a lot of seasons this hour.', next: 'Give the pier a few minutes, then try again. Or play the scripted preview.' },
+  NETWORK: { head: 'The harbour line is down.', next: 'Check your connection and try again.' },
 };
 
-/** Before dawn: accounts, season, bonds land on-chain while the buyers talk in the back room. */
+const firstName = (n: string) => (n.split(' ')[0] === 'The' ? n.split(' ').slice(0, 2).join(' ') : n);
+
+function Row({ done, children, tx, index }: { done: boolean; children: ReactNode; tx?: string; index: number }) {
+  const still = useReducedMotion();
+  return (
+    <motion.li
+      className="manifest-row"
+      data-done={done || undefined}
+      initial={still ? false : { opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease, delay: index * 0.04 }}
+    >
+      <span className="manifest-line">
+        {children}
+        {!done && <span className="manifest-cursor" aria-hidden />}
+      </span>
+      <span className="manifest-proof">
+        {tx && (
+          <a className="typed-link" href={txUrl(tx)} target="_blank" rel="noreferrer">
+            tx ↗
+          </a>
+        )}
+        {done && (
+          <Slam tone="verified" angle={-8} className="manifest-stamp">
+            Verified
+          </Slam>
+        )}
+      </span>
+    </motion.li>
+  );
+}
+
+/** Before dawn: the season is written to NEAR as a typed manifest that fills in line by line. */
 export function Setup({
   meta,
   view,
   error,
   errorCode,
   onRetry,
+  playerKind = 'guest',
 }: {
   meta: SessionMeta | null;
   view: View;
   error: string | null;
   errorCode?: string;
   onRetry?: () => void;
+  playerKind?: 'guest' | 'wallet';
 }) {
-  const friendly = errorCode ? FRIENDLY[errorCode] : undefined;
-  const rows: Array<{ label: string; tx?: string; done: boolean }> = [
-    { label: 'Your fisher account opens on NEAR testnet', tx: view.txs.find((t) => t.label.startsWith('Fisher'))?.tx, done: !!view.playerAccountId },
-    { label: view.seasonId != null ? `Season #${view.seasonId} written to the Lowball contract` : 'A new season is written to the Lowball contract', tx: view.txs.find((t) => t.label.startsWith('Season'))?.tx, done: view.seasonId != null },
-  ];
+  const still = useReducedMotion();
+  const notice = errorCode ? NOTICES[errorCode] : undefined;
+  const bond = meta ? `${yoctoToNear(meta.bondYocto, 2)} Ⓝ` : 'a';
   const bonded = Object.keys(view.bonds).length;
+  const accountDone = !!view.playerAccountId;
+  const seasonDone = view.seasonId != null;
+  const txOf = (prefix: string) => view.txs.find((t) => t.label.startsWith(prefix))?.tx;
+
   return (
     <main className="setup">
-      <motion.div className="setup-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }}>
-        <p className="slab-kicker">Before dawn</p>
-        <h2 className="display">The buyers are arriving.</h2>
-        <ul className="setup-rows">
-          {rows.map((r) => (
-            <li key={r.label} data-done={r.done || undefined}>
-              <i aria-hidden />
-              <span>{r.label}</span>
-              {r.tx && (
-                <a href={txUrl(r.tx)} target="_blank" rel="noreferrer" className="mono">
-                  tx ↗
-                </a>
-              )}
-            </li>
-          ))}
-          <li data-done={bonded === 5 || undefined}>
-            <i aria-hidden />
-            <span>
-              {meta ? `Each buyer locks a ${yoctoToNear(meta.bondYocto, 2)} Ⓝ bond in the contract` : 'Each buyer locks a bond in the contract'}
-            </span>
-            <span className="bond-count mono">{bonded}/5</span>
-          </li>
-        </ul>
-        <div className="setup-bonds">
-          {(meta?.buyers ?? []).map((b, i) => (
-            <motion.div
-              key={b.id}
-              className="setup-buyer"
-              data-bonded={!!view.bonds[b.id] || undefined}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease, delay: 0.1 + i * 0.06 }}
-            >
-              <img src={`/art/${b.id}_calm.webp`} alt="" />
-              <span>{b.name.split(' ')[0] === 'The' ? 'Deacon' : b.name.split(' ')[0]}</span>
-              {view.mode?.mode !== 'standard' && (view.cartelForming || view.tee[b.id]) ? (
-                view.tee[b.id] ? (
-                  <motion.a
-                    className="enclave-tick"
-                    href={view.tee[b.id]!.at(-1)!.attestationUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', duration: 0.4, bounce: 0.3 }}
-                  >
-                    signed in TDX ✓
-                  </motion.a>
-                ) : (
-                  <span className="enclave-wait">in its enclave…</span>
-                )
-              ) : null}
-            </motion.div>
-          ))}
-        </div>
+      <motion.article
+        className="manifest paper paper--ruled desk-tape"
+        initial={still ? false : { opacity: 0, y: -16, rotate: -2.5 }}
+        animate={{ opacity: 1, y: 0, rotate: -0.7 }}
+        transition={{ duration: 0.5, ease }}
+        aria-label="Before dawn"
+      >
+        <header className="manifest-head">
+          <p className="stencil">Pier Nine · before dawn</p>
+          <h2 className="sign">The buyers are arriving.</h2>
+          <p className="typed manifest-sub">The season is being written to NEAR. Every line below is a real transaction.</p>
+        </header>
+        <ol className="manifest-rows typed">
+          <Row index={0} done={accountDone} tx={txOf('Fisher')}>
+            {playerKind === 'wallet' ? 'Your wallet' : 'Dock pass opened on NEAR'}
+            {view.playerAccountId ? <span className="data manifest-id"> · {view.playerAccountId}</span> : '…'}
+          </Row>
+          {(accountDone || seasonDone) && (
+            <Row index={1} done={seasonDone} tx={txOf('Season')}>
+              {seasonDone ? `Season #${view.seasonId} written to the Lowball contract` : 'Writing the season to the Lowball contract…'}
+            </Row>
+          )}
+          {seasonDone && (
+            <Row index={2} done={bonded === 5}>
+              Five bonds posted · {bond} each · <span className="data">{bonded} of 5</span>
+            </Row>
+          )}
+        </ol>
+        {seasonDone && meta && (
+          <ul className="manifest-bonds typed">
+            {meta.buyers.map((b) => {
+              const tx = view.bonds[b.id];
+              const tee = view.tee[b.id]?.at(-1);
+              return (
+                <li key={b.id} data-done={!!tx || undefined}>
+                  <img src={`/art/${b.id}_calm.webp`} alt="" />
+                  <span className="manifest-name">{firstName(b.name)}</span>
+                  <span className="manifest-proof">
+                    {tx ? (
+                      <a className="typed-link" href={txUrl(tx)} target="_blank" rel="noreferrer">
+                        bond tx ↗
+                      </a>
+                    ) : (
+                      <span className="manifest-wait">posting…</span>
+                    )}
+                    {tee && view.mode?.mode !== 'standard' && (
+                      <a className="typed-link" href={tee.attestationUrl} target="_blank" rel="noreferrer">
+                        signed in TDX ↗
+                      </a>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
         <AnimatePresence>
           {view.cartelForming && (
-            <motion.div
-              className="backroom"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              transition={{ duration: 0.5, ease }}
+            <motion.p
+              className="manifest-backroom typed"
+              initial={still ? false : { opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease }}
             >
-              <span className="whisper" aria-hidden>
-                <i />
-                <i />
-                <i />
+              Voices behind the warehouse door. The five of them are talking in private, and you are not invited.{' '}
+              <span>
+                {view.mode?.mode === 'standard'
+                  ? "Standard mode this season: OutLayer's testnet enclaves are slow right now, so the buyers sign with keys our server holds. Every decision is still TEE inference with a verified signature."
+                  : `Each buyer decides whether to sign inside its own Intel TDX enclave on OutLayer; its pact key never leaves it. ${Object.keys(view.tee).length} of 5 signed.`}
               </span>
-              <p>
-                Voices behind the warehouse door. The five of them are talking in private, and you are not invited.
-                {view.mode?.mode === 'standard' ? (
-                  <small>
-                    Standard mode this season: OutLayer's testnet enclaves are slow right now, so the buyers sign with
-                    keys our server holds. Every decision is still TEE inference with a verified signature.
-                  </small>
-                ) : (
-                  <small>
-                    Each buyer decides whether to sign inside its own Intel TDX enclave on OutLayer; its pact key never
-                    leaves it. {Object.keys(view.tee).length}/5 signed.
-                  </small>
-                )}
-              </p>
-            </motion.div>
+            </motion.p>
           )}
         </AnimatePresence>
-        {view.rumours.length > 0 && <p className="setup-rumour">“{view.rumours[view.rumours.length - 1]}”</p>}
+        {view.rumours.length > 0 && <p className="manifest-rumour spoken">“{view.rumours[view.rumours.length - 1]}”</p>}
         {error && (
-          <div className="setup-error" role="alert">
-            <p>{friendly ?? error}</p>
-            <div className="setup-error-actions">
+          <div className="notice paper paper--telegram" role="alert">
+            <Slam angle={-4} className="notice-stamp">
+              Notice
+            </Slam>
+            <p className="typed notice-head">{notice?.head ?? error}</p>
+            {notice && <p className="typed notice-next">{notice.next}</p>}
+            <div className="notice-actions">
               {onRetry && errorCode !== 'BUDGET_EXHAUSTED' && (
-                <button className="btn btn-ghost" onClick={onRetry}>
+                <button className="plaque" onClick={onRetry}>
                   Try again
                 </button>
               )}
-              <a className="btn btn-ghost" href="/?preview=1">
+              <a className={onRetry && errorCode !== 'BUDGET_EXHAUSTED' ? 'ticket' : 'plaque'} href="/?preview=1">
                 Play the scripted preview
               </a>
             </div>
           </div>
         )}
-      </motion.div>
+      </motion.article>
     </main>
   );
 }

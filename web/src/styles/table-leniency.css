@@ -1,0 +1,150 @@
+/* The offer of leniency (a document laid over the slate) and the verdict paper. */
+
+/* a strip of tape across a document's corner (materials' .tape collides with the wiretap deck's .tape) */
+.desk-tape::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  right: 22px;
+  width: 76px;
+  height: 22px;
+  transform: rotate(4deg);
+  background: rgba(233, 222, 190, 0.55);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- offer of leniency ---------- */
+/* the offer shares the slate's grid cell, so the desk grows if the document is the taller of the two */
+.desk-lot { display: grid; }
+.desk-lot > * { grid-area: 1 / 1; min-width: 0; }
+.offer {
+  position: relative;
+  z-index: 6;
+  margin: -10px -14px 0 14px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 16px 20px 14px;
+  box-shadow: var(--shadow-lift);
+}
+.offer-kicker { margin: 0; font-size: 12px; color: var(--paper-ink-2); }
+.offer-title {
+  margin: 0;
+  font-size: clamp(30px, 3vw, 42px);
+  font-weight: 900;
+  color: var(--stamp);
+  letter-spacing: 0.03em;
+}
+.offer-terms { margin: 0; font-size: 14px; line-height: 1.45; max-width: 52ch; }
+.offer-status { margin: 4px 0 0; font-size: 16px; line-height: 1.35; }
+.offer-status[data-tone='warn'] { color: var(--stamp); }
+.offer-retry { justify-self: start; }
+.offer-source { font-size: 12px; justify-self: start; }
+.offer-fuse { display: grid; gap: 6px; margin-top: 2px; }
+.offer-fuse p { margin: 0; font-size: 16px; }
+.offer-fuse b { font-size: 22px; color: var(--stamp); }
+.offer-small { font-size: 12px !important; color: var(--paper-ink-2); }
+.fuse {
+  position: relative;
+  display: block;
+  height: 6px;
+  background: repeating-linear-gradient(90deg, rgba(31, 23, 14, 0.25) 0 6px, transparent 6px 9px);
+}
+.fuse i {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: repeating-linear-gradient(90deg, var(--paper-ink) 0 6px, transparent 6px 9px);
+}
+.fuse i::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: -4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff3c4 0 20%, var(--lamp-hot) 35%, rgba(196, 60, 49, 0.6) 60%, transparent 72%);
+  animation: spark 0.9s steps(2) infinite;
+}
+@keyframes spark { 50% { transform: scale(0.75); opacity: 0.8; } }
+.typing-dots i { font-style: normal; animation: tick 1.2s steps(1) infinite; }
+.typing-dots i:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots i:nth-child(3) { animation-delay: 0.4s; }
+
+/* ---------- verdict ---------- */
+.verdict {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: end center;
+  padding: var(--gutter);
+  overflow-y: auto;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, transparent 34%, rgba(4, 6, 8, 0.72) 62%, rgba(4, 6, 8, 0.92) 100%);
+}
+.verdict-paper {
+  pointer-events: auto;
+  width: min(100%, 760px);
+  padding: 22px 26px 22px;
+  box-shadow: var(--shadow-deep), var(--shadow-lift);
+}
+.verdict-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(31, 23, 14, 0.3);
+}
+.verdict-head p { margin: 0; font-size: 13px; color: var(--paper-ink-2); }
+.verdict-kicker { text-transform: uppercase; letter-spacing: 0.1em; }
+.verdict-paper[data-kind='slashed'] .verdict-kicker { color: var(--stamp); }
+.verdict-title {
+  margin: 14px 0 8px;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 900;
+  line-height: 0.92;
+  text-wrap: balance;
+}
+.verdict-body { margin: 0; max-width: 60ch; font-size: 15px; line-height: 1.5; }
+.verdict-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px 28px;
+  margin-top: 16px;
+  align-items: start;
+}
+.verdict-names { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.verdict-names li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 30px;
+  border-bottom: 1px dotted rgba(31, 23, 14, 0.3);
+}
+.verdict-names .spoken { font-size: 18px; }
+.verdict-names .stamp { font-size: 14px; padding: 2px 7px 1px; border-width: 2px; }
+.verdict-payout {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(47, 107, 74, 0.55);
+  background: rgba(47, 107, 74, 0.08);
+}
+.verdict-payout strong { font-size: clamp(40px, 5vw, 60px); font-weight: 900; line-height: 0.95; color: var(--verified); }
+.verdict-payout .typed-link { font-size: 13px; }
+.verdict-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; align-items: center; }
+
+@media (max-width: 760px) {
+  .offer { margin: -6px -4px 0 4px; padding: 14px 14px 12px; }
+  .verdict { padding: 12px; place-items: end stretch; }
+  .verdict-paper { padding: 18px 16px; }
+  .verdict-grid { grid-template-columns: 1fr; }
+  .verdict-actions > * { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fuse i::after, .typing-dots i { animation: none; }
+}

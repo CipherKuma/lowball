@@ -1,15 +1,22 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BuyerId } from '../../../shared/api';
 import type { SessionMeta } from '../lib/driver';
 import { lastLineOf, type View } from '../lib/state';
 import { useBlockHeight } from '../lib/useBlockHeight';
 import type { Pending } from '../lib/useGame';
-import { txUrl, yoctoToNear } from '../lib/wallet';
+import { yoctoToNear } from '../lib/wallet';
 import { BuyerCard, type BondState, type Outcome } from './BuyerCard';
 import { InterrogationRoom } from './Interrogation';
 import { Ledger } from './Ledger';
 import { Slab } from './Slab';
+import { ActionBar } from './table/ActionBar';
+import { Dispatch } from './table/Dispatch';
+import { Envelopes } from './table/Envelopes';
+import { OfferOfLeniency, offerOnDesk, type LeniencyStage } from './table/Leniency';
+import { Verdict } from './table/Verdict';
+
+export type { LeniencyStage } from './table/Leniency';
 
 interface Props {
   meta: SessionMeta;
@@ -25,6 +32,10 @@ interface Props {
     error: string | null;
     clearError: () => void;
   };
+  /** where the player's offer of leniency stands, for wallet signing (optional; guests sign in the browser) */
+  leniencyStage?: LeniencyStage;
+  /** wallet = signed in with a NEAR wallet; guest = dock pass key held in this browser */
+  playerKind?: 'guest' | 'wallet';
 }
 
 function bondOf(v: View, id: BuyerId): BondState {
@@ -40,7 +51,8 @@ function outcomeOf(v: View, id: BuyerId): Outcome {
   return a.ok ? { kind: 'confessed' } : { kind: 'refused', code: a.errorCode };
 }
 
-export function Room({ meta, view, pending, act, offerLeniency, openCase, interro }: Props) {
+/** The desk under the lamp: posters on the wall, the slate, the envelopes, dispatch, the ledger and the plaques. */
+export function Room({ meta, view, pending, act, offerLeniency, openCase, interro, leniencyStage }: Props) {
   const [cornered, setCornered] = useState<{ buyer: BuyerId; sinceSeq: number } | null>(null);
   const phaseOk = view.status?.phase === 'lot_open' || view.status?.phase === 'settled';
   const canLean = phaseOk && !view.slashed && !view.leniencyOpen && !interro.usedToday && pending === null;
@@ -52,6 +64,12 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase, interr
   const bondNear = yoctoToNear(meta.bondYocto, 2);
   const deliberatingSet = useMemo(() => new Set(view.deliberating), [view.deliberating]);
   const height = useBlockHeight(view.leniencyOpen && !view.slashed && !view.holdout && view.deadlineBlock != null);
+  const showOffer = offerOnDesk(view, pending, leniencyStage);
+  const wins = useMemo(() => {
+    const w: Partial<Record<BuyerId, number>> = {};
+    for (const h of view.history) if (h.winner) w[h.winner] = (w[h.winner] ?? 0) + 1;
+    return w;
+  }, [view.history]);
 
   // Holds are capped per day by the server; count re-seals of a lot that was already fully sealed.
   const [holds, setHolds] = useState(0);
@@ -67,38 +85,23 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase, interr
     act('hold');
   };
 
+  const closedNote = interro.usedToday && !view.slashed && !view.closed ? 'back room closed till tomorrow' : undefined;
+  const leanNote = view.slashed
+    ? 'The back room is quiet now.'
+    : interro.usedToday
+      ? 'You leaned on someone today. The back room opens again tomorrow.'
+      : view.leniencyOpen
+        ? 'Nobody goes to the back room while the offer is on the table.'
+        : canLean
+          ? 'Click a poster to lean on that buyer in the back room · once a day.'
+          : pending !== null
+            ? 'The back room waits while the pier is busy.'
+            : 'The back room opens once the lot is on the slate.';
+
   return (
     <div className="room">
-      <div className="room-stage">
-        <AnimatePresence>
-          {view.leniencyOpen && !view.slashed && !view.holdout && (
-            <motion.div
-              className="leniency-banner"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <strong className="display">Leniency is on the table.</strong>
-              <span>The first buyer to hand the contract a signed pact walks free. Everyone else loses their bond.</span>
-              <a
-                className="leniency-source"
-                href="https://www.justice.gov/atr/leniency-policy"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Modelled on the US DOJ Antitrust Division Leniency Policy, Justice Manual 7-3.300 ↗
-              </a>
-              <span className="leniency-clock">
-                {view.deadlineBlock && height
-                  ? `On-chain window · ${Math.max(0, view.deadlineBlock - height)} blocks left · closes itself at block ${view.deadlineBlock.toLocaleString()}`
-                  : 'On-chain window · the contract closes it by itself after 200 blocks'}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="buyers">
+      <section className="wall" data-tour="buyers" aria-label="The buyers">
+        <div className="wall-row">
           {meta.buyers.map((b, i) => (
             <BuyerCard
               key={b.id}
@@ -107,10 +110,7 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase, interr
               name={b.name}
               bond={bondOf(view, b.id)}
               bondNear={bondNear}
-              bid={
-                view.reveals?.find((r) => r.buyer === b.id)?.amount ??
-                (view.committed[b.id] ? 'sealed' : 'none')
-              }
+              bid={view.reveals?.find((r) => r.buyer === b.id)?.amount ?? (view.committed[b.id] ? 'sealed' : 'none')}
               identical={view.identical}
               isWinner={view.settled?.winner === b.id}
               line={lastLineOf(view, b.id)}
@@ -118,35 +118,50 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase, interr
               outcome={outcomeOf(view, b.id)}
               teeUrl={view.tee[b.id]?.at(-1)?.attestationUrl}
               pressure={view.pressure[b.id]}
+              wins={wins[b.id]}
+              closedNote={closedNote}
               onLean={canLean ? () => setCornered({ buyer: b.id, sinceSeq: view.lastSeq }) : undefined}
             />
           ))}
         </div>
+      </section>
 
-        <div style={{ visibility: view.leniencyOpen && !view.slashed && !view.holdout ? 'hidden' : 'visible' }}>
-          <Slab
-            lot={view.lot}
-            bestBid={bestBid}
-            identical={view.identical}
-            settledPrice={view.settled?.price ?? null}
-            token={view.token}
-            sea={view.sea}
-            ownerName={view.token?.ownerBuyer ? meta.buyers.find((b) => b.id === view.token?.ownerBuyer)?.name ?? null : null}
+      <section className="desk desk-surface" data-tense={showOffer || undefined}>
+        <div className="lamp-pool" aria-hidden />
+        <div className="desk-main">
+          <div className="desk-lot" data-tour="slate">
+            <Slab
+              lot={view.lot}
+              bestBid={bestBid}
+              identical={view.identical}
+              settledPrice={view.settled?.price ?? null}
+              token={view.token}
+              sea={view.sea}
+              ownerName={view.token?.ownerBuyer ? meta.buyers.find((b) => b.id === view.token?.ownerBuyer)?.name ?? null : null}
+            />
+            <AnimatePresence>
+              {showOffer && (
+                <OfferOfLeniency key="offer" view={view} pending={pending} stage={leniencyStage} height={height} onRetry={offerLeniency} />
+              )}
+            </AnimatePresence>
+          </div>
+          <Dispatch view={view} buyers={meta.buyers} />
+          <Envelopes buyers={meta.buyers} view={view} pending={pending} />
+          <ActionBar
+            view={view}
+            status={status}
+            days={meta.days}
+            pending={pending}
+            holdsLeft={Math.max(0, 2 - holds)}
+            leanNote={leanNote}
+            onSell={() => act('sell')}
+            onHold={hold}
+            onNext={() => act('next_day')}
+            onLeniency={offerLeniency}
           />
         </div>
-      </div>
-
-      <Ledger
-        view={view}
-        status={status}
-        days={meta.days}
-        pending={pending}
-        holdsLeft={Math.max(0, 2 - holds)}
-        onSell={() => act('sell')}
-        onHold={hold}
-        onNext={() => act('next_day')}
-        onLeniency={offerLeniency}
-      />
+        <Ledger view={view} status={status} days={meta.days} />
+      </section>
 
       <AnimatePresence>
         {cornered && (
@@ -170,97 +185,5 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase, interr
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-function Verdict({
-  view,
-  meta,
-  onCase,
-  onContinue,
-  pending,
-}: {
-  view: View;
-  meta: SessionMeta;
-  onCase: () => void;
-  onContinue: () => void;
-  pending: Pending;
-}) {
-  const [dismissed, setDismissed] = useState(false);
-  const s = view.slashed;
-  const confessorName = s ? meta.buyers.find((b) => b.id === s.confessor)?.name : null;
-  // Only what the contract actually refused: later confessions in this window.
-  const refused = view.attempts.filter((a) => !a.ok && a.errorCode === 'E_ALREADY_CONFESSED').length;
-  if (view.holdout && !view.closed && dismissed) return null;
-  return (
-    <motion.div
-      className="verdict"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6, delay: s ? 4.2 : 0.4 }}
-    >
-      <motion.div
-        className="verdict-card"
-        initial={{ y: 40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: s ? 4.4 : 0.5, ease: [0.23, 1, 0.32, 1] }}
-      >
-        <div className="verdict-copy">
-        {s ? (
-          <>
-            <p className="verdict-kicker">Somebody talked</p>
-            <h2 className="display">{confessorName} handed over the pact.</h2>
-            <p className="verdict-sub">
-              The contract checked every signature. {s.slashed.length} {s.slashed.length === 1 ? 'bond' : 'bonds'} slashed.
-              {refused === 1 ? ' A second confession was refused.' : refused > 1 ? ` ${refused} later confessions were refused.` : ''}
-            </p>
-          </>
-        ) : view.closed ? (
-          <>
-            <p className="verdict-kicker">Season over</p>
-            <h2 className="display">They kept their mouths shut.</h2>
-            <p className="verdict-sub">You were robbed of {view.shortfallTotal} marks. Every bond went home.</p>
-          </>
-        ) : (
-          <>
-            <p className="verdict-kicker">Leniency refused</p>
-            <h2 className="display">Nobody talked. Not today.</h2>
-            <p className="verdict-sub">The pressure stays on. Their identical bids are still on the record.</p>
-          </>
-        )}
-        <div className="verdict-actions">
-          {view.closed ? (
-            <button className="btn btn-amber" onClick={onCase}>
-              Open the case file
-            </button>
-          ) : (
-            <button className="btn btn-amber" onClick={() => setDismissed(true)} disabled={pending !== null}>
-              Back to the table
-            </button>
-          )}
-          {!view.closed && view.settled && (
-            <button className="btn btn-ghost" onClick={onContinue} disabled={pending !== null}>
-              Next day
-            </button>
-          )}
-        </div>
-        </div>
-        {s && (
-          <div className="payout">
-            <span>Paid to you from their bonds</span>
-            <strong className="mono">{yoctoToNear(s.payoutYocto, 2)} Ⓝ</strong>
-            <a href={txUrl(s.tx)} target="_blank" rel="noreferrer">
-              See the slash on NEAR testnet ↗
-            </a>
-            {view.payoutEvm && (
-              <a href={`https://sepolia.etherscan.io/tx/${view.payoutEvm.sepoliaTx}`} target="_blank" rel="noreferrer">
-                Paid out on Ethereum Sepolia via NEAR chain signatures ↗
-              </a>
-            )}
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
   );
 }
