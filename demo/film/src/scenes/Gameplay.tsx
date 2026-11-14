@@ -19,9 +19,8 @@ export const Gameplay=({id}:{id:string})=>{
   <WorldTravel/>
   <FramedPlay slot={s}/>
   {id==='before-dawn'&&<>
-   <Receipt from={44} duration={92} title="Signed in with your wallet" verified={v.season} lines={['NEAR Connect · Meteor',`NEP-413 · ${t.identity.wallet.split(' ')[0]}`,'one-time nonce, checked by the server']}/>
-   <Receipt from={142} duration={74} title={`Season #${t.live.season} is written`} verified={v.season} lines={['create_season · 5 buyers · 6 days',`tx ${t.receipts.season}`]}/>
-   <Receipt from={220} duration={80} title="Five bonds, locked" verified={v.bond} lines={[`post_bond · ${t.api.bondNear} Ⓝ each`,`tx ${t.receipts.bond}`]}/>
+   <Receipt from={148} duration={64} title="Signed in with your wallet" verified={v.season} lines={['NEAR Connect · Meteor',`NEP-413 · ${t.identity.wallet.split(' ')[0]}`,'one-time nonce, checked by the server']}/>
+   <Receipt from={214} duration={86} title={`Season #${t.live.season} · five bonds locked`} verified={v.bond} lines={[`create_season · post_bond ${t.api.bondNear} Ⓝ ×5`,`tx ${t.receipts.season}`]}/>
   </>}
   {id==='day-one-lot'&&<>
    <Chart/>
@@ -32,7 +31,7 @@ export const Gameplay=({id}:{id:string})=>{
    <Receipt from={510} duration={150} at={{left:60,top:350}} width={470} title="An attested answer" verified={t.proof.nearAi.verified} lines={[`receipt ${t.proof.nearAi.receipt}`,'TEE signature ✓',`release → answer ${t.live.latencyMs}`]}/>
   </>}
   {id==='leniency'&&<>
-   <Receipt from={255} duration={205} title="You sign. The window opens." verified={v.leniency} lines={[`offer_leniency · signed in Meteor`,`NEP-519 yield · ${t.api.yieldBlocks} blocks`,`tx ${t.receipts.leniency}`]}/>
+   <Receipt from={255} duration={240} title="You sign. The window opens." verified={v.leniency} lines={[`offer_leniency · signed in Meteor`,`NEP-519 yield · ${t.api.yieldBlocks} blocks`,`tx ${t.receipts.leniency}`]}/>
    <Receipt from={545} duration={145} title="The pact becomes evidence" verified={v.confess} lines={[`confess · ed25519 ×${t.live.signatureCount} · Sully`,'Ines, Odile: E_ALREADY_CONFESSED',`tx ${t.receipts.confess}`]}/>
   </>}
   {id==='cold-open'&&<div style={{position:'absolute',inset:0,pointerEvents:'none',boxShadow:`inset 0 0 ${180+f*.4}px #b8392c${Math.round(18+ease(f,50,180)*20).toString(16)}`}}/>}

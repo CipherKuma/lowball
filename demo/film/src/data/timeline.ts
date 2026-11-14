@@ -14,16 +14,18 @@ export const soundCues = [
  {at:7,file:'foghorn',volume:.18},
  {at:12,file:'paper_slide',volume:.22}, {at:15,file:'folder_open',volume:.28},
  {at:18.2,file:'ui_tick',volume:.18}, {at:21.7,file:'paper_slide',volume:.24},
- // before dawn: Connect (a 13.5 → 26.4), Meteor signs (m1 4.0 → 30.2), day 1 opens (b 22.1 at 3.4× → 35.8)
- {at:26.4,file:'ui_tick',volume:.22}, {at:30.2,file:'wax_seal',volume:.24}, {at:35.8,file:'auction_bell',volume:.32},
+ // before dawn: Connect (a 13.5 → 26.4), Meteor signs (m1 4.0 → 30.6), licence stamp (→ 31.2), day 1 opens (b 22.1 at 7× → 35.9)
+ {at:26.4,file:'ui_tick',volume:.22}, {at:30.6,file:'ui_tick',volume:.24}, {at:31.2,file:'wax_seal',volume:.26}, {at:35.8,file:'auction_bell',volume:.32},
  // day-one lot (b 22.6–33.6): sell at b 27.5, five sealed commits by b 30
  {at:40.9,file:'ui_tick',volume:.2}, {at:43.4,file:'paper_slide',volume:.28},
  // identical bids (b 33.9–41.9): reveal b 37.8, settle b 40.4
  {at:50.9,file:'card_flip',volume:.45}, {at:53.5,file:'gavel',volume:.36},
- // leniency: day 2 at 2.5× (sell b 84.5, reveal b 94.8, settle b 96), offer click b 103.2 → 85.0, Meteor approve → 89.2,
- // then c from 3.3 (film 91.6): Sully's confession, Ines and Odile refused, the slash, verdict at c 7.3 → 95.6
- {at:77.2,file:'paper_slide',volume:.22}, {at:81.3,file:'card_flip',volume:.4}, {at:81.8,file:'gavel',volume:.3},
- {at:85.0,file:'ui_tick',volume:.22}, {at:89.2,file:'ui_tick',volume:.2},
+ // interrogation bridge at 7×: Next day (b 46.3 → 55.6)
+ {at:55.6,file:'ui_tick',volume:.18},
+ // leniency: b 75.3–101.8 at 4.1× (sell b 84.5 → 79.2, reveal b 94.8 → 81.8, settle b 96 → 82.1), offer click b 103.2 → 84.9,
+ // Meteor approve (m2 4.5 → 89.4), then c from 3.3 (film 91.8): Sully's confession, Ines and Odile refused, verdict → 95.8
+ {at:79.2,file:'paper_slide',volume:.22}, {at:81.8,file:'card_flip',volume:.4}, {at:82.1,file:'gavel',volume:.3},
+ {at:84.9,file:'ui_tick',volume:.22}, {at:89.4,file:'ui_tick',volume:.2},
  {at:94.9,file:'wax_seal',volume:.4}, {at:95.2,file:'refusal_thud',volume:.42}, {at:95.5,file:'refusal_thud',volume:.38},
  {at:95.8,file:'bond_slash',volume:.36}, {at:96.8,file:'coins_pour',volume:.3},
  // case file: open (c 18.3 → 103.2), re-check stamps (→ 106.4), wiretap deck, forgery refusals (→ 114.9–115.5)

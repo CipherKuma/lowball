@@ -143,11 +143,11 @@ export const take = {
   // Selects cut by scratchpad/cut-take.mjs from demo/footage/raw/take-10-{a,m1,b,m2,c}.mp4 using the beat times in take-10.log.
   footage: [
     {id:'cold-open',from:0,to:7,title:'Five envelopes. One number.',expected:'',src:'footage/cold-open.mp4',sourceIn:0,focus:[42,30],provenance:'take-10-b 93.4–100.4 s'},
-    {id:'before-dawn',from:26,to:36,title:'Your wallet, before dawn',expected:'',src:'footage/before-dawn.mp4',sourceIn:0,focus:[50,45],provenance:'take-10-a 13.1–15.1 s + take-10-m1 1.8–4.3 s (Meteor) + take-10-b 4.1–22.6 s at 3.4×',speed:[{from:4.5,to:10,label:'sped up ×3.4'}]},
+    {id:'before-dawn',from:26,to:36,title:'Your wallet, before dawn',expected:'',src:'footage/before-dawn.mp4',sourceIn:0,focus:[50,45],provenance:'take-10-a 13.1–14.7 s + take-10-m1 1.0–4.3 s (Meteor card, zoomed) + take-10-b 0.1–2.3 s (licence) + take-10-b 2.3–22.6 s at 7.0×',speed:[{from:7.1,to:10,label:'sped up ×7'}]},
     {id:'day-one-lot',from:36,to:47,title:'The first catch',expected:'',src:'footage/day-one-lot.mp4',sourceIn:0,focus:[45,80],provenance:'take-10-b 22.6–33.6 s'},
     {id:'identical-bids',from:47,to:55,title:'The price of silence',expected:'',src:'footage/identical-bids.mp4',sourceIn:0,focus:[45,32],provenance:'take-10-b 33.9–41.9 s'},
-    {id:'interrogation',from:55,to:77,title:'Make him answer',expected:'',src:'footage/interrogation.mp4',sourceIn:0,focus:[55,42],provenance:'take-10-b 53.3–75.3 s'},
-    {id:'leniency',from:77,to:103,title:'One chance to talk',expected:'',src:'footage/leniency.mp4',sourceIn:0,focus:[42,40],provenance:'take-10-b 84.0–100.5 s at 2.5× + take-10-b 101.8–103.8 s + take-10-m2 0.9–6.9 s (Meteor) + take-10-c 3.3–14.8 s',speed:[{from:0,to:6.6,label:'sped up ×2.5'}]},
+    {id:'interrogation',from:55,to:77,title:'Make him answer',expected:'',src:'footage/interrogation.mp4',sourceIn:0,focus:[55,42],provenance:'take-10-b 41.9–55.2 s at 7.0× (next day → Sully) + take-10-b 55.2–75.3 s',speed:[{from:0,to:1.9,label:'sped up ×7'}]},
+    {id:'leniency',from:77,to:103,title:'One chance to talk',expected:'',src:'footage/leniency.mp4',sourceIn:0,focus:[42,40],provenance:'take-10-b 75.3–101.8 s at 4.1× + take-10-b 101.8–103.8 s + take-10-m2 0.9–6.9 s (Meteor card, zoomed) + take-10-c 3.3–14.8 s',speed:[{from:0,to:6.5,label:'sped up ×4'}]},
     {id:'case-file',from:103,to:116,title:'The case file',expected:'',src:'footage/case-file.mp4',sourceIn:0,focus:[50,45],provenance:'take-10-c 18.8–21.3, 25.5–29.3, 55.5–59.5, 98.6–101.3 s'},
   ] as MediaSlot[],
   narration,
