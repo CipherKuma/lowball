@@ -27,5 +27,7 @@ export interface Env {
   TEE_BUYERS?: string;
   /** auto (default) | on | off: per season, enclave signing only when OutLayer looks healthy (src/tee/mode.ts) */
   TEE_MODE?: string;
+  /** NEP-413 recipient the wallet signs for (default play.lowball-game.pages.dev) */
+  AUTH_RECIPIENT?: string;
   DEBUG?: string;
 }

@@ -1,5 +1,11 @@
 import type { ContractErrorCode, ErrorCode } from '../../shared/api.js';
 
+/** Sign-in codes and the too-short interrogation code; server-local (additive to the shared ErrorCode). */
+export type LocalErrorCode =
+  | 'AUTH_BAD_SIGNATURE' | 'AUTH_NONCE_USED' | 'AUTH_NONCE_EXPIRED' | 'AUTH_NONCE_UNKNOWN'
+  | 'AUTH_NOT_FULL_ACCESS' | 'AUTH_BAD_RECIPIENT' | 'AUTH_REQUIRED' | 'TOO_SHORT';
+export type AnyErrorCode = ErrorCode | LocalErrorCode;
+
 export interface ErrorInfo {
   message: string;
   retryable: boolean;
@@ -73,23 +79,32 @@ export const SERVER_ERRORS: Record<string, ErrorInfo> = {
   ALREADY_INTERROGATED: { message: 'You have already cornered a buyer today.', retryable: false, status: 409 },
   ALREADY_FORGED: { message: 'The forgery drill has already been run for this case.', retryable: false, status: 409 },
   STT_UNAVAILABLE: { message: 'Could not transcribe that recording. Try again or type it.', retryable: true, status: 502 },
+  AUTH_BAD_SIGNATURE: { message: 'That signature did not verify.', retryable: false, status: 401 },
+  AUTH_NONCE_USED: { message: 'That sign-in challenge was already used. Request a new one.', retryable: false, status: 401 },
+  AUTH_NONCE_EXPIRED: { message: 'That sign-in challenge expired. Request a new one.', retryable: false, status: 401 },
+  AUTH_NONCE_UNKNOWN: { message: 'That sign-in challenge was not issued here. Request a new one.', retryable: false, status: 401 },
+  AUTH_NOT_FULL_ACCESS: { message: 'That key is not a full access key of this account.', retryable: false, status: 401 },
+  AUTH_BAD_RECIPIENT: { message: 'The sign-in message does not match what was issued.', retryable: false, status: 401 },
+  AUTH_REQUIRED: { message: 'Sign in with your wallet first.', retryable: false, status: 401 },
+  TOO_SHORT: { message: 'That was too short to hear. Try again.', retryable: false, status: 422 },
   TEE_UNAVAILABLE: { message: "A buyer's enclave job did not complete. Try again.", retryable: true, status: 503 },
 };
 
 export class AppError extends Error {
+  /** typed as the shared ErrorCode; the local auth/TOO_SHORT codes are additive and travel as strings */
   readonly code: ErrorCode;
   readonly retryable: boolean;
   readonly status: number;
-  constructor(code: ErrorCode, message?: string, opts?: { retryable?: boolean; status?: number }) {
+  constructor(code: AnyErrorCode, message?: string, opts?: { retryable?: boolean; status?: number }) {
     const info = errorInfo(code);
     super(message ?? info.message);
-    this.code = code;
+    this.code = code as ErrorCode;
     this.retryable = opts?.retryable ?? info.retryable;
     this.status = opts?.status ?? info.status;
   }
 }
 
-export function errorInfo(code: ErrorCode): ErrorInfo {
+export function errorInfo(code: AnyErrorCode): ErrorInfo {
   return (
     (CONTRACT_ERRORS as Record<string, ErrorInfo>)[code] ??
     SERVER_ERRORS[code] ??

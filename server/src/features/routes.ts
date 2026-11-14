@@ -48,7 +48,7 @@ export function registerFeatureRoutes(app: Hono, o: FeatureRouteOptions): void {
     let blob: Blob | undefined;
     if (hasAudio) {
       const f = audio as Blob;
-      if (f.size === 0) throw new AppError('BAD_REQUEST', 'The recording is empty.');
+      if (f.size === 0) throw new AppError('TOO_SHORT');
       if (f.size > MAX_AUDIO_BYTES) throw new AppError('BAD_REQUEST', 'That recording is too large (1.5 MB at most).');
       if (!AUDIO_TYPES.includes(baseType(f.type))) throw new AppError('BAD_REQUEST', 'Audio must be webm, ogg or mp4.');
       blob = f;

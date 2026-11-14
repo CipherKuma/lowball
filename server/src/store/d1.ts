@@ -5,6 +5,49 @@ import type { ArtifactKind, SpendEntry, Store, TeeJobRow } from './types.js';
 export class D1Store implements Store {
   constructor(private db: D1Database) {}
 
+  private authReady: Promise<unknown> | null = null;
+  /** migrations/0004_auth.sql, also created on first use so a deploy never depends on running the migration first */
+  private ensureAuth(): Promise<unknown> {
+    this.authReady ??= this.db
+      .batch([
+        this.db.prepare('CREATE TABLE IF NOT EXISTS auth_nonces (nonce TEXT PRIMARY KEY, expires_at INTEGER NOT NULL, used INTEGER NOT NULL DEFAULT 0)'),
+        this.db.prepare('CREATE TABLE IF NOT EXISTS auth_sessions (token_hash TEXT PRIMARY KEY, account_id TEXT NOT NULL, expires_at INTEGER NOT NULL)'),
+      ])
+      .catch((e) => {
+        this.authReady = null;
+        throw e;
+      });
+    return this.authReady;
+  }
+  async putAuthNonce(nonce: string, expiresAt: number) {
+    await this.ensureAuth();
+    // housekeeping: spent or long-expired rows (an hour of grace so "expired" can still be told from "unknown")
+    await this.db.prepare('DELETE FROM auth_nonces WHERE expires_at < ?').bind(Date.now() - 3_600_000).run();
+    await this.db.prepare('INSERT INTO auth_nonces (nonce, expires_at, used) VALUES (?, ?, 0)').bind(nonce, expiresAt).run();
+  }
+  async consumeAuthNonce(nonce: string, now: number) {
+    await this.ensureAuth();
+    const r = await this.db.prepare('UPDATE auth_nonces SET used = 1 WHERE nonce = ? AND used = 0 AND expires_at >= ?').bind(nonce, now).run();
+    if ((r.meta.changes ?? 0) > 0) return 'ok' as const;
+    const row = await this.db.prepare('SELECT used FROM auth_nonces WHERE nonce = ?').bind(nonce).first<{ used: number }>();
+    if (!row) return 'unknown' as const;
+    return row.used === 1 ? ('used' as const) : ('expired' as const);
+  }
+  async putAuthSession(tokenHash: string, accountId: string, expiresAt: number) {
+    await this.ensureAuth();
+    await this.db.prepare('DELETE FROM auth_sessions WHERE expires_at < ?').bind(Date.now()).run();
+    await this.db.prepare('INSERT INTO auth_sessions (token_hash, account_id, expires_at) VALUES (?, ?, ?)').bind(tokenHash, accountId, expiresAt).run();
+  }
+  async getAuthSession(tokenHash: string, now: number) {
+    await this.ensureAuth();
+    const row = await this.db.prepare('SELECT account_id FROM auth_sessions WHERE token_hash = ? AND expires_at >= ?').bind(tokenHash, now).first<{ account_id: string }>();
+    return row?.account_id ?? null;
+  }
+  async deleteAuthSession(tokenHash: string) {
+    await this.ensureAuth();
+    await this.db.prepare('DELETE FROM auth_sessions WHERE token_hash = ?').bind(tokenHash).run();
+  }
+
   private ready: Promise<unknown> | null = null;
   /** migrations/0003_tee.sql, also created on first use so a deploy never depends on running the migration first */
   private ensureTee(): Promise<unknown> {

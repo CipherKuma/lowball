@@ -92,7 +92,7 @@ describe('voicing the new events with GET /api/tts', () => {
   it('voices an interrogation answer in the buyer voice with its mood tag, and a recap in the narrator voice', async () => {
     const r = rig();
     const id = await begun(r);
-    const j = await body(await post(r, id, form({ buyer: 'marlow', text: 'Talk.' })));
+    const j = await body(await post(r, id, form({ buyer: 'marlow', text: 'Talk to me.' })));
     const a = await r.app.request(`/api/tts?session=${id}&seq=${j.seq}`);
     expect(a.status).toBe(200);
     expect(r.up.lastTts!.model_id).toBe('eleven_v4_turbo'); // buyer voice: low-latency model

@@ -19,6 +19,9 @@ export const EvmAddressSchema = z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'payoutE
 
 export const CreateSessionSchema = z.object({ playerPublicKey: PublicKeySchema, payoutEvm: EvmAddressSchema.optional() }).strict();
 
+/** Wallet mode: the player is the signed-in account (Authorization: Bearer <token>); no key, no sub-account. */
+export const WalletSessionSchema = z.object({ mode: z.literal('wallet'), payoutEvm: EvmAddressSchema.optional() }).strict();
+
 export const StepSchema = z.object({ action: z.enum(['begin', 'sell', 'hold', 'next_day']) }).strict();
 
 /** NEAR tx hashes are base58 of 32 bytes: 43 or 44 chars. */

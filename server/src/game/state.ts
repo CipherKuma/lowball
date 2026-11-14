@@ -64,7 +64,10 @@ export interface Interrogation {
 
 export interface SessionState {
   playerAccountId: string;
+  /** empty for wallet players (their own key signs) */
   playerPublicKey: string;
+  /** who signs offer_leniency: a guest's throwaway key or the player's own wallet; absent on older sessions (guest) */
+  playerKind?: 'guest' | 'wallet';
   contractId: string;
   seasonId: number | null;
   buyers: BuyerInfo[];

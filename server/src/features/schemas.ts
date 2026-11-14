@@ -27,7 +27,7 @@ export const INTERROGATE_JSON_SCHEMA = {
 
 export const InterrogateFormSchema = z.object({
   buyer: z.enum(BUYER_IDS),
-  text: z.string().trim().min(1, 'text is empty').max(240, 'text is at most 240 characters').optional(),
+  text: z.string().trim().max(240, 'text is at most 240 characters').optional(),
 });
 
 /** POST /forge takes no input. */

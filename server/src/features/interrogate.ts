@@ -35,6 +35,10 @@ export function checkInterrogable(s: SessionState): void {
   }
 }
 
+/** A question needs at least three words; anything shorter (a cut-off "hey") must not cost the day's one question. */
+export const MIN_QUESTION_WORDS = 3;
+export const tooShort = (q: string): boolean => q.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length < MIN_QUESTION_WORDS;
+
 export const clampPressure = (n: number): number => Math.max(0, Math.min(MAX_PRESSURE, n));
 
 export async function interrogate(deps: GameDeps, id: string, input: InterrogateInput, voice: VoiceBudget): Promise<InterrogateResponse> {
@@ -51,6 +55,8 @@ export async function interrogate(deps: GameDeps, id: string, input: Interrogate
     s.seq = Math.max(s.seq, await store.lastSeq(id));
 
     let question = input.text?.trim() ?? '';
+    // typed text: refused before anything billed runs, and nothing has been written yet
+    if (!input.audio && tooShort(question)) throw new AppError('TOO_SHORT');
     if (input.audio) {
       if (!(await voice.reserve())) throw new AppError('TTS_LIMIT');
       let t;
@@ -61,10 +67,10 @@ export async function interrogate(deps: GameDeps, id: string, input: Interrogate
         throw e;
       }
       if (t.seconds !== null && t.seconds > MAX_AUDIO_SECONDS + 1) throw new AppError('BAD_REQUEST', `Keep it under ${MAX_AUDIO_SECONDS} seconds.`);
-      if (!t.text) throw new AppError('BAD_REQUEST', 'Could not hear anything. Try again or type it.');
       question = t.text.slice(0, 240);
+      // a cut-off recording ("hey") is heard but is not a question: the day's one question stays unspent
+      if (tooShort(question)) throw new AppError('TOO_SHORT');
     }
-    if (!question) throw new AppError('BAD_REQUEST', 'Say or type a question.');
 
     ctx = new GameCtx(id, s, deps);
     const r = await deps.llm.complete({

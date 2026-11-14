@@ -14,6 +14,7 @@ import type {
 } from '../../../shared/api.js';
 import { AppError } from '../errors.js';
 import { debug } from '../log.js';
+import type { TxResult } from '../near/signer.js';
 import { pactMessageHex } from '../near/pact.js';
 import { buyerInfos } from './cast.js';
 import { GameCtx, type GameDeps } from './ctx.js';
@@ -56,29 +57,52 @@ async function ensureBudget(deps: GameDeps): Promise<void> {
   if ((await deps.store.totalSpendUsd()) >= cap) throw new AppError('BUDGET_EXHAUSTED');
 }
 
-export async function createSession(deps: GameDeps, playerPublicKey: string, ip: string, payoutEvm?: string): Promise<CreateSessionResponse> {
+export async function createSession(
+  deps: GameDeps,
+  playerPublicKey: string,
+  ip: string,
+  payoutEvm?: string,
+  /** wallet mode: the player is this signed-in account; nothing is created or funded for it */
+  wallet?: { accountId: string },
+): Promise<CreateSessionResponse & { playerKind: 'guest' | 'wallet' }> {
   const { chain, store, config } = deps;
   await ensureBudget(deps);
   const bal = await chain.houseBalance();
   if (bal < config.minTreasuryYocto) throw new AppError('TREASURY_LOW');
-  const { accountId, tx } = await chain.createPlayer(playerPublicKey);
-  if (!tx.ok) throw new AppError(tx.errorCode ?? 'TX_FAILED', 'Could not create the fisher account.');
+  const buyers = buyerInfos(chain.houseId);
+  let accountId: string;
+  let tx: TxResult | null = null;
+  if (wallet) {
+    // the house and the buyers are never players of their own seasons
+    if (wallet.accountId === chain.houseId || buyers.some((b) => b.accountId === wallet.accountId)) {
+      throw new AppError('BAD_REQUEST', 'That account cannot play.');
+    }
+    accountId = wallet.accountId;
+  } else {
+    const made = await chain.createPlayer(playerPublicKey);
+    if (!made.tx.ok) throw new AppError(made.tx.errorCode ?? 'TX_FAILED', 'Could not create the fisher account.');
+    accountId = made.accountId;
+    tx = made.tx;
+  }
   const id = newSessionId();
   const seedBytes = crypto.getRandomValues(new Uint32Array(1));
   const state = newState({
     playerAccountId: accountId,
     playerPublicKey,
     contractId: chain.contractId,
-    buyers: buyerInfos(chain.houseId),
+    buyers,
     days: config.days,
     bondYocto: config.bondYocto.toString(),
     seed: seedBytes[0]!,
     payoutEvm: payoutEvm ?? null,
   });
+  state.playerKind = wallet ? 'wallet' : 'guest';
   await store.createSession(id, state, ip);
   const ctx = new GameCtx(id, state, deps);
-  await ctx.recordTx('create_player', chain.houseId, tx);
-  await ctx.emit({ type: 'account_created', accountId, tx: tx.hash });
+  if (tx) {
+    await ctx.recordTx('create_player', chain.houseId, tx);
+    await ctx.emit({ type: 'account_created', accountId, tx: tx.hash });
+  }
   await ctx.save();
   return {
     sessionId: id,
@@ -90,6 +114,7 @@ export async function createSession(deps: GameDeps, playerPublicKey: string, ip:
     bondYocto: state.bondYocto,
     network: 'testnet',
     payoutEvm: state.payoutEvm,
+    playerKind: wallet ? 'wallet' : 'guest',
   };
 }
 
@@ -132,7 +157,7 @@ export async function getEvents(deps: GameDeps, id: string, after: number): Prom
     deps.store.isLocked(id),
     deps.store.lastSeq(id),
   ]);
-  return { events, status: { ...statusOf(s, busy), lastSeq: Math.max(last, s.seq) } };
+  return { events, status: { ...statusOf(s, busy), lastSeq: Math.max(last, s.seq), playerKind: s.playerKind ?? 'guest' } as EventsResponse['status'] };
 }
 
 /** Run `job` under the session lock. Errors become `error` events unless the job already emitted one. */

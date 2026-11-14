@@ -13,6 +13,8 @@ export class MemoryStore implements Store {
   tts = new Map<string, number>();
   globalLocks = new Map<string, number>();
   teeJobs: TeeJobRow[] = [];
+  nonces = new Map<string, { expiresAt: number; used: boolean }>();
+  authSessions = new Map<string, { accountId: string; expiresAt: number }>();
 
   async createSession(id: string, state: SessionState, ip: string) {
     this.states.set(id, structuredClone(state));
@@ -94,5 +96,27 @@ export class MemoryStore implements Store {
   }
   async countSessionsSince(ip: string, since: number) {
     return this.sessions.filter((s) => s.ip === ip && s.at >= since).length;
+  }
+
+  async putAuthNonce(nonce: string, expiresAt: number) {
+    this.nonces.set(nonce, { expiresAt, used: false });
+  }
+  async consumeAuthNonce(nonce: string, now: number) {
+    const n = this.nonces.get(nonce);
+    if (!n) return 'unknown';
+    if (n.used) return 'used';
+    if (n.expiresAt < now) return 'expired';
+    n.used = true;
+    return 'ok';
+  }
+  async putAuthSession(tokenHash: string, accountId: string, expiresAt: number) {
+    this.authSessions.set(tokenHash, { accountId, expiresAt });
+  }
+  async getAuthSession(tokenHash: string, now: number) {
+    const a = this.authSessions.get(tokenHash);
+    return a && a.expiresAt >= now ? a.accountId : null;
+  }
+  async deleteAuthSession(tokenHash: string) {
+    this.authSessions.delete(tokenHash);
   }
 }

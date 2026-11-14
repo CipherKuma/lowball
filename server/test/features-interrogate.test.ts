@@ -16,10 +16,8 @@ describe('F3 interrogation: validation', () => {
       ['neither audio nor text', form({ buyer: 'marlow' })],
       ['both audio and text', form({ buyer: 'marlow', text: 'hi', audio: audio() })],
       ['text over 240', form({ buyer: 'marlow', text: 'x'.repeat(241) })],
-      ['blank text', form({ buyer: 'marlow', text: '   ' })],
       ['audio over 1.5 MB', form({ buyer: 'marlow', audio: audio('audio/webm', MAX_AUDIO_BYTES + 1) })],
       ['audio of the wrong type', form({ buyer: 'marlow', audio: audio('text/plain') })],
-      ['empty audio', form({ buyer: 'marlow', audio: audio('audio/webm', 0) })],
     ];
     for (const [name, f] of cases) {
       const res = await post(r, id, f);
@@ -36,7 +34,7 @@ describe('F3 interrogation: validation', () => {
   it('accepts exactly 240 characters and the largest allowed recording', async () => {
     const r = rig();
     const id = await begun(r);
-    expect((await post(r, id, form({ buyer: 'marlow', text: 'x'.repeat(240) }))).status).toBe(200);
+    expect((await post(r, id, form({ buyer: 'marlow', text: 'ab '.repeat(80).trim() }))).status).toBe(200);
     const r2 = rig();
     const id2 = await begun(r2);
     expect((await post(r2, id2, form({ buyer: 'sully', audio: audio('audio/mp4', MAX_AUDIO_BYTES) }))).status).toBe(200);
@@ -83,8 +81,8 @@ describe('F3 interrogation: the exchange', () => {
   it('one per day: the second is ALREADY_INTERROGATED (even for another buyer); the next day allows another', async () => {
     const r = rig();
     const id = await begun(r);
-    expect((await post(r, id, form({ buyer: 'marlow', text: 'one' }))).status).toBe(200);
-    const again = await post(r, id, form({ buyer: 'sully', text: 'two' }));
+    expect((await post(r, id, form({ buyer: 'marlow', text: 'one two three' }))).status).toBe(200);
+    const again = await post(r, id, form({ buyer: 'sully', text: 'two two three' }));
     expect(again.status).toBe(409);
     expect(await body(again)).toMatchObject({ code: 'ALREADY_INTERROGATED' });
     expect(asked(r)).toBe(1);
@@ -92,7 +90,7 @@ describe('F3 interrogation: the exchange', () => {
     expect(r.up.stt).toBe(0);
     await step(r.deps, id, 'sell');
     await step(r.deps, id, 'next_day');
-    const d2 = await post(r, id, form({ buyer: 'marlow', text: 'three' }));
+    const d2 = await post(r, id, form({ buyer: 'marlow', text: 'three three three' }));
     expect(d2.status).toBe(200);
     expect((await body(d2)).pressure).toBe(4); // 2 + 2
   });
@@ -101,13 +99,13 @@ describe('F3 interrogation: the exchange', () => {
     const r = rig();
     const id = await begun(r);
     r.llm.next = { ...r.llm.next, pressure: -2 };
-    expect((await body(await post(r, id, form({ buyer: 'deacon', text: 'a' })))).pressure).toBe(0);
+    expect((await body(await post(r, id, form({ buyer: 'deacon', text: 'a b c' })))).pressure).toBe(0);
     const s = (await r.store.loadState(id))!;
     s.interrogations = [];
     s.pressure = { deacon: 5 };
     await r.store.saveState(id, s);
     r.llm.next = { ...r.llm.next, pressure: 3 };
-    expect((await body(await post(r, id, form({ buyer: 'deacon', text: 'b' })))).pressure).toBe(6);
+    expect((await body(await post(r, id, form({ buyer: 'deacon', text: 'b b b' })))).pressure).toBe(6);
   });
 
   it('works after the lot settles, but not after a confession', async () => {
@@ -132,7 +130,7 @@ describe('F3 interrogation: the exchange', () => {
     expect(res.status).toBe(502);
     expect((await body(res)).code).toBe('STT_UNAVAILABLE');
     expect(r.store.tts.get(id) ?? 0).toBe(0);
-    r.up.sttText = 'Try again';
+    r.up.sttText = 'Try that again please';
     expect((await post(r, id, form({ buyer: 'marlow', audio: audio() }))).status).toBe(200);
   });
 
@@ -140,7 +138,7 @@ describe('F3 interrogation: the exchange', () => {
     const r = rig();
     const id = await begun(r);
     r.up.sttText = '   ';
-    expect((await post(r, id, form({ buyer: 'marlow', audio: audio() }))).status).toBe(400);
+    expect((await post(r, id, form({ buyer: 'marlow', audio: audio() }))).status).toBe(422);
     r.up.sttText = 'a long speech';
     r.up.words = [{ end: 40 }];
     expect((await post(r, id, form({ buyer: 'marlow', audio: audio() }))).status).toBe(400);
@@ -151,13 +149,13 @@ describe('F3 interrogation: the exchange', () => {
     const r = rig();
     const id = await begun(r);
     r.llm.failInterrogate = true;
-    const res = await post(r, id, form({ buyer: 'marlow', text: 'hi' }));
+    const res = await post(r, id, form({ buyer: 'marlow', text: 'hi there friend' }));
     expect(res.status).toBe(502);
     expect((await body(res)).code).toBe('MODEL_UNAVAILABLE');
     expect((await r.store.loadState(id))!.interrogations ?? []).toEqual([]);
     expect(await r.store.isLocked(id)).toBe(false);
     r.llm.failInterrogate = false;
-    expect((await post(r, id, form({ buyer: 'marlow', text: 'hi again' }))).status).toBe(200);
+    expect((await post(r, id, form({ buyer: 'marlow', text: 'hi again friend' }))).status).toBe(200);
   });
 
   it('a running step blocks it (BUSY)', async () => {
@@ -182,3 +180,52 @@ describe('F3 interrogation: the exchange', () => {
   });
 });
 
+describe('F3 interrogation: a too-short question never spends the day', () => {
+  const expectUnspent = async (r: ReturnType<typeof rig>, id: string, res: Response) => {
+    expect(res.status).toBe(422);
+    expect(await body(res)).toEqual({ error: 'That was too short to hear. Try again.', code: 'TOO_SHORT' });
+    const s = (await r.store.loadState(id))!;
+    expect(s.interrogations ?? []).toEqual([]);
+    expect(s.pressure ?? {}).toEqual({});
+    expect(asked(r)).toBe(0);
+    expect(await r.store.isLocked(id)).toBe(false);
+  };
+
+  for (const text of ['', '   ', 'hey', 'hey you', '... ?!']) {
+    it(`typed ${JSON.stringify(text)} is TOO_SHORT and leaves the day available`, async () => {
+      const r = rig();
+      const id = await begun(r);
+      await expectUnspent(r, id, await post(r, id, form({ buyer: 'marlow', text })));
+      expect((await post(r, id, form({ buyer: 'marlow', text: 'Who set the cap?' }))).status).toBe(200);
+    });
+  }
+
+  it('a recording cut off after "hey" (transcript of one word) is TOO_SHORT and leaves the day available', async () => {
+    const r = rig();
+    const id = await begun(r);
+    r.up.sttText = 'hey';
+    await expectUnspent(r, id, await post(r, id, form({ buyer: 'marlow', audio: audio() })));
+    r.up.sttText = 'Where were you Tuesday?';
+    expect((await post(r, id, form({ buyer: 'marlow', audio: audio() }))).status).toBe(200);
+  });
+
+  it('an empty recording is TOO_SHORT without any upstream call', async () => {
+    const r = rig();
+    const id = await begun(r);
+    await expectUnspent(r, id, await post(r, id, form({ buyer: 'marlow', audio: audio('audio/webm', 0) })));
+    expect(r.up.stt).toBe(0);
+  });
+
+  it('an STT or model failure after a long-enough question also leaves the day available', async () => {
+    const r = rig();
+    const id = await begun(r);
+    r.up.sttText = null;
+    expect((await post(r, id, form({ buyer: 'marlow', audio: audio() }))).status).toBe(502);
+    r.up.sttText = 'Where were you Tuesday?';
+    r.llm.failInterrogate = true;
+    expect((await post(r, id, form({ buyer: 'marlow', audio: audio() }))).status).toBe(502);
+    expect((await r.store.loadState(id))!.interrogations ?? []).toEqual([]);
+    r.llm.failInterrogate = false;
+    expect((await post(r, id, form({ buyer: 'marlow', audio: audio() }))).status).toBe(200);
+  });
+});

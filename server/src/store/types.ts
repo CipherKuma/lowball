@@ -47,4 +47,12 @@ export interface Store {
   reserveTts(sessionId: string, max: number): Promise<boolean>;
   /** give a claimed call back (the upstream call failed and was not billed) */
   releaseTts(sessionId: string): Promise<void>;
+  /** wallet sign-in challenge (base64 of 32 bytes), valid until expiresAt (ms) */
+  putAuthNonce(nonce: string, expiresAt: number): Promise<void>;
+  /** atomically spend a nonce: exactly one caller ever gets 'ok' */
+  consumeAuthNonce(nonce: string, now: number): Promise<'ok' | 'used' | 'expired' | 'unknown'>;
+  /** only the sha256 of the bearer token is stored */
+  putAuthSession(tokenHash: string, accountId: string, expiresAt: number): Promise<void>;
+  getAuthSession(tokenHash: string, now: number): Promise<string | null>;
+  deleteAuthSession(tokenHash: string): Promise<void>;
 }
