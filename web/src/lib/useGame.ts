@@ -1,0 +1,160 @@
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import type { BuyerId, GameEvent, SessionStatus, StepAction } from '../../../shared/api';
+import { ApiFailure } from './api';
+import { audio } from './audio';
+import { LiveDriver, type Driver, type SessionMeta } from './driver';
+import { PreviewDriver } from './preview';
+import { apply, initialView, type View } from './state';
+
+type Act = { type: 'events'; events: GameEvent[]; status: SessionStatus | null } | { type: 'reset' };
+
+function reducer(v: View, a: Act): View {
+  if (a.type === 'reset') return initialView;
+  let n = v;
+  for (const e of a.events) n = apply(n, e);
+  return a.status ? { ...n, status: a.status } : n;
+}
+
+export type Pending = StepAction | 'start' | 'leniency' | null;
+
+/** Pre-voiced lines keyed by exact text, so scripted lines use studio VO and live lines use TTS. */
+const VO_BY_TEXT: Record<string, string> = {
+  "Morning, captain. Let's keep this civilised.": 'marlow_greet',
+  'Nobody on this pier talks. Nobody.': 'marlow_threat',
+  'You rat. After everything I did for this harbour.': 'marlow_betrayed',
+  'Your catch. Our price. Shall we.': 'odile_greet',
+  "Mornin'. Look — it's nothin' personal, yeah?": 'sully_greet',
+  'Darling, you look exhausted. Sell to me and go to bed.': 'ines_greet',
+  'Peace be with you.': 'deacon_greet',
+  'As agreed.': 'deacon_bid',
+  'Judas.': 'deacon_betrayed',
+};
+
+function cue(e: GameEvent, driver: Driver, firstDay: { done: boolean }) {
+  switch (e.type) {
+    case 'day_opened':
+      audio.sfx('auction_bell', 0.5);
+      if (!firstDay.done) firstDay.done = true;
+      else audio.say('day_open');
+      return;
+    case 'bid_committed':
+      audio.sfx('paper_slide', 0.35);
+      return;
+    case 'bids_revealed':
+      audio.sfx('card_flip', 0.6);
+      if (e.identical) window.setTimeout(() => audio.say('identical'), 900);
+      return;
+    case 'lot_settled':
+      audio.sfx('gavel', 0.7);
+      return;
+    case 'line': {
+      const key = VO_BY_TEXT[e.text];
+      if (key) audio.say(key);
+      else {
+        const url = driver.ttsUrl(e.seq);
+        if (url) audio.sayUrl(url);
+      }
+      return;
+    }
+    case 'leniency_open':
+      audio.playMusic('harbour_tense', 900);
+      audio.say('leniency');
+      return;
+    case 'confession_attempt':
+      if (e.ok) {
+        audio.sting('confession_sting');
+        audio.sfx('wax_seal', 0.8);
+        audio.say('confessed');
+      } else audio.sfx('refusal_thud', 0.9);
+      return;
+    case 'slashed':
+      audio.sfx('bond_slash', 0.85);
+      window.setTimeout(() => audio.sfx('coins_pour', 0.7), 1100);
+      return;
+    case 'holdout':
+      audio.say('holdout');
+      audio.playMusic('harbour_loop');
+      return;
+    default:
+  }
+}
+
+export function useGame() {
+  const preview = useMemo(() => new URLSearchParams(location.search).has('preview'), []);
+  const driverRef = useRef<Driver | null>(null);
+  const [meta, setMeta] = useState<SessionMeta | null>(null);
+  const [view, dispatch] = useReducer(reducer, initialView);
+  const [pending, setPending] = useState<Pending>(null);
+  const [failure, setFailure] = useState<{ message: string; code: string; retry?: () => void } | null>(null);
+  const firstDay = useRef({ done: false });
+
+  const run = useCallback(async (label: Pending, fn: () => Promise<unknown>, retry?: () => void) => {
+    setPending(label);
+    setFailure(null);
+    try {
+      await fn();
+    } catch (err) {
+      const code = err instanceof ApiFailure ? err.code : 'CLIENT';
+      const message = err instanceof Error ? err.message : 'Something went wrong.';
+      setFailure({ message, code, retry });
+    } finally {
+      setPending(null);
+    }
+  }, []);
+
+  const start = useCallback(() => {
+    const d: Driver = preview ? new PreviewDriver() : new LiveDriver();
+    driverRef.current = d;
+    firstDay.current.done = false;
+    dispatch({ type: 'reset' });
+    d.subscribe((events, status) => {
+      dispatch({ type: 'events', events, status });
+      for (const e of events) cue(e, d, firstDay.current);
+    });
+    const go = () =>
+      run('start', async () => {
+        const m = await d.start();
+        setMeta(m);
+        await d.step('begin');
+      }, go);
+    void go();
+  }, [preview, run]);
+
+  const act = useCallback(
+    (a: StepAction) => {
+      const d = driverRef.current;
+      if (!d) return;
+      const go = () => run(a, () => d.step(a), go);
+      void go();
+    },
+    [run],
+  );
+
+  const offerLeniency = useCallback(() => {
+    const d = driverRef.current;
+    const season = view.seasonId ?? view.status?.seasonId;
+    if (!d || season == null) return;
+    const go = () => run('leniency', () => d.leniency(season), go);
+    void go();
+  }, [run, view.seasonId, view.status?.seasonId]);
+
+  const loadCasefile = useCallback(() => {
+    const d = driverRef.current;
+    if (!d) return Promise.reject(new Error('No session'));
+    return d.casefile();
+  }, []);
+
+  // Music follows the story: tense under leniency, cue on the ending.
+  useEffect(() => {
+    if (!view.closed) return;
+    audio.stopMusic(800);
+    const won = !!view.slashed;
+    window.setTimeout(() => {
+      audio.sting(won ? 'victory' : 'defeat', 0.75);
+      audio.say(won ? 'season_end_win' : 'season_end_lose');
+    }, 2400);
+  }, [view.closed, view.slashed]);
+
+  const confessor: BuyerId | null = view.slashed?.confessor ?? null;
+  return { preview, meta, view, pending, failure, start, act, offerLeniency, loadCasefile, confessor, dismissFailure: () => setFailure(null) };
+}

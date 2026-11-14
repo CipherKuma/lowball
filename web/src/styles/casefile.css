@@ -1,0 +1,247 @@
+.casefile {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 var(--gutter) var(--gutter);
+  overflow-y: auto;
+}
+.folder {
+  position: relative;
+  width: min(100%, 920px);
+  margin-top: 30px;
+  padding: 26px 28px 22px;
+  border-radius: 4px 14px 14px 14px;
+  background: linear-gradient(180deg, #e3d4ad, #d5c393);
+  color: var(--paper-ink);
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9), inset 0 0 120px rgba(120, 90, 40, 0.25);
+}
+.folder-tab {
+  position: absolute;
+  top: -28px;
+  left: 0;
+  padding: 7px 18px 6px;
+  border-radius: 10px 10px 0 0;
+  background: #e3d4ad;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+.folder-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  border-bottom: 1.5px solid rgba(42, 33, 22, 0.25);
+  padding-bottom: 16px;
+}
+.folder-kicker {
+  margin: 0;
+  font: 600 11px var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8a2b22;
+}
+.folder-head h2 {
+  margin: 6px 0 0;
+  font-size: clamp(28px, 3.4vw, 42px);
+  font-weight: 750;
+  line-height: 1;
+}
+.folder-facts {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+}
+.folder-facts div {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+.folder-facts dt {
+  opacity: 0.65;
+}
+.folder-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+.folder-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 16px 0 0;
+}
+.folder-tabs button {
+  padding: 8px 14px;
+  border-radius: 6px 6px 0 0;
+  font-weight: 600;
+  font-size: 14px;
+  color: rgba(42, 33, 22, 0.65);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.folder-tabs button[aria-selected='true'] {
+  background: rgba(255, 250, 235, 0.65);
+  color: var(--paper-ink);
+}
+.folder-body {
+  min-height: 300px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: 0 8px 8px 8px;
+  background: rgba(255, 250, 235, 0.65);
+}
+.folder-loading {
+  font-style: italic;
+  opacity: 0.7;
+}
+.folder-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.folder a {
+  color: #7a3b10;
+}
+
+/* The pact */
+.pact-doc {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.pact-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  font-style: italic;
+  margin: 0 0 10px;
+}
+.pact-body {
+  text-align: center;
+  margin: 0 0 18px;
+  font-size: 15px;
+}
+.sigs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.sigs li {
+  display: grid;
+  grid-template-columns: 1.1fr 1.4fr auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 10px;
+  border-bottom: 1px dashed rgba(42, 33, 22, 0.25);
+}
+.sigs li[data-confessor] {
+  background: rgba(232, 163, 61, 0.22);
+  border-radius: 6px;
+}
+.sig-name {
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 600;
+}
+.sigs code {
+  font-size: 11px;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sig-ok {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2f6b4f;
+  white-space: nowrap;
+}
+.pact-bytes {
+  margin-top: 14px;
+  font-size: 12px;
+}
+.pact-bytes code {
+  display: block;
+  margin-top: 6px;
+  word-break: break-all;
+  font-size: 11px;
+}
+
+/* Back room transcript */
+.transcript {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.transcript li {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+}
+.transcript img {
+  width: 44px;
+  height: 55px;
+  object-fit: cover;
+  object-position: 50% 15%;
+  border-radius: 4px;
+}
+.t-who {
+  margin: 0;
+  font-weight: 700;
+  font-size: 14px;
+}
+.t-who .mono {
+  font-weight: 400;
+  font-size: 11px;
+  opacity: 0.65;
+  margin-left: 6px;
+}
+.t-say {
+  margin: 2px 0 4px;
+  font: italic 400 16px/1.4 var(--font-display);
+}
+.t-receipt {
+  margin: 0;
+  font-size: 11px;
+  color: #8a2b22;
+}
+.t-receipt[data-ok] {
+  color: #2f6b4f;
+}
+
+/* Chain record */
+.chain-head {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+.chain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.chain-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(42, 33, 22, 0.12);
+  font-size: 14px;
+}
+.chain-list li[data-fail] span {
+  color: #8a2b22;
+}
+
+@media (max-width: 640px) {
+  .folder {
+    padding: 20px 16px;
+  }
+  .sigs li {
+    grid-template-columns: 1fr auto;
+  }
+  .sigs code {
+    display: none;
+  }
+}

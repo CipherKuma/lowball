@@ -1,0 +1,33 @@
+:root {
+  --ink: #0b1418;
+  --ink-2: #0f1d21;
+  --harbour: #14302c;
+  --harbour-2: #1b3d38;
+  --amber: #e8a33d;
+  --amber-hot: #ffc266;
+  --amber-glow: rgba(232, 163, 61, 0.22);
+  --fog: #c8d1c9;
+  --rust: #8a2b22;
+  --rust-hot: #b8392c;
+  --paper: #e6dcc4;
+  --paper-ink: #2a2116;
+  --text: #ece6d6;
+  --muted: #8d9a93;
+  --line: rgba(200, 209, 201, 0.14);
+  --ok: #7fb59a;
+
+  --font-display: 'Fraunces', 'Times New Roman', serif;
+  --font-ui: 'Inter Tight', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --shadow-deep: 0 30px 80px -20px rgba(0, 0, 0, 0.85);
+  --gutter: clamp(16px, 2.4vw, 32px);
+  color-scheme: dark;
+}
