@@ -15,15 +15,15 @@ Filing limit for this event: at most 2 projects per person across all personas; 
 | Demo video | `demo/out/lowball-demo.mp4` (2:15, 1080p, −14 LUFS) → Gabriel's X post link |
 | Website | https://play.lowball-game.pages.dev |
 
-## What did you build? (about 1,660 characters; limit 2,000)
+## What did you build? (about 1,920 characters; limit 2,000)
 
 Lowball is a noir auction game where five AI fish buyers rig your sale, and you break their cartel the way antitrust regulators do: with leniency.
 
-Each morning you land a catch at Pier Nine. Its board price is the real 2024 NOAA ex-vessel price for that species, and the live wave height off New Bedford sets the haul. The buyers seal their bids, and the bids keep coming back identical. Before the season they met in private and each signed a pact with its own ed25519 key. Once a day you can lean on one buyer out loud: ElevenLabs Scribe transcribes you and the buyer answers in its own ElevenLabs voice. With two matching days on the record, you sign an offer of leniency in your browser. The first buyer to hand our NEAR contract the signed pact walks free; the contract verifies every signature, slashes the other bonds, pays you, and refuses every later confession.
+You sign in with your own wallet through NEAR Connect (Meteor, Intear, Nightly, Ledger, or MetaMask via Ethereum Wallets), with a NEP-413 message the server checks once and never accepts again. Each morning you land a catch at Pier Nine. Its board price is the real 2024 NOAA ex-vessel price for that species, and the live wave height off New Bedford sets the haul. The buyers seal their bids, and the bids keep coming back identical: before the season each signed a pact with its own ed25519 key. Once a day you can lean on one buyer out loud: ElevenLabs Scribe transcribes you and the buyer answers in its own voice. With two matching days on the record, you sign an offer of leniency in your wallet. The first buyer to hand our NEAR contract the signed pact walks free; the contract verifies every signature, slashes the other bonds and pays your account, and refuses every later confession.
 
-The buyers are LLM agents on NEAR AI Cloud's Confidential TEE (Qwen3.6). Every response signature is verified against a signer proven by a live Intel TDX quote and NVIDIA GPU evidence. The leniency window is a NEP-519 yield that closes itself after 200 blocks; every catch is a NEP-245 token in escrow; chain signatures can pay slashed bonds out on Sepolia. In enclave mode, each buyer's pact key lives in its own OutLayer TDX enclave (live in season 32; testnet seasons fall back to standard mode when OutLayer's pool is down, and the game says so).
+The buyers are LLM agents on NEAR AI Cloud's Confidential TEE (Qwen3.6). Every response signature is verified against a signer proven by a live Intel TDX quote and NVIDIA GPU evidence. The leniency window is a NEP-519 yield that closes itself after 200 blocks; every catch is a NEP-245 token in escrow; Chain Signatures can pay slashed bonds to your own Ethereum address on Sepolia. Judges without a wallet can play a clearly labelled no-wallet demo. In enclave mode, each buyer's pact key lives in its own OutLayer TDX enclave (live in season 32; testnet seasons fall back to standard mode when OutLayer's pool is down, and the game says so).
 
-Measured: 87 contract tests; 309 server tests; 18 of 18 attacks refused on the deployed contract. In simulation with real AI buyers, the ring held identical bids on 96% of days without leniency; with it, a buyer cracked in 9 of 10 seasons.
+Measured: 87 contract tests; 348 server tests; 18 of 18 attacks refused on the deployed contract. In simulation with real AI buyers, the ring held identical bids on 96% of days without leniency; with it, a buyer cracked in 9 of 10 seasons.
 
 ## Notes for the form (not part of the text above)
 

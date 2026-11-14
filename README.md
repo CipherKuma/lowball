@@ -66,7 +66,7 @@ confession, a forged one, or a replayed one is refused on-chain.
 
 - **Contract:** 87 tests (unit + near-workspaces sandbox, including a real confession race) — `contract/TEST-RESULTS.md`.
 - **On the deployed contract:** 18 of 18 adversarial refusals as expected — `server/sim/ADVERSARIAL-REAL.md`; the forgery drill's real refused transactions — `server/FEATURES-RUN.md`.
-- **Server:** 338 tests (including NEP-413 sign-in: wrong recipient, tampered signature, replayed and expired nonce, function-call key refused; wallet seasons; wallet leniency without a tx hash) — `server/TEST-RESULTS.md`.
+- **Server:** 348 tests (including NEP-413 and EIP-191 sign-in: wrong recipient, tampered signature, replayed and expired nonce, function-call key refused; wallet seasons; wallet leniency without a tx hash) — `server/TEST-RESULTS.md`.
 - **Wallets:** the NEAR Connect selector opens on the deployed site and lists Meteor, Intear, Ledger, Nightly and NEAR CLI on testnet. A season played end to end with a real Meteor wallet is pending; its transactions will be listed here.
 - **Live on the deployed game (14 Nov, season 46):** a buyer confessed, four bonds were slashed and paid to the player, a second
   confession was refused, all five pact signatures re-checked in the browser, and the forgery drill's three attacks were refused.

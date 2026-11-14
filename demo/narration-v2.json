@@ -1,7 +1,7 @@
 {
   "voice": "iP95p4xoKVk53GoZ742B",
   "model": "eleven_v4",
-  "take": "take 2 · season 49 · session 547e3fe3-c385-41a4-b8d2-514a312285c7",
+  "take": "take 9, season 62 (wallet-first, 15 Nov 2026)",
   "lines": [
     {
       "id": "n01",
@@ -18,8 +18,8 @@
     {
       "id": "n03",
       "at": 26.3,
-      "text": "Before dawn, the five buyers meet in private. Each one signs a price-fixing pact with its own key, and locks a bond in our NEAR contract.",
-      "evidence": "season 49: 5 bonds posted, pact with 5 members"
+      "text": "You sign in with your own NEAR wallet. Before dawn, the five buyers sign a price-fixing pact, each with its own key, and lock bonds in our contract.",
+      "evidence": "season 62: cipherkuma.testnet signed in through NEAR Connect (Meteor, NEP-413); 5 bonds posted, pact with 5 members"
     },
     {
       "id": "n04",
@@ -48,14 +48,14 @@
     {
       "id": "n08",
       "at": 83.6,
-      "text": "So you offer leniency. You sign it yourself, and the contract opens a window that closes after two hundred blocks.",
-      "evidence": "offer_leniency 8qt7a4o2…, deadline block 277653593"
+      "text": "So you offer leniency, signed in your own wallet. The contract opens a window that closes after two hundred blocks.",
+      "evidence": "season 62: offer_leniency signed by cipherkuma.testnet in Meteor; NEP-519 yield, deadline block 277697679"
     },
     {
       "id": "n09",
       "at": 95.1,
-      "text": "Sully talks first and walks free. Every signature checks out, four bonds are slashed and paid to you, and the late confessions are refused.",
-      "evidence": "confess 5Rgodoqx…; E_ALREADY_CONFESSED ×2; slashed 4; 0.20 NEAR"
+      "text": "Sully talks first and walks free. Every signature checks out, and four bonds are slashed and paid to your wallet.",
+      "evidence": "season 62: Sully confessed (9isYKgqY…), 4 bonds slashed, 0.20 NEAR paid to cipherkuma.testnet"
     },
     {
       "id": "n10",
@@ -83,7 +83,7 @@
     },
     {
       "id": "n14",
-      "at": 131.0,
+      "at": 131,
       "text": "That's Lowball. Make one of them talk.",
       "evidence": "close"
     }
