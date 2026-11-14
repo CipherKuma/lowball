@@ -189,6 +189,8 @@ function Verdict({
   const [dismissed, setDismissed] = useState(false);
   const s = view.slashed;
   const confessorName = s ? meta.buyers.find((b) => b.id === s.confessor)?.name : null;
+  // Only what the contract actually refused: later confessions in this window.
+  const refused = view.attempts.filter((a) => !a.ok && a.errorCode === 'E_ALREADY_CONFESSED').length;
   if (view.holdout && !view.closed && dismissed) return null;
   return (
     <motion.div
@@ -210,7 +212,8 @@ function Verdict({
             <p className="verdict-kicker">Somebody talked</p>
             <h2 className="display">{confessorName} handed over the pact.</h2>
             <p className="verdict-sub">
-              The contract checked every signature. {s.slashed.length} bonds slashed. A second confession was refused.
+              The contract checked every signature. {s.slashed.length} {s.slashed.length === 1 ? 'bond' : 'bonds'} slashed.
+              {refused === 1 ? ' A second confession was refused.' : refused > 1 ? ` ${refused} later confessions were refused.` : ''}
             </p>
           </>
         ) : view.closed ? (

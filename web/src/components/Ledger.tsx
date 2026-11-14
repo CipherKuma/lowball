@@ -75,7 +75,7 @@ export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold,
           </button>
         )}
         <button className="btn btn-primary leniency-btn" disabled={!canLeniency || busy} onClick={onLeniency}>
-          {pending === 'leniency' ? 'Signing on NEAR…' : 'Offer leniency'}
+          {pending === 'leniency' ? (view.leniencyOpen ? 'The buyers are deciding…' : 'Signing on NEAR…') : 'Offer leniency'}
           <span className="kbd">
             {caseCount < CASE_DAYS && !view.slashed
               ? `build your case first · ${caseCount} of ${CASE_DAYS} evidence days on record`

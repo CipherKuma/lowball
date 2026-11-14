@@ -112,7 +112,7 @@ export function InterrogationRoom({ buyer, exchange, pending, error, onAsk, onCl
                   <span>You</span>“{exchange.question}”
                 </p>
                 <p className="a display">“{exchange.answer}”</p>
-                {exchange.tell && <p className="tell">{exchange.tell}</p>}
+                {exchange.tell && <p className="tell">{exchange.tell.charAt(0).toUpperCase() + exchange.tell.slice(1)}</p>}
                 <div className="pressure" aria-label={`Pressure ${exchange.pressure} of ${MAX_PRESSURE}`}>
                   <span>Pressure</span>
                   <div>
