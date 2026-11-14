@@ -107,6 +107,12 @@ export function MicDesk({
             onPointerDown={press}
             onPointerUp={lift}
             onPointerCancel={lift}
+            // Screen readers and switch access activate with a bare click (detail 0) and no pointer events.
+            onClick={(e) => {
+              if (e.detail !== 0) return;
+              if (listening) void finish();
+              else if (rec.state !== 'starting') begin();
+            }}
             onKeyDown={(e) => {
               if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
                 e.preventDefault();
