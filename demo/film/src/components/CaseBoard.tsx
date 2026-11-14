@@ -10,7 +10,7 @@ const Card=({card}:{card:BoardCard})=>{
  return <div style={{position:'absolute',left:card.x,top:card.y,width:card.w,height:card.h,padding:'28px 30px 24px',zIndex:1,display:'flex',flexDirection:'column',boxSizing:'border-box',color:card.dark?c.paper:c.paperInk,background:card.dark?'linear-gradient(130deg,#183831,#0b1c1b)':'linear-gradient(120deg,#e6dcc4,#bda77d)',boxShadow:'4px 14px 27px #0009',border:card.dark?'1px solid #a88649':'1px solid #e7d1a2',transformOrigin:'50% 0px',transform:`translateY(${(1-p)*45}px) rotate(${card.angle}deg)`,opacity:p}}>
   <Pin/>
   <div style={{fontFamily:font.mono,fontSize:16,letterSpacing:'.15em',opacity:.65,marginBottom:12}}>{card.id}</div>
-  <div style={{fontFamily:font.display,fontSize:card.dark?48:36,lineHeight:1.12,fontStyle:card.dark?'italic':'normal',marginBottom:14}}>{card.title}</div>
+  <div style={{fontFamily:font.sign,fontWeight:card.dark?900:800,fontSize:card.dark?56:38,lineHeight:.95,textTransform:'uppercase',letterSpacing:'.01em',marginBottom:14}}>{card.title}</div>
   <div style={{fontFamily:font.mono,fontSize:22,lineHeight:1.45,whiteSpace:'pre-wrap',overflowWrap:'anywhere',overflow:'hidden',flex:1,minHeight:0}}><PendingText text={reveal(card.body,f,card.at+12,1.8)} dark={card.dark}/></div>
   <div style={{fontFamily:font.mono,fontSize:15,lineHeight:1.5,opacity:.85,marginTop:14,overflowWrap:'anywhere',overflow:'hidden',maxHeight:45,flexShrink:0,borderTop:'1px solid currentColor',paddingTop:12}}><PendingText text={card.footer} dark={card.dark}/></div>
  </div>;
