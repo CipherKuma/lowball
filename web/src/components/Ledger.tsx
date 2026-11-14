@@ -22,8 +22,8 @@ const CASE_DAYS = 2;
 export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold, onNext, onLeniency }: Props) {
   const phase = status?.phase;
   const busy = pending !== null || !!status?.busy;
-  const allSealed = Object.keys(view.committed).length >= 5;
-  const canSell = phase === 'lot_open' && allSealed && !view.settled;
+  // The server seals the five bids inside the sell step, so selling must not wait for sealed envelopes.
+  const canSell = phase === 'lot_open' && !view.settled;
   const canLeniency = !!status?.leniencyAvailable && !view.leniencyOpen && !view.slashed;
   const lastDay = (status?.day ?? 0) >= days;
   const streak = view.identicalStreak;

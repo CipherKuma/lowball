@@ -20,7 +20,7 @@ referee is a NEAR contract that nobody, including us, can talk round.
 
 ## A season, in four beats
 
-1. **Before dawn.** Your fisher account opens on NEAR testnet. Each buyer locks a 0.2 Ⓝ bond in the
+1. **Before dawn.** Your fisher account opens on NEAR testnet. Each buyer locks a 0.1 Ⓝ bond in the
    contract. Behind the warehouse door the five talk privately and decide whether to sign a pact
    (`bid no more than N marks`), each with their own ed25519 key. You never see this talk until the end.
 2. **The auction.** Each day's catch is minted as a NEP-245 token in escrow. The buyers commit sealed

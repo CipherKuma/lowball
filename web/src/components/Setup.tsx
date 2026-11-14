@@ -32,7 +32,7 @@ export function Setup({ meta, view, error }: { meta: SessionMeta | null; view: V
           <li data-done={bonded === 5 || undefined}>
             <i aria-hidden />
             <span>
-              Each buyer locks a {meta ? yoctoToNear(meta.bondYocto, 2) : '0.20'} Ⓝ bond in the contract
+              Each buyer locks a {meta ? yoctoToNear(meta.bondYocto, 2) : '0.10'} Ⓝ bond in the contract
             </span>
             <span className="bond-count mono">{bonded}/5</span>
           </li>
