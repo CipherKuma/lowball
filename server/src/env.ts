@@ -25,5 +25,7 @@ export interface Env {
   SEPOLIA_RPC_URLS?: string;
   /** "1": each buyer's pact key lives in an OutLayer TDX enclave (outlayer/deployed.json); default off */
   TEE_BUYERS?: string;
+  /** auto (default) | on | off: per season, enclave signing only when OutLayer looks healthy (src/tee/mode.ts) */
+  TEE_MODE?: string;
   DEBUG?: string;
 }

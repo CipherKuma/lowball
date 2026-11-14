@@ -3,7 +3,7 @@
 import { sha256 } from '@noble/hashes/sha256';
 import { BUYER_IDS, type BuyerId, type ErrorCode } from '../../../shared/api.js';
 import { b58encode } from '../near/base58.js';
-import { concat, fromB64, utf8 } from '../near/bytes.js';
+import { concat, fromB64, toB64, utf8 } from '../near/bytes.js';
 import { verify } from '../near/keys.js';
 import { PACT_PREFIX, encodePact, verifyConfessionSig } from '../near/pact.js';
 import { mockEvent } from './mock-events.js';
@@ -32,7 +32,25 @@ export class MockChain implements Chain {
   /** every tx processed, in order, for assertions */
   log: { label: string; hash: string; signer: string; ok: boolean; errorCode?: ErrorCode; logs?: string[] }[] = [];
 
-  constructor(private pactPublicKeys: Record<BuyerId, Uint8Array>) {}
+  /** registered pact keys (register_buyer_key); seasons snapshot them at create_season */
+  private pactPublicKeys: Record<BuyerId, Uint8Array>;
+  constructor(pactPublicKeys: Record<BuyerId, Uint8Array>) {
+    this.pactPublicKeys = { ...pactPublicKeys };
+  }
+
+  async getBuyerKey(accountId: string): Promise<string | null> {
+    const id = BUYER_IDS.find((x) => this.acct(x) === accountId);
+    return id ? toB64(this.pactPublicKeys[id]) : null;
+  }
+
+  async registerBuyerKey(buyer: BuyerId, publicKeyB64: string): Promise<TxResult> {
+    await Promise.resolve();
+    return this.tx('register_buyer_key', this.acct(buyer), () => {
+      const pk = fromB64(publicKeyB64);
+      ensure(pk.length === 32, 'E_BAD_KEY');
+      this.pactPublicKeys[buyer] = pk;
+    });
+  }
 
   advanceBlocks(n: number) {
     this.height += n;

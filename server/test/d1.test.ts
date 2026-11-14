@@ -56,6 +56,24 @@ function storeContract(name: string, make: () => Store) {
       expect(await s.countSessionsSince('2.2.2.2', 0)).toBe(0);
     });
 
+    it('has a cross-session lock and keeps the newest enclave jobs first', async () => {
+      const s = make();
+      const name = `lock-${crypto.randomUUID()}`;
+      expect(await s.tryGlobalLock(name, 60_000)).toBe(true);
+      expect(await s.tryGlobalLock(name, 60_000)).toBe(false);
+      await s.releaseGlobalLock(name);
+      expect(await s.tryGlobalLock(name, 60_000)).toBe(true);
+      await s.releaseGlobalLock(name);
+      const t = Date.now() + 10_000_000;
+      await s.addTeeJob({ at: t, buyer: 'marlow', op: 'sign_pact', ok: true, ms: 1234 });
+      await s.addTeeJob({ at: t + 1, buyer: 'odile', op: 'probe', ok: false, ms: 99 });
+      const jobs = await s.recentTeeJobs(2);
+      expect(jobs).toEqual([
+        { at: t + 1, buyer: 'odile', op: 'probe', ok: false, ms: 99 },
+        { at: t, buyer: 'marlow', op: 'sign_pact', ok: true, ms: 1234 },
+      ]);
+    });
+
     it('keeps the spend ledger and the per-session voice counter', async () => {
       const s = make();
       const before = await s.totalSpendUsd();

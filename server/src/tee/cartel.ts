@@ -1,4 +1,4 @@
-import { BUYER_IDS, type BuyerId, type ChannelMessage } from '../../../shared/api.js';
+import { BUYER_IDS, BUYER_NAMES, type BuyerId, type ChannelMessage } from '../../../shared/api.js';
 import type { PactJson } from '../chain/types.js';
 import { AppError } from '../errors.js';
 import type { GameCtx } from '../game/ctx.js';
@@ -23,8 +23,8 @@ function finalStep(base: string, cap: number): string {
 
 /**
  * TEE_BUYERS=1: the pact is composed here from round 1 (cap = median of all five proposals, members = all five
- * accounts, fresh nonce); each buyer's enclave decides whether to sign it and signs it itself. Throws
- * TEE_UNAVAILABLE (after emitting the error event) when any job fails; no server-held key ever signs.
+ * accounts, fresh nonce); each buyer's enclave decides whether to sign it and signs it itself. A buyer whose job
+ * fails after its retry abstains; no server-held key ever signs in enclave mode.
  */
 export async function teeRoundTwo(ctx: GameCtx, tee: TeeActs, round1: ChannelMessage[]): Promise<ChannelMessage[]> {
   const s = ctx.state;
@@ -46,14 +46,20 @@ export async function teeRoundTwo(ctx: GameCtx, tee: TeeActs, round1: ChannelMes
       return { id, buyerAccount, v };
     }),
   );
-  const bad = results.find((r) => r.status === 'rejected') as PromiseRejectedResult | undefined;
-  if (bad) {
-    const code = bad.reason instanceof AppError ? bad.reason.code : 'TEE_UNAVAILABLE';
-    await ctx.emit({ type: 'error', code, message: 'A buyer\'s enclave job did not complete.', retryable: true });
-    throw bad.reason instanceof AppError ? bad.reason : new AppError('TEE_UNAVAILABLE');
+  // A job that failed after its retry means that buyer abstains: he stays out of the pact (it forms with >= 2 signers)
+  // and the player is told plainly. One slow or dead enclave never blocks the season.
+  const done: { id: BuyerId; buyerAccount: string; v: Awaited<ReturnType<TeeActs['signPact']>> }[] = [];
+  const msgs: ChannelMessage[] = [];
+  for (const [i, r] of results.entries()) {
+    const id = BUYER_IDS[i]!;
+    if (r.status === 'fulfilled') {
+      done.push(r.value);
+      msgs.push({ round: 2, buyer: id, say: r.value.v.say, proposeCap: cap, sign: r.value.v.sign, mood: r.value.v.mood, chatId: r.value.v.chatId });
+      continue;
+    }
+    await ctx.emit({ type: 'line', buyer: id, text: `${BUYER_NAMES[id]}'s enclave never answered; he stays out of the pact.`, mood: 'calm', note: true });
+    msgs.push({ round: 2, buyer: id, say: '(no answer: his enclave did not respond)', proposeCap: cap, sign: false, mood: 'calm', chatId: '' });
   }
-  const done = (results as PromiseFulfilledResult<{ id: BuyerId; buyerAccount: string; v: Awaited<ReturnType<TeeActs['signPact']>> }>[]).map((r) => r.value);
-  const msgs: ChannelMessage[] = done.map(({ id, v }) => ({ round: 2, buyer: id, say: v.say, proposeCap: cap, sign: v.sign, mood: v.mood, chatId: v.chatId }));
   const signers = done.filter((d) => d.v.sign);
   if (signers.length >= 2) {
     s.pact = {

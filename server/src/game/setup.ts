@@ -8,6 +8,7 @@ import type { GameCtx } from './ctx.js';
 import { openNextLot } from './days.js';
 import { cartelPrompt, system } from './prompts.js';
 import { teeRoundTwo } from '../tee/cartel.js';
+import { chooseMode, ensureKeys, teeFor, withModeLock } from '../tee/mode.js';
 import { ensureSea } from '../features/sea.js';
 
 function median(xs: number[]): number {
@@ -55,7 +56,7 @@ async function formCartel(ctx: GameCtx): Promise<void> {
   const s = ctx.state;
   if (s.seasonId === null) throw new AppError('BAD_PHASE');
   await ctx.emit({ type: 'cartel_forming' });
-  const tee = ctx.deps.tee;
+  const tee = teeFor(ctx);
   // a retry after a failed enclave job keeps the round-1 talk it already has
   const kept = tee ? s.channel.filter((m) => m.round === 1) : [];
   const r1 = kept.length === BUYER_IDS.length ? kept : await cartelRound(ctx, 1);
@@ -118,8 +119,20 @@ export async function beginSeason(ctx: GameCtx): Promise<void> {
       const r = await chain.ensureBuyerFunds(b.id, b.accountId, config.bondYocto);
       if (r) await ctx.must(`fund ${b.id}`, chain.houseId, Promise.resolve(r));
     }
-    const res = await chain.createSeason(s.playerAccountId, buyerAccounts, s.days, config.bondYocto, s.payoutEvm ?? undefined);
-    await ctx.recordTx('create_season', chain.houseId, res);
+    // Mode, then keys, then create_season, all under one cross-session lock: the contract snapshots each buyer's
+    // registered key at create_season, so a concurrent session must not re-register keys in between.
+    const res = await withModeLock(ctx, async () => {
+      if (!s.mode) {
+        const c = await chooseMode(ctx);
+        s.mode = c.mode;
+        await ctx.emit({ type: 'mode', mode: c.mode, reason: c.reason });
+        await ctx.save();
+      }
+      await ensureKeys(ctx, s.mode);
+      const r = await chain.createSeason(s.playerAccountId, buyerAccounts, s.days, config.bondYocto, s.payoutEvm ?? undefined);
+      await ctx.recordTx('create_season', chain.houseId, r);
+      return r;
+    });
     if (!res.ok || res.seasonId === undefined) throw new AppError(res.errorCode ?? 'TX_FAILED', 'create_season failed');
     s.seasonId = res.seasonId;
     s.setup.seasonTx = res.hash;

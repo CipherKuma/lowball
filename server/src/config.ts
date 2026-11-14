@@ -16,7 +16,7 @@ import { NearSigner } from './near/signer.js';
 import { parseSecretKey } from './near/keys.js';
 import { TeeActs } from './tee/acts.js';
 import { OutlayerTransport } from './tee/outlayer.js';
-import type { TeeDeployment } from './tee/types.js';
+import type { TeeDeployment, TeeMode } from './tee/types.js';
 
 export interface Resolved {
   contractId: string;
@@ -34,6 +34,15 @@ let cached: { key: string; chain: RealChain; llm: NearAiLlm; pactKeys: GameDeps[
 /** the spend ledger the cached LLM client writes to (D1 binding of the current request) */
 let ledger: Store | null = null;
 
+/** TEE_MODE = auto | on | off (default auto). The legacy TEE_BUYERS "1"/"0" still maps to on/off when TEE_MODE is unset. */
+export function teeModeOf(env: Env): TeeMode {
+  const m = (env.TEE_MODE ?? '').trim().toLowerCase();
+  if (m === 'auto' || m === 'on' || m === 'off') return m;
+  if (env.TEE_BUYERS === '1') return 'on';
+  if (env.TEE_BUYERS === '0') return 'off';
+  return 'auto';
+}
+
 export function ttsMaxPerSession(env: Env): number {
   const n = Number(env.TTS_MAX_PER_SESSION ?? DEFAULT_TTS_MAX_PER_SESSION);
   return Number.isFinite(n) && n >= 0 ? n : DEFAULT_TTS_MAX_PER_SESSION;
@@ -43,7 +52,7 @@ export function ttsMaxPerSession(env: Env): number {
 export function buildDeps(env: Env): GameDeps {
   setDebug(env.DEBUG);
   const { contractId, houseId } = resolveIds(env);
-  const key = [contractId, houseId, env.NEARAI_MODEL, env.RPC_URLS, env.DESK_ACCOUNT_ID, env.SEPOLIA_RPC_URLS, env.TEE_BUYERS].join('|');
+  const key = [contractId, houseId, env.NEARAI_MODEL, env.RPC_URLS, env.DESK_ACCOUNT_ID, env.SEPOLIA_RPC_URLS, env.TEE_MODE, env.TEE_BUYERS].join('|');
   const store = new D1Store(env.DB);
   ledger = store;
   if (!cached || cached.key !== key) {
@@ -64,9 +73,10 @@ export function buildDeps(env: Env): GameDeps {
     };
     const pactKeys = {} as Record<BuyerId, (typeof buyerKeys)[BuyerId]['pact']>;
     for (const id of BUYER_IDS) pactKeys[id] = buyerKeys[id].pact;
-    // TEE_BUYERS=1: the registered pact keys are enclave keys, so the server holds none and never signs a pact itself.
+    // The enclave client exists unless TEE_MODE=off; each season then picks enclave or standard signing itself
+    // (src/tee/mode.ts) and registers the matching keys before create_season.
     let tee: TeeActs | undefined;
-    if (env.TEE_BUYERS === '1') {
+    if (teeModeOf(env) !== 'off') {
       const deployment = deployedTee as unknown as TeeDeployment;
       const signer = new NearSigner({ accountId: houseId, keyPair: parseSecretKey(env.HOUSE_PRIVATE_KEY), rpc });
       tee = new TeeActs(deployment, new OutlayerTransport({ deployment, signer, rpc }));
@@ -80,6 +90,7 @@ export function buildDeps(env: Env): GameDeps {
     pactKeys: cached.pactKeys,
     payout: cached.payout,
     tee: cached.tee,
+    teeMode: teeModeOf(env),
     features: { seaFetch: (...a) => fetch(...a) },
     config: {
       days: Number(env.SEASON_DAYS ?? 6),

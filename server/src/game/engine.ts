@@ -199,7 +199,7 @@ export async function casefile(deps: GameDeps, id: string): Promise<CasefileResp
   if (s.phase !== 'closed') throw new AppError('BAD_PHASE', 'The case file is sealed until the season closes.');
   const receipts = await deps.store.listArtifacts<Receipt>(id, 'receipt');
   const txs = await deps.store.listArtifacts<TxRecord>(id, 'tx');
-  const tee = deps.tee ? await deps.store.listArtifacts<TeeActRecord>(id, 'tee') : undefined;
+  const tee = s.mode === 'enclave' ? await deps.store.listArtifacts<TeeActRecord>(id, 'tee') : undefined;
   let pact: PactRecord | null = null;
   if (s.pact && s.seasonId !== null) {
     pact = {
@@ -225,6 +225,7 @@ export async function casefile(deps: GameDeps, id: string): Promise<CasefileResp
     playerAccountId: s.playerAccountId,
     model: deps.llm.model,
     ...(tee ? { tee } : {}),
+    ...(s.mode ? { mode: s.mode } : {}),
     ...(deps.llm.attestation ? { attestation: await deps.llm.attestation().catch(() => undefined) } : {}),
     channel: s.channel,
     pact,

@@ -5,7 +5,7 @@ import { nearToYocto } from '../near/accounts.js';
 import { utf8 } from '../near/bytes.js';
 import { Rpc, RpcError } from '../near/rpc.js';
 import type { NearSigner } from '../near/signer.js';
-import type { TeeDeployment, TeeRun, TeeTransport } from './types.js';
+import type { TeeDeployment, TeeJobOptions, TeeRun, TeeTransport } from './types.js';
 
 const TGAS = 10n ** 12n;
 /** attached to request_execution; the contract refunds what the job does not use (estimate for 60 s: 0.0070001 NEAR) */
@@ -38,7 +38,7 @@ export class OutlayerTransport implements TeeTransport {
     this.now = o.now ?? Date.now;
   }
 
-  async run(buyer: BuyerId, input: Record<string, unknown>): Promise<TeeRun> {
+  async run(buyer: BuyerId, input: Record<string, unknown>, opts: TeeJobOptions = {}): Promise<TeeRun> {
     const d = this.o.deployment;
     const b = d.buyers[buyer];
     const started = this.now();
@@ -59,7 +59,7 @@ export class OutlayerTransport implements TeeTransport {
     );
     debug('tee', buyer, 'sent', sent.hash, `${this.now() - started} ms`, sent.ok ? 'ok' : String(sent.errorCode));
     if (!sent.ok) throw new AppError('TEE_UNAVAILABLE', `request_execution for ${buyer} failed: ${sent.errorCode ?? 'rejected'}`);
-    const output = await this.result(sent.hash, started).catch((e) => {
+    const output = await this.result(sent.hash, started, opts.timeoutMs).catch((e) => {
       debug('tee', buyer, 'result failed', sent.hash, `${this.now() - started} ms`, String(e));
       throw e;
     });
@@ -67,8 +67,8 @@ export class OutlayerTransport implements TeeTransport {
     return { output, txHash: sent.hash, ms: this.now() - started };
   }
 
-  private async result(txHash: string, started: number): Promise<unknown> {
-    const timeout = this.o.timeoutMs ?? 100_000;
+  private async result(txHash: string, started: number, capMs?: number): Promise<unknown> {
+    const timeout = capMs ?? this.o.timeoutMs ?? 100_000;
     const poll = this.o.pollMs ?? 4000;
     await this.sleep(poll);
     while (this.now() - started < timeout) {

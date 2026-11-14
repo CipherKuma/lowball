@@ -29,7 +29,10 @@ TTS_MAX_PER_SESSION = "80"
 # SEPOLIA_RPC_URLS = "https://ethereum-sepolia-rpc.publicnode.com,https://sepolia.drpc.org"
 ALLOWED_ORIGIN = "*"
 
-# OutLayer TEE buyers: "1" runs each buyer's pact decision and signature, and its confession, inside an Intel TDX
-# enclave (src/tee/, outlayer/deployed.json). The contract must hold the enclave keys (register_buyer_key); with "1"
-# the Worker holds no pact key that matters and never falls back to one. "0": server-held pact keys (BUYER_KEYS_JSON).
-TEE_BUYERS = "1"
+# OutLayer TEE buyers, per season: TEE_MODE = auto | on | off (default auto).
+#  auto: a season signs inside Intel TDX enclaves ("enclave") only when OutLayer looks healthy (>= 80% of the last 10
+#        jobs ok, one ok in the last 30 min, p90 < 75 s; with no recent data one 60 s probe job decides), else the
+#        server signs with the buyers' pact keys ("standard"). on: always enclave. off: always standard.
+#  Right before create_season the Worker registers the buyers' keys for the chosen mode (register_buyer_key) under a
+#  lock, because the contract snapshots them there. See src/tee/mode.ts and outlayer/deployed.json.
+TEE_MODE = "auto"

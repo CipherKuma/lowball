@@ -146,6 +146,14 @@ export class RealChain implements Chain {
     return this.house.send(this.contractId, [this.fn('close_season', { season_id: seasonId })]);
   }
 
+  registerBuyerKey(buyer: BuyerId, publicKeyB64: string) {
+    return this.buyers[buyer].send(this.contractId, [this.fn('register_buyer_key', { public_key: publicKeyB64 }, 0n, 30n * TGAS)]);
+  }
+
+  getBuyerKey(accountId: string): Promise<string | null> {
+    return this.view<string | null>('get_buyer_key', { account: accountId });
+  }
+
   async view<T>(method: string, args: unknown): Promise<T> {
     const r = await this.rpc.call('query', {
       request_type: 'call_function',

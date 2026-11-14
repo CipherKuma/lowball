@@ -12,6 +12,8 @@ export const BUYER_NAMES: Record<BuyerId, string> = {
   deacon: 'The Deacon',
 };
 
+export type SeasonMode = 'enclave' | 'standard';
+
 export type Mood = 'calm' | 'tense' | 'cracking' | 'cold';
 
 export interface BuyerInfo {
@@ -194,7 +196,14 @@ export type GameEventBody =
   | { type: 'bid_committed'; buyer: BuyerId; tx: string }
   | { type: 'bids_revealed'; reveals: BidReveal[]; identical: boolean }
   | { type: 'lot_settled'; winner: BuyerId | null; price: number; shortfall: number; tx: string }
-  | { type: 'line'; buyer: BuyerId; text: string; mood: Mood }
+  /** note: true marks an honest system note about this buyer (e.g. his enclave never answered), not a line he spoke */
+  | { type: 'line'; buyer: BuyerId; text: string; mood: Mood; note?: boolean }
+  /**
+   * How this season's buyers sign, chosen right before create_season and emitted once.
+   * 'enclave': pact and confession are decided and signed inside OutLayer TDX enclaves (TEE keys registered).
+   * 'standard': the server signs with the buyers' pact keys (server keys registered). reason is a short plain sentence.
+   */
+  | { type: 'mode'; mode: SeasonMode; reason: string }
   /** deadlineBlock: NEAR block height at which the on-chain 200-block window ends (always set by the server) */
   | { type: 'leniency_open'; tx: string; deadlineBlock?: number }
   | { type: 'deliberating'; buyer: BuyerId }
@@ -454,6 +463,8 @@ export interface CasefileResponse {
   txs: TxRecord[];
   /** acts signed inside OutLayer TDX enclaves; absent when TEE_BUYERS is off */
   tee?: TeeActRecord[];
+  /** how this season's buyers signed; absent on servers that predate it */
+  mode?: SeasonMode;
   /** on-chain season view at the time of the request (null before the season exists) */
   chain: unknown | null;
   status: SessionStatus;

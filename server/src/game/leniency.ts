@@ -1,4 +1,4 @@
-import type { BuyerId, ErrorCode, SlashedBuyer } from '../../../shared/api.js';
+import { BUYER_NAMES, type BuyerId, type ErrorCode, type SlashedBuyer } from '../../../shared/api.js';
 import { AppError } from '../errors.js';
 import { DeliberateOut, JSON_SCHEMAS } from '../llm/schemas.js';
 import type { PactJson, PactSigJson } from '../chain/types.js';
@@ -6,6 +6,7 @@ import type { GameCtx } from './ctx.js';
 import { startHoldoutWait, startPayout } from './finalize.js';
 import { deliberatePrompt, system } from './prompts.js';
 import { signConfession } from '../near/pact.js';
+import { teeFor } from '../tee/mode.js';
 import { toB64 } from '../near/bytes.js';
 
 /** Default wall-clock one /leniency request may spend waiting on the chain (the proxy cuts at 100 s). */
@@ -64,7 +65,7 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
 
   const attempts: Attempt[] = [];
   let modelFailed = false;
-  const tee = ctx.deps.tee;
+  const tee = teeFor(ctx);
   const jobs = members.map(async (id) => {
     const acct = s.buyers.find((b) => b.id === id)!.accountId;
     let decision: { confess: boolean; say: string; mood: string };
@@ -100,9 +101,14 @@ export async function runLeniency(ctx: GameCtx, txHash: string): Promise<Lenienc
         confessionSig = toB64(signConfession(s.seasonId!, acct, BigInt(pact.nonce), ctx.deps.pactKeys[id]));
       }
     } catch (e) {
+      if (tee) {
+        // enclave mode: a job that failed after its retry means this buyer stays silent; the others go on
+        await ctx.emit({ type: 'line', buyer: id, text: `${BUYER_NAMES[id]}'s enclave never answered; he stays silent.`, mood: 'calm', note: true });
+        return;
+      }
       modelFailed = true;
-      const code = e instanceof AppError ? e.code : tee ? 'TEE_UNAVAILABLE' : 'MODEL_UNAVAILABLE';
-      await ctx.emit({ type: 'error', code, message: tee && e instanceof AppError ? e.message.slice(0, 200) : `${id} could not answer`, retryable: true });
+      const code = e instanceof AppError ? e.code : 'MODEL_UNAVAILABLE';
+      await ctx.emit({ type: 'error', code, message: `${id} could not answer`, retryable: true });
       return;
     }
     await ctx.say(id, decision.say, decision.mood);

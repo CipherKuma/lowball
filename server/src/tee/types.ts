@@ -32,7 +32,15 @@ export interface TeeRun {
   ms: number;
 }
 
+/** TEE_MODE: 'auto' picks per season from enclave health, 'on' always uses enclaves, 'off' never does. */
+export type TeeMode = 'auto' | 'on' | 'off';
+
+export interface TeeJobOptions {
+  /** wait at most this long for the result (default: the transport's own cap) */
+  timeoutMs?: number;
+}
+
 /** Sends a job to a buyer's enclave and waits for its result. Faked in tests. */
 export interface TeeTransport {
-  run(buyer: BuyerId, input: Record<string, unknown>): Promise<TeeRun>;
+  run(buyer: BuyerId, input: Record<string, unknown>, opts?: TeeJobOptions): Promise<TeeRun>;
 }

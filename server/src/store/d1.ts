@@ -1,9 +1,44 @@
 import type { GameEvent } from '../../../shared/api.js';
 import type { SessionState } from '../game/state.js';
-import type { ArtifactKind, SpendEntry, Store } from './types.js';
+import type { ArtifactKind, SpendEntry, Store, TeeJobRow } from './types.js';
 
 export class D1Store implements Store {
   constructor(private db: D1Database) {}
+
+  private ready: Promise<unknown> | null = null;
+  /** migrations/0003_tee.sql, also created on first use so a deploy never depends on running the migration first */
+  private ensureTee(): Promise<unknown> {
+    this.ready ??= this.db.batch([
+      this.db.prepare('CREATE TABLE IF NOT EXISTS tee_jobs (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, buyer TEXT NOT NULL, op TEXT NOT NULL, ok INTEGER NOT NULL, ms INTEGER NOT NULL)'),
+      this.db.prepare('CREATE TABLE IF NOT EXISTS global_locks (name TEXT PRIMARY KEY, until INTEGER NOT NULL)'),
+    ]).catch((e) => {
+      this.ready = null;
+      throw e;
+    });
+    return this.ready;
+  }
+  async tryGlobalLock(name: string, ttlMs: number) {
+    await this.ensureTee();
+    const now = Date.now();
+    const r = await this.db
+      .prepare('INSERT INTO global_locks (name, until) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET until = excluded.until WHERE global_locks.until < ?')
+      .bind(name, now + ttlMs, now)
+      .run();
+    return (r.meta.changes ?? 0) > 0;
+  }
+  async releaseGlobalLock(name: string) {
+    await this.ensureTee();
+    await this.db.prepare('UPDATE global_locks SET until = 0 WHERE name = ?').bind(name).run();
+  }
+  async addTeeJob(j: TeeJobRow) {
+    await this.ensureTee();
+    await this.db.prepare('INSERT INTO tee_jobs (at, buyer, op, ok, ms) VALUES (?, ?, ?, ?, ?)').bind(j.at, j.buyer, j.op, j.ok ? 1 : 0, Math.round(j.ms)).run();
+  }
+  async recentTeeJobs(limit: number) {
+    await this.ensureTee();
+    const r = await this.db.prepare('SELECT at, buyer, op, ok, ms FROM tee_jobs ORDER BY id DESC LIMIT ?').bind(limit).all<{ at: number; buyer: string; op: string; ok: number; ms: number }>();
+    return r.results.map((x) => ({ at: x.at, buyer: x.buyer, op: x.op, ok: x.ok === 1, ms: x.ms }));
+  }
 
   async createSession(id: string, state: SessionState, ip: string) {
     await this.db

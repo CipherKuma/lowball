@@ -1,4 +1,4 @@
-import type { BuyerId, BuyerInfo, ChannelMessage, ForgeAttempt, ForgeKind, Mood, SeaState, SessionPhase } from '../../../shared/api.js';
+import type { BuyerId, BuyerInfo, ChannelMessage, ForgeAttempt, ForgeKind, Mood, SeaState, SeasonMode, SessionPhase } from '../../../shared/api.js';
 
 export interface LotMemory {
   day: number;
@@ -93,6 +93,8 @@ export interface SessionState {
   /** Sepolia address the season was created with (cross-chain payout), or null */
   payoutEvm: string | null;
   finalize: Finalize | null;
+  /** how this season's buyers sign (chosen right before create_season); undefined on sessions that predate it */
+  mode?: SeasonMode;
   // ---- optional feature fields (BRIEF-3); absent on sessions written before them ----
   /** live sea state, fetched once at season begin; null: the fetch was tried and failed (no multiplier) */
   sea?: SeaState | null;

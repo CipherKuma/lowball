@@ -1,6 +1,6 @@
 import type { GameEvent } from '../../../shared/api.js';
 import type { SessionState } from '../game/state.js';
-import type { ArtifactKind, SpendEntry, Store } from './types.js';
+import type { ArtifactKind, SpendEntry, Store, TeeJobRow } from './types.js';
 
 /** In-memory Store used by tests and the sim harness. */
 export class MemoryStore implements Store {
@@ -11,6 +11,8 @@ export class MemoryStore implements Store {
   sessions: { ip: string; at: number }[] = [];
   spend: SpendEntry[] = [];
   tts = new Map<string, number>();
+  globalLocks = new Map<string, number>();
+  teeJobs: TeeJobRow[] = [];
 
   async createSession(id: string, state: SessionState, ip: string) {
     this.states.set(id, structuredClone(state));
@@ -66,6 +68,20 @@ export class MemoryStore implements Store {
   }
   async totalSpendUsd() {
     return this.spend.reduce((a, e) => a + e.usd, 0);
+  }
+  async tryGlobalLock(name: string, ttlMs: number) {
+    if ((this.globalLocks.get(name) ?? 0) > Date.now()) return false;
+    this.globalLocks.set(name, Date.now() + ttlMs);
+    return true;
+  }
+  async releaseGlobalLock(name: string) {
+    this.globalLocks.delete(name);
+  }
+  async addTeeJob(j: TeeJobRow) {
+    this.teeJobs.unshift({ ...j });
+  }
+  async recentTeeJobs(limit: number) {
+    return this.teeJobs.slice(0, limit).map((j) => ({ ...j }));
   }
   async reserveTts(sessionId: string, max: number) {
     const n = this.tts.get(sessionId) ?? 0;

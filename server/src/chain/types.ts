@@ -98,6 +98,10 @@ export interface Chain {
   settleLot(seasonId: number): Promise<TxResult>;
   confess(buyer: BuyerId, seasonId: number, pact: PactJson, sigs: PactSigJson[], opts?: ConfessOptions): Promise<TxResult>;
   closeSeason(seasonId: number): Promise<TxResult>;
+  /** the base64 ed25519 pact key registered for this buyer account (get_buyer_key), or null */
+  getBuyerKey(accountId: string): Promise<string | null>;
+  /** the buyer account registers (or replaces) its own pact key; seasons snapshot it at create_season */
+  registerBuyerKey(buyer: BuyerId, publicKeyB64: string): Promise<TxResult>;
   getSeason(seasonId: number): Promise<SeasonView>;
   /** current block height (the leniency window is measured in blocks) */
   blockHeight(): Promise<number>;

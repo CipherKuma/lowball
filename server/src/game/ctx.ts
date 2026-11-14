@@ -6,6 +6,7 @@ import type { Llm } from '../llm/types.js';
 import type { Store } from '../store/types.js';
 import type { FeatureDeps } from '../features/types.js';
 import type { TeeActs } from '../tee/acts.js';
+import type { TeeMode } from '../tee/types.js';
 import type { SessionState } from './state.js';
 
 export interface GameConfig {
@@ -36,6 +37,8 @@ export interface GameDeps {
   payout?: PayoutRelay;
   /** TEE_BUYERS=1: pact and confession decisions and signatures come from the buyers' OutLayer enclaves */
   tee?: TeeActs;
+  /** TEE_MODE (default: 'on' when tee is set, else 'off'): how a season picks enclave or standard signing */
+  teeMode?: TeeMode;
   /** BRIEF-3 optional capabilities (live sea state); absent in tests unless a test opts in */
   features?: FeatureDeps;
   /** wait between chain polls (tests advance the mock chain here) */

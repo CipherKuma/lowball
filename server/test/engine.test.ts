@@ -17,7 +17,7 @@ describe('event ordering', () => {
     const rig = makeRig();
     const { sessionId } = await start(rig);
     const t = types(await all(rig, sessionId));
-    expect(t.slice(0, 2)).toEqual(['account_created', 'season_created']);
+    expect(t.slice(0, 3)).toEqual(['account_created', 'mode', 'season_created']);
     expect(t.filter((x) => x === 'bond_posted')).toHaveLength(5);
     const iBond = t.lastIndexOf('bond_posted');
     expect(t.indexOf('cartel_forming')).toBeGreaterThan(iBond);

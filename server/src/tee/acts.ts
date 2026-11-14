@@ -81,24 +81,59 @@ export class TeeActs {
     private transport: TeeTransport,
   ) {}
 
-  /** One job with one retry: a transport error, a timeout or an empty result (a guest trap) is tried again once. */
-  private async runJob(buyer: BuyerId, input: Record<string, unknown>): Promise<{ run: TeeRun; attempts: number }> {
+  /** Health signal for TEE_MODE=auto: one row per attempt. Never lets a store problem break a game. */
+  private async record(ctx: GameCtx, buyer: BuyerId, op: string, ok: boolean, ms: number): Promise<void> {
+    try {
+      await ctx.deps.store.addTeeJob({ at: Date.now(), buyer, op, ok, ms });
+    } catch (e) {
+      debug('tee', 'job record failed', String(e).slice(0, 120));
+    }
+  }
+
+  /** One job with one retry: a transport error, a timeout, an empty result (a guest trap) or a guest error is tried again once. */
+  private async runJob(ctx: GameCtx, buyer: BuyerId, input: Record<string, unknown>): Promise<{ run: TeeRun; attempts: number }> {
     this.stats.jobs++;
+    const op = String(input.op);
     let last: unknown = null;
     for (let attempt = 1; attempt <= 2; attempt++) {
+      const t0 = Date.now();
       try {
         const run = await this.transport.run(buyer, input);
         this.stats.latenciesMs.push(run.ms);
-        if (run.output !== null && run.output !== undefined) return { run, attempts: attempt };
-        last = new AppError('TEE_UNAVAILABLE', `${buyer}'s enclave job returned nothing`);
+        const good = run.output !== null && run.output !== undefined && (run.output as { ok?: unknown }).ok !== false;
+        await this.record(ctx, buyer, op, good, run.ms);
+        if (good) return { run, attempts: attempt };
+        const err = (run.output as { error?: unknown } | null)?.error;
+        last = new AppError('TEE_UNAVAILABLE', `${buyer}'s enclave job failed: ${typeof err === 'string' ? err.slice(0, 140) : 'returned nothing'}`);
       } catch (e) {
         last = e;
+        await this.record(ctx, buyer, op, false, Date.now() - t0);
         debug('tee', buyer, 'attempt', attempt, 'failed', String(e).slice(0, 160));
       }
       this.stats.failedAttempts++;
     }
     this.stats.failedJobs++;
     throw last instanceof AppError ? last : new AppError('TEE_UNAVAILABLE', String(last).slice(0, 160));
+  }
+
+  /**
+   * One quick `probe` job (the enclave derives its key, calls NEAR AI /models, signs a canary) with a hard cap.
+   * ok only when it answered in time, as the registered build, with the API key sealed in. Recorded as a job.
+   */
+  async probe(ctx: GameCtx, buyer: BuyerId, capMs: number): Promise<{ ok: boolean; ms: number; reason: string }> {
+    const dep = this.deployment.buyers[buyer];
+    const t0 = Date.now();
+    try {
+      const run = await this.transport.run(buyer, { op: 'probe', nonce: `auto${t0}` }, { timeoutMs: capMs });
+      const o = run.output as { ok?: unknown; public_key_b64?: unknown; has_api_key?: unknown } | null;
+      const good = !!o && o.ok === true && o.public_key_b64 === dep.publicKeyB64 && o.has_api_key === true;
+      await this.record(ctx, buyer, 'probe', good, run.ms);
+      return { ok: good, ms: run.ms, reason: good ? 'probe answered' : 'probe answered with an unexpected result' };
+    } catch (e) {
+      const ms = Date.now() - t0;
+      await this.record(ctx, buyer, 'probe', false, ms);
+      return { ok: false, ms, reason: `probe failed: ${e instanceof AppError ? e.message : String(e)}`.slice(0, 160) };
+    }
   }
 
   private async checked<O extends CommonOut>(
@@ -113,7 +148,7 @@ export class TeeActs {
     decisionOf: (o: O) => string,
   ): Promise<O> {
     const dep = this.deployment.buyers[buyer];
-    const { run, attempts } = await this.runJob(buyer, input);
+    const { run, attempts } = await this.runJob(ctx, buyer, input);
     const parsed = schema.safeParse(run.output);
     if (!parsed.success) {
       const err = (run.output as { error?: unknown })?.error;

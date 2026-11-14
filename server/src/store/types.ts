@@ -10,6 +10,15 @@ export interface SpendEntry {
   usd: number;
 }
 
+/** One OutLayer job attempt, newest first in recentTeeJobs: the health signal behind TEE_MODE=auto. */
+export interface TeeJobRow {
+  at: number;
+  buyer: string;
+  op: string;
+  ok: boolean;
+  ms: number;
+}
+
 export interface Store {
   createSession(id: string, state: SessionState, ip: string): Promise<void>;
   loadState(id: string): Promise<SessionState | null>;
@@ -28,6 +37,12 @@ export interface Store {
   /** one row per NEAR AI completion (cumulative, all sessions) */
   addSpend(e: SpendEntry): Promise<void>;
   totalSpendUsd(): Promise<number>;
+  /** Cross-session lock (not tied to a session row). True when acquired; it expires by itself after ttlMs. */
+  tryGlobalLock(name: string, ttlMs: number): Promise<boolean>;
+  releaseGlobalLock(name: string): Promise<void>;
+  /** record one OutLayer job attempt; implementations may throw, callers must not let that break a game */
+  addTeeJob(j: TeeJobRow): Promise<void>;
+  recentTeeJobs(limit: number): Promise<TeeJobRow[]>;
   /** claim one upstream ElevenLabs call for this session; false when the session already used `max` */
   reserveTts(sessionId: string, max: number): Promise<boolean>;
   /** give a claimed call back (the upstream call failed and was not billed) */
