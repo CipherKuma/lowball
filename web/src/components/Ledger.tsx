@@ -16,6 +16,8 @@ interface Props {
 }
 
 const MAX_HOLDS = 2;
+/** Mirrors server CASE_DAYS: leniency unlocks after this many identical-bid days on record. */
+const CASE_DAYS = 2;
 
 export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold, onNext, onLeniency }: Props) {
   const phase = status?.phase;
@@ -25,6 +27,7 @@ export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold,
   const canLeniency = !!status?.leniencyAvailable && !view.leniencyOpen && !view.slashed;
   const lastDay = (status?.day ?? 0) >= days;
   const streak = view.identicalStreak;
+  const caseCount = view.history.filter((h) => h.identical).length;
 
   return (
     <aside className="ledger" aria-label="Your ledger">
@@ -73,7 +76,11 @@ export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold,
         )}
         <button className="btn btn-primary leniency-btn" disabled={!canLeniency || busy} onClick={onLeniency}>
           {pending === 'leniency' ? 'Signing on NEAR…' : 'Offer leniency'}
-          <span className="kbd">first to confess walks free</span>
+          <span className="kbd">
+            {caseCount < CASE_DAYS && !view.slashed
+              ? `build your case first · ${caseCount} of ${CASE_DAYS} identical days on record`
+              : 'first to confess walks free'}
+          </span>
         </button>
       </div>
 

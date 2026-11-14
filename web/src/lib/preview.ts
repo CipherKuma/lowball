@@ -52,6 +52,7 @@ export class PreviewDriver implements Driver {
   private listeners = new Set<(e: GameEvent[], s: SessionStatus | null) => void>();
   private phase: SessionStatus['phase'] = 'created';
   private confessed = false;
+  private sold = 0;
 
   private status(): SessionStatus {
     return {
@@ -60,7 +61,7 @@ export class PreviewDriver implements Driver {
       day: this.day,
       days: LOTS.length,
       seasonId: 7,
-      leniencyAvailable: (this.phase === 'lot_open' || this.phase === 'settled') && !this.confessed,
+      leniencyAvailable: (this.phase === 'lot_open' || this.phase === 'settled') && !this.confessed && this.sold >= 2,
       confessed: this.confessed,
       lastSeq: this.seq,
     };
@@ -119,8 +120,9 @@ export class PreviewDriver implements Driver {
         { type: 'lot_transferred', tokenId: `s7-d${this.day}`, to: `marlow.${HOUSE}`, buyer: 'marlow', tx: fakeTx() },
         500,
       );
-      await this.emit({ type: 'line', buyer: 'marlow', text: 'Pleasure doing business.', mood: 'calm' }, 700);
+      this.sold += 1;
       this.phase = 'settled';
+      await this.emit({ type: 'line', buyer: 'marlow', text: 'Pleasure doing business.', mood: 'calm' }, 700);
       return;
     }
     if (action === 'hold') {

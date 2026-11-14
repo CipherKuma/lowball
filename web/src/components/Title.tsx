@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 const RULES = [
   ['Five buyers. One price.', 'Every morning they seal their bids. Every morning the number is the same, and it is low.'],
   ['They signed a pact.', 'Each buyer put up a bond and signed a secret agreement with their own key.'],
-  ['Make one talk.', 'Offer leniency on NEAR. The first to hand over the signed pact walks free; the rest lose their bonds to you.'],
+  ['Make one talk.', 'Take their rigged price long enough to build a case, then offer leniency on NEAR. The first to hand over the signed pact walks free; the rest lose their bonds to you.'],
 ] as const;
 
 const ease = [0.23, 1, 0.32, 1] as const;
