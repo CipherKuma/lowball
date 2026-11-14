@@ -16,8 +16,9 @@ export const GAS_CONFESS_EVM = 250n * TGAS;
 export const GAS_CONFESS = 30n * TGAS;
 /** offer_leniency only creates a yield: 30 Tgas keeps the throwaway drill player (0.05 NEAR, 0.04 key allowance) solvent */
 export const GAS_OFFER = 30n * TGAS;
-const PLAYER_FUNDING = nearToYocto('0.03'); // covers offer_leniency at 30 Tgas (pessimistic gas) plus storage
-const PLAYER_ALLOWANCE = nearToYocto('0.025');
+// offer_leniency at 30 Tgas costs ~0.031 NEAR at the pessimistic gas price (measured 2026-11-14); 0.03 failed.
+const PLAYER_FUNDING = nearToYocto('0.05');
+const PLAYER_ALLOWANCE = nearToYocto('0.04');
 const STORAGE_PRICE = 10n ** 19n;
 
 export interface RealChainOptions {

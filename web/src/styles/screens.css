@@ -222,6 +222,25 @@
 @keyframes whisper {
   50% { opacity: 0.2; transform: translateY(-3px); }
 }
+.backroom small {
+  display: block;
+  margin-top: 6px;
+  font: 500 12px/1.4 var(--font-mono);
+  font-style: normal;
+  color: #e9b3a8;
+}
+.enclave-tick,
+.enclave-wait {
+  font: 600 10px/1.2 var(--font-mono);
+  text-align: center;
+}
+.enclave-tick {
+  color: var(--ok);
+}
+.enclave-wait {
+  color: var(--muted);
+  animation: breathe 1.4s var(--ease-in-out) infinite;
+}
 .setup-rumour {
   margin: 14px 0 0;
   font: italic 400 14px var(--font-display);

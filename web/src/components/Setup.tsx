@@ -69,6 +69,23 @@ export function Setup({
             >
               <img src={`/art/${b.id}_calm.webp`} alt="" />
               <span>{b.name.split(' ')[0] === 'The' ? 'Deacon' : b.name.split(' ')[0]}</span>
+              {view.cartelForming || view.tee[b.id] ? (
+                view.tee[b.id] ? (
+                  <motion.a
+                    className="enclave-tick"
+                    href={view.tee[b.id]!.at(-1)!.attestationUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: 'spring', duration: 0.4, bounce: 0.3 }}
+                  >
+                    signed in TDX ✓
+                  </motion.a>
+                ) : (
+                  <span className="enclave-wait">in its enclave…</span>
+                )
+              ) : null}
             </motion.div>
           ))}
         </div>
@@ -87,6 +104,10 @@ export function Setup({
               </span>
               <p>
                 Voices behind the warehouse door. The five of them are talking in private, and you are not invited.
+                <small>
+                  Each buyer decides whether to sign inside its own Intel TDX enclave on OutLayer; its pact key never
+                  leaves it. {Object.keys(view.tee).length}/5 signed.
+                </small>
               </p>
             </motion.div>
           )}

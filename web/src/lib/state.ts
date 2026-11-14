@@ -24,7 +24,18 @@ export interface DayRecord {
   price: number;
   winner: BuyerId | null;
   identical: boolean;
+  /** on the record as evidence: at least 4 of 5 sealed bids equal and below the board price (server rule) */
+  evidence: boolean;
   shortfall: number;
+}
+
+/** Mirrors the server's isEvidence: a day counts when ≥ 4 of 5 bids share one number below the board price. */
+export function isEvidenceDay(reveals: BidReveal[] | null, fairValue: number, allIdentical: boolean): boolean {
+  if (allIdentical) return true;
+  if (!reveals) return false;
+  const counts = new Map<number, number>();
+  for (const r of reveals) counts.set(r.amount, (counts.get(r.amount) ?? 0) + 1);
+  return [...counts.entries()].some(([amount, n]) => n >= 4 && amount < fairValue);
 }
 export interface Line {
   seq: number;
@@ -188,6 +199,7 @@ export function apply(v: View, e: GameEvent): View {
             price: e.price,
             winner: e.winner,
             identical: v.identical,
+            evidence: isEvidenceDay(v.reveals, lot.fairValue, v.identical),
             shortfall: e.shortfall,
           }
         : null;

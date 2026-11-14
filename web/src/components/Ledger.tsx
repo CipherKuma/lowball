@@ -27,7 +27,7 @@ export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold,
   const canLeniency = !!status?.leniencyAvailable && !view.leniencyOpen && !view.slashed;
   const lastDay = (status?.day ?? 0) >= days;
   const streak = view.identicalStreak;
-  const caseCount = view.history.filter((h) => h.identical).length;
+  const caseCount = view.history.filter((h) => h.evidence).length;
 
   return (
     <aside className="ledger" aria-label="Your ledger">
@@ -49,10 +49,10 @@ export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold,
         </motion.strong>
       </div>
       <div className="ledger-evidence" aria-label={`${streak} identical-bid days in a row`}>
-        <span>Identical bids</span>
+        <span>Evidence on record</span>
         <div className="evidence-dots">
           {Array.from({ length: days }, (_, i) => (
-            <i key={i} data-on={i < view.history.filter((h) => h.identical).length || undefined} />
+            <i key={i} data-on={i < caseCount || undefined} />
           ))}
         </div>
       </div>
@@ -78,7 +78,7 @@ export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold,
           {pending === 'leniency' ? 'Signing on NEAR…' : 'Offer leniency'}
           <span className="kbd">
             {caseCount < CASE_DAYS && !view.slashed
-              ? `build your case first · ${caseCount} of ${CASE_DAYS} identical days on record`
+              ? `build your case first · ${caseCount} of ${CASE_DAYS} evidence days on record`
               : 'first to confess walks free'}
           </span>
         </button>
@@ -116,7 +116,7 @@ export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold,
           </thead>
           <tbody>
             {view.history.map((h) => (
-              <tr key={h.day} data-identical={h.identical || undefined}>
+              <tr key={h.day} data-identical={h.evidence || undefined}>
                 <td>{h.day}</td>
                 <td>{h.fairValue}</td>
                 <td>{h.price}</td>
