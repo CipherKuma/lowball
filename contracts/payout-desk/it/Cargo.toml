@@ -1,0 +1,16 @@
+[package]
+name = "payout-desk-it"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Sandbox integration tests (own workspace: near-workspaces needs a newer toolchain than the 1.86
+# the contracts build with). The MPC signer is not in the sandbox: tests deploy ../mock-signer.
+[workspace]
+
+[dependencies]
+near-workspaces = "~0.23"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1"
+hex = "0.4"
+anyhow = "1"

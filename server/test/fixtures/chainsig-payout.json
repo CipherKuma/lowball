@@ -1,0 +1,30 @@
+{
+  "_note": "Oracle: viem 2.21 serializeTransaction + @noble/curves secp256k1 (RFC6979, low-s), test key 0x1111..1122. Payout record has the exact JSON shape of the desk's get_payout (verified against the contract in contracts/payout-desk/it). Not a real payout.",
+  "deskAddress": "0x7d931fd3f5a12c18Cd77f9Cb90ff58E677dF9479",
+  "signedRaw": "0x02f87483aa36a70784773594008506fc23ac008252089470997970c51812dc3a010c7d01b50e0d17dc79c886b5e620f4800080c080a022dc9a7c747ca303b3b53cb0bdd0b7abdb270091b06e3985ba7533556441c195a04030f0dce7d9c05d109ddf00a6d5fdec41c19851dcdf5cd525de200ff39dd608",
+  "payout": {
+    "season_id": 5,
+    "status": "Signed",
+    "to": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "amount_yocto": "200000000000000000000000",
+    "amount_wei": "200000000000000",
+    "chain_id": 11155111,
+    "nonce": 7,
+    "max_fee_per_gas": "30000000000",
+    "max_priority_fee_per_gas": "2000000000",
+    "gas_limit": 21000,
+    "digest": "0x59ed8ee682c274f15638b93bff92c64b8305473b241cafe2a68375220ed849a9",
+    "unsigned_tx": "0x02f183aa36a70784773594008506fc23ac008252089470997970c51812dc3a010c7d01b50e0d17dc79c886b5e620f4800080c0",
+    "big_r": "0x0222dc9a7c747ca303b3b53cb0bdd0b7abdb270091b06e3985ba7533556441c195",
+    "s": "0x4030f0dce7d9c05d109ddf00a6d5fdec41c19851dcdf5cd525de200ff39dd608",
+    "recovery_id": 0,
+    "verified": true,
+    "requested_block": 100,
+    "signed_block": 104,
+    "error": null
+  },
+  "mpcLive": {
+    "_note": "replaced by a recorded v1.signer-prod.testnet response when one is captured",
+    "response": null
+  }
+}

@@ -1,0 +1,14 @@
+[package]
+name = "mock-signer"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "TEST DOUBLE of the NEAR MPC signer (v1.signer-prod.testnet): signs with one fixed key. Never deployed to a live network."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "~5.27"
+k256 = { version = "0.13", default-features = false, features = ["ecdsa", "arithmetic"] }
+hex = "0.4"
