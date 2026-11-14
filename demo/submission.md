@@ -12,7 +12,7 @@ Filing limit for this event: at most 2 projects per person across all personas; 
 | Tracks | Games With Real Economies; Privacy & Private AI; Agent Economy |
 | NEAR wallet address | _Gabriel fills_ (CipherKuma's funded implicit account, if he chooses it: `64ddc8dc1205c677468dcb9b9ab1ea429d933046eafd9c035c672a204c19d472`) |
 | Repository link | https://github.com/CipherKuma/lowball |
-| Demo video | `demo/out/lowball-demo.mp4` (2:15, 1080p, −14 LUFS) → Gabriel's X post link |
+| Demo video | `demo/out/lowball-demo.mp4` (2:15, 1080p, −14 LUFS, wallet-first take 10, season 64) → Gabriel's X post link |
 | Website | https://play.lowball-game.pages.dev |
 
 ## What did you build? (about 1,920 characters; limit 2,000)

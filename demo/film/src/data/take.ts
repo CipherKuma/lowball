@@ -132,9 +132,12 @@ export const take = {
   // frames either side of all 11 cuts, by Claude; nobody has watched it at full speed with sound yet (Gabriel's call).
   // Master: demo/out/lowball-demo.mp4 decoded end to end with 0 errors; ebur128 on the final file. voiceLufs is the
   // narration windows inside the master (-13.3 to -14.2): a narration-led film cannot hold VO at -16 under a -14 master.
-  // Not reviewed yet: re-cut from take 10 at 01:10 IST; master numbers are filled in after the new master is measured.
-  review:{causalOrderApproved:true,visualReviewApproved:false,encodedMasterDecoded:false,
-    masterLufs:null as number|null,truePeakDbtp:null as number|null,voiceLufs:null as number|null},
+  // 15 Nov 01:25 IST, take 10. Causal order checked against take-10.log; 24 frames across all cuts checked by Claude; a
+  // Whisper transcript of the master hears every narration line and take voice in order. Nobody has watched it at full
+  // speed with sound yet (Gabriel's call). Master decoded end to end with 0 errors; ebur128 on the final file. voiceLufs is
+  // the narration windows inside the master (-13.5 to -14.2): a narration-led film cannot hold VO at -16 under a -14 master.
+  review:{causalOrderApproved:true,visualReviewApproved:false,encodedMasterDecoded:true,
+    masterLufs:-14.2 as number|null,truePeakDbtp:-1.4 as number|null,voiceLufs:-14.0 as number|null},
   // The day-1 lot of the recorded take (the Chart shows this species and its NOAA price).
   referenceSpecies:'monkfish' as const,
   // Selects cut by scratchpad/cut-take.mjs from demo/footage/raw/take-10-{a,m1,b,m2,c}.mp4 using the beat times in take-10.log.
