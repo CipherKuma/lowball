@@ -10,6 +10,7 @@
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
+    "@noble/curves": "1.9.7",
     "howler": "^2.2.4",
     "motion": "^14.13.0",
     "near-api-js": "^7.5.3",

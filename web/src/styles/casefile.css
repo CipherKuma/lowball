@@ -157,6 +157,27 @@
   color: #2f6b4f;
   white-space: nowrap;
 }
+.sig-ok[data-fail] {
+  color: #8a2b22;
+}
+.recheck {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.recheck .btn {
+  min-height: 38px;
+  color: var(--paper-ink);
+  border-color: rgba(42, 33, 22, 0.3);
+  background: rgba(255, 250, 235, 0.6);
+}
+.recheck span {
+  font-size: 12px;
+  opacity: 0.75;
+  max-width: 48ch;
+}
 .pact-bytes {
   margin-top: 14px;
   font-size: 12px;

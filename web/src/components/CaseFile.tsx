@@ -5,6 +5,7 @@ import { BUYER_NAMES } from '../../../shared/api';
 import { audio } from '../lib/audio';
 import type { View } from '../lib/state';
 import { accountUrl, txUrl } from '../lib/wallet';
+import { recheckPact, type SigResult } from '../lib/sigcheck';
 import { Wiretap } from './Wiretap';
 
 type Tab = 'pact' | 'room' | 'chain';
@@ -82,8 +83,14 @@ export function CaseFile({
 }
 
 function Pact({ data, confessor }: { data: CasefileResponse; confessor?: BuyerId }) {
+  const [check, setCheck] = useState<'idle' | 'running' | SigResult[]>('idle');
   if (!data.pact) return <p>No pact was ever signed: fewer than two buyers agreed. The low bids were their own.</p>;
   const p = data.pact;
+  const results = Array.isArray(check) ? new Map(check.map((r) => [r.signer, r])) : null;
+  const runCheck = async () => {
+    setCheck('running');
+    setCheck(await recheckPact(data.contractId, p.messageHex, p.signatures));
+  };
   return (
     <div className="pact-doc">
       <p className="pact-title display">Agreement of the Pier Nine buyers</p>
@@ -96,10 +103,22 @@ function Pact({ data, confessor }: { data: CasefileResponse; confessor?: BuyerId
           <li key={s.buyer} data-confessor={s.buyer === confessor || undefined}>
             <span className="sig-name display">{BUYER_NAMES[s.buyer]}</span>
             <code className="mono">{s.signatureB64.slice(0, 22)}…</code>
-            <span className="sig-ok">ed25519 ✓ checked on-chain</span>
+            <span className="sig-ok" data-fail={results?.get(s.signer)?.ok === false || undefined}>
+              {results?.get(s.signer)
+                ? results.get(s.signer)!.ok
+                  ? 'ed25519 ✓ re-checked in your browser'
+                  : `✗ ${results.get(s.signer)!.note ?? 'failed'}`
+                : 'ed25519 ✓ checked on-chain'}
+            </span>
           </li>
         ))}
       </ul>
+      <div className="recheck">
+        <button className="btn btn-ghost" onClick={() => void runCheck()} disabled={check === 'running'}>
+          {check === 'running' ? 'Checking…' : 'Re-check every signature in your browser'}
+        </button>
+        <span>Fetches each buyer's key from the contract and verifies the exact signed bytes locally. No trust in us required.</span>
+      </div>
       <details className="pact-bytes">
         <summary>Exact signed bytes</summary>
         <code className="mono">LOWBALL-PACT-v1: ‖ borsh(pact) = {p.messageHex}</code>
