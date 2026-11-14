@@ -319,6 +319,14 @@
   body {
     overflow: auto;
   }
+  .app {
+    height: auto;
+    min-height: 100%;
+  }
+  .screen,
+  .room {
+    flex: none;
+  }
   .room {
     grid-template-columns: 1fr;
   }
@@ -354,7 +362,33 @@
   .slab-prices dd {
     font-size: 20px;
   }
-  .bubble {
-    width: 200px;
+  .room-stage {
+    padding-top: 12px;
+  }
+  .bubble,
+  .buyer:first-child .bubble,
+  .buyer:last-child .bubble {
+    top: 6px;
+    bottom: auto;
+    left: 6px;
+    right: 6px;
+    translate: 0 0;
+    width: auto;
+    font-size: 12.5px;
+    padding: 7px 9px;
+  }
+  .bubble::after {
+    display: none;
+  }
+  .bond-state {
+    display: none;
+  }
+  .bond .mono {
+    white-space: nowrap;
+  }
+  .leniency-banner {
+    position: relative;
+    bottom: auto;
+    order: -1;
   }
 }
