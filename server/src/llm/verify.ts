@@ -10,6 +10,8 @@ import { sha256 } from '@noble/hashes/sha256';
 import { keccak_256 } from '@noble/hashes/sha3';
 import type { SignatureVerification } from '../../../shared/api.js';
 import { concat, fromHex, toHex, utf8 } from '../near/bytes.js';
+import { sameSigner } from './attestation.js';
+import { evidenceCovers, type AttestationEvidence } from './evidence.js';
 
 export interface SignaturePayload {
   text: string;
@@ -79,7 +81,12 @@ export interface VerifyInput {
   /** canonical model id as sent in the request (needed for provider_tee text) */
   modelId: string;
   payload: SignaturePayload;
+  /** signer of the gateway attestation fetched before the completion */
   preflight: PreflightSigner | null;
+  /** signers of the NEAR model attestation candidates fetched before the completion (offline checks passed) */
+  modelSigners?: PreflightSigner[];
+  /** record of the last full attestation verification run; absent means no signer can be quote-verified */
+  evidence?: AttestationEvidence | null;
 }
 
 export function verifyReceipt(i: VerifyInput): SignatureVerification {
@@ -94,13 +101,15 @@ export function verifyReceipt(i: VerifyInput): SignatureVerification {
   else if (kind === 'provider_tee') expected = `${i.modelId}:${requestHash}:${responseHash}`;
   const textMatches = expected !== null && i.payload.text === expected;
   const signatureValid = checkSignatureCrypto(i.payload);
-  // The preflight binding applies to gateway signatures. A provider_tee signer would come from a
-  // model attestation report, which this server does not fetch; quoteVerified stays false.
+  // gateway: the signer must be the gateway attestation fetched before the completion.
+  // provider_tee: the signer must be a signing identity of a model attestation fetched before the completion
+  // (instances of one model share a key, so several candidates can carry the same signer).
+  const signer = { signing_address: i.payload.signing_address, signing_algo: i.payload.signing_algo };
   const signerMatchesPreflight =
-    kind === 'gateway' &&
-    i.preflight !== null &&
-    i.preflight.signing_algo === i.payload.signing_algo &&
-    constEq(normAddr(i.preflight.signing_address), normAddr(i.payload.signing_address));
+    kind === 'gateway'
+      ? i.preflight !== null && sameSigner(i.preflight, signer)
+      : kind === 'provider_tee' && (i.modelSigners ?? []).some((m) => sameSigner(m, signer));
+  const verified = textMatches && signatureValid && signerMatchesPreflight;
   return {
     requestHash,
     responseHash,
@@ -110,8 +119,9 @@ export function verifyReceipt(i: VerifyInput): SignatureVerification {
     textMatches,
     signatureValid,
     signerMatchesPreflight,
-    quoteVerified: false,
-    verified: textMatches && signatureValid && (kind === 'provider_tee' || signerMatchesPreflight),
+    // Only a verified response whose signer the evidence run proved is bound by a DCAP-verified TDX quote.
+    quoteVerified: verified && evidenceCovers(i.evidence ?? null, kind, i.modelId, signer),
+    verified,
   };
 }
 

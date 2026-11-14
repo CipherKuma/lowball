@@ -171,6 +171,7 @@ export async function casefile(deps: GameDeps, id: string): Promise<CasefileResp
     contractId: s.contractId,
     playerAccountId: s.playerAccountId,
     model: deps.llm.model,
+    ...(deps.llm.attestation ? { attestation: await deps.llm.attestation().catch(() => undefined) } : {}),
     channel: s.channel,
     pact,
     receipts,

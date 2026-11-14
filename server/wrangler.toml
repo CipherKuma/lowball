@@ -13,7 +13,8 @@ migrations_dir = "migrations"
 
 [vars]
 # Contract and house ids come from src/generated/config.json (npm run sync); set here to override.
-NEARAI_MODEL = "anthropic/claude-haiku-5-5"
+# NEAR AI own-fleet Confidential TEE model (owned_by "nearai"); see MODELS.md. Never an Incognito (Anthropic/OpenAI) id.
+NEARAI_MODEL = "z-ai/glm-5.3-flash"
 SEASON_DAYS = "6"
 BOND_NEAR = "0.2"
 MIN_TREASURY_NEAR = "1.5"

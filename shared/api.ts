@@ -167,8 +167,12 @@ export interface SignatureVerification {
   signatureValid: boolean;
   /** signing identity equals the one in a gateway attestation fetched before the completion */
   signerMatchesPreflight: boolean;
-  /** TDX quote verification is NOT performed by this server; always false here */
-  quoteVerified: false;
+  /**
+   * The response signer is bound by an Intel TDX quote that server/scripts/verify-attestation.ts verified in
+   * full (DCAP chain, nonce and signer binding, RTMR3, GPU evidence) and recorded in the evidence file.
+   * The Worker does not verify quotes itself; false whenever there is no matching evidence.
+   */
+  quoteVerified: boolean;
   /** overall: textMatches && signatureValid && signerMatchesPreflight */
   verified: boolean;
   error?: string;
@@ -217,12 +221,26 @@ export interface TxRecord {
   at: number;
 }
 
+/** Outcome of the last full attestation verification run, matched against the live deployment. */
+export interface AttestationSummary {
+  /** the model's TDX quote and GPU evidence passed full verification AND the live signer is the verified one */
+  verified: boolean;
+  /** ISO time of the verification run; null when none was recorded */
+  checkedAt: string | null;
+  /** where the evidence JSON can be read; null when none was recorded */
+  evidenceUrl: string | null;
+  /** why verified is false */
+  reason?: string;
+}
+
 export interface CasefileResponse {
   sessionId: string;
   seasonId: number | null;
   contractId: string;
   playerAccountId: string;
   model: string;
+  /** attestation status of the buyer model; absent on servers that predate it */
+  attestation?: AttestationSummary;
   channel: ChannelMessage[];
   /** null when fewer than two buyers signed (no cartel formed) */
   pact: PactRecord | null;

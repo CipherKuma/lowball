@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { BuyerId, Receipt } from '../../../shared/api.js';
+import type { AttestationSummary, BuyerId, Receipt } from '../../../shared/api.js';
 
 export type CallKind = Receipt['kind'];
 
@@ -25,5 +25,7 @@ export interface CompleteResult<T> {
 
 export interface Llm {
   readonly model: string;
+  /** attestation status for the Case File; omitted by transports that have none (scripted tests) */
+  attestation?(): Promise<AttestationSummary>;
   complete<T>(req: CompleteRequest<T>): Promise<CompleteResult<T>>;
 }

@@ -1,18 +1,21 @@
 import { AppError } from '../errors.js';
 import { debug } from '../log.js';
-import type { Receipt } from '../../../shared/api.js';
+import type { AttestationSummary, Receipt } from '../../../shared/api.js';
 import { utf8 } from '../near/bytes.js';
 import type { CompleteRequest, CompleteResult, Llm } from './types.js';
+import { summarizeEvidence, type AttestationEvidence } from './evidence.js';
+import bundledEvidence from './attestation-evidence.json';
+import { fetchPreflight, type Preflight } from './preflight.js';
 import {
   failedVerification,
   sha256Hex,
   verifyReceipt,
-  type PreflightSigner,
   type SignaturePayload,
 } from './verify.js';
 
 export const DEFAULT_BASE_URL = 'https://cloud-api.near.ai/v1';
-export const DEFAULT_MODEL = 'anthropic/claude-haiku-5-5';
+/** NEAR AI own-fleet Confidential TEE model (owned_by "nearai"), see server/MODELS.md. */
+export const DEFAULT_MODEL = 'z-ai/glm-5.3-flash';
 const SIGNING_ALGO = 'ecdsa';
 
 export interface NearAiOptions {
@@ -24,6 +27,10 @@ export interface NearAiOptions {
   sleep?: (ms: number) => Promise<void>;
   /** hard cap on total completions (sim harness) */
   maxCalls?: number;
+  /** attestation evidence record; undefined uses the bundled file, null means none */
+  evidence?: AttestationEvidence | null;
+  /** attestation nonce source (tests replay a recorded report with its recorded nonce) */
+  nonceFn?: () => string;
 }
 
 /** Pull the first JSON object out of a model reply (tolerates code fences and prose). */
@@ -55,12 +62,16 @@ export class NearAiLlm implements Llm {
   private fetchFn: typeof fetch;
   private timeoutMs: number;
   private sleep: (ms: number) => Promise<void>;
-  private preflight: { signer: Promise<PreflightSigner | null>; at: number } | null = null;
+  private preflight: { pf: Promise<Preflight>; at: number } | null = null;
+  private evidence: AttestationEvidence | null;
+  private nonceFn: (() => string) | undefined;
   private useSchema = true;
   calls = 0;
   private maxCalls: number;
 
   constructor(o: NearAiOptions) {
+    this.evidence = o.evidence === undefined ? (bundledEvidence as unknown as AttestationEvidence) : o.evidence;
+    this.nonceFn = o.nonceFn;
     this.key = o.apiKey;
     this.model = o.model ?? DEFAULT_MODEL;
     this.base = (o.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
@@ -90,30 +101,19 @@ export class NearAiLlm implements Llm {
     }
   }
 
-  /** Gateway signer identity, fetched once before completions (cached 10 minutes). */
-  getPreflight(): Promise<PreflightSigner | null> {
-    if (this.preflight && Date.now() - this.preflight.at < 600_000) return this.preflight.signer;
-    const signer = this.fetchPreflight(); // share one in-flight request between concurrent buyers
-    this.preflight = { signer, at: Date.now() };
-    return signer;
+  /** Gateway and model signer identities, fetched once before completions (cached 10 minutes). */
+  getPreflight(): Promise<Preflight> {
+    if (this.preflight && Date.now() - this.preflight.at < 600_000) return this.preflight.pf;
+    // share one in-flight request between concurrent buyers
+    const pf = fetchPreflight((u, i) => this.timedFetch(u, i), this.base, this.key, this.model, SIGNING_ALGO, this.nonceFn);
+    this.preflight = { pf, at: Date.now() };
+    return pf;
   }
 
-  private async fetchPreflight(): Promise<PreflightSigner | null> {
-    let signer: PreflightSigner | null = null;
-    try {
-      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, '0')).join('');
-      const res = await this.timedFetch(`${this.base}/attestation/report?signing_algo=${SIGNING_ALGO}&nonce=${nonce}`, {
-        headers: { accept: 'application/json', authorization: `Bearer ${this.key}` },
-      });
-      if (res.ok) {
-        const j: any = await res.json();
-        const g = j?.gateway_attestation;
-        if (g?.signing_address && g?.signing_algo) signer = { signing_address: g.signing_address, signing_algo: g.signing_algo };
-      }
-    } catch (e) {
-      debug('nearai', 'preflight failed', String(e));
-    }
-    return signer;
+  /** Case File summary: the last full verification run, matched against this deployment's live model signers. */
+  async attestation(): Promise<AttestationSummary> {
+    const pf = await this.getPreflight();
+    return summarizeEvidence(this.evidence, this.model, pf.error ? null : { modelSigners: pf.models });
   }
 
   private buildBody<T>(req: CompleteRequest<T>): string {
@@ -225,12 +225,15 @@ export class NearAiLlm implements Llm {
       if (!payload) {
         return { ...base, signature: null, verification: failedVerification(reqHash, respHash, 'signature unavailable') };
       }
+      const pf = await this.getPreflight();
       const verification = verifyReceipt({
         requestBytes,
         responseBytes,
         modelId: this.model,
         payload,
-        preflight: await this.getPreflight(),
+        preflight: pf.gateway,
+        modelSigners: pf.models,
+        evidence: this.evidence,
       });
       return { ...base, signature: payload, verification };
     } catch (e) {

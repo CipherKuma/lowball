@@ -4,7 +4,7 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { keccak_256 } from '@noble/hashes/sha3';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { NearAiLlm, extractJson } from '../src/llm/client.js';
+import { DEFAULT_MODEL, NearAiLlm, extractJson } from '../src/llm/client.js';
 import { JSON_SCHEMAS, BidOut } from '../src/llm/schemas.js';
 import { eip191Digest, recoverEthAddress, sha256Hex, verifyReceipt } from '../src/llm/verify.js';
 import { toHex, utf8 } from '../src/near/bytes.js';
@@ -77,13 +77,13 @@ describe('verifyReceipt', () => {
     expect(v.verified).toBe(false);
   });
 
-  it('verifies provider_tee text (model id prefix) and ed25519 signers', () => {
+  it('verifies provider_tee text (model id prefix) and ed25519 signers matched to a preflight model signer', () => {
     const seed = ed25519.utils.randomPrivateKey();
     const addr = toHex(ed25519.getPublicKey(seed));
     const t = `m:${sha256Hex(req)}:${sha256Hex(resp)}`;
     const sig = toHex(ed25519.sign(utf8(t), seed));
     const v = verifyReceipt({
-      requestBytes: req, responseBytes: resp, modelId: 'm', preflight: null,
+      requestBytes: req, responseBytes: resp, modelId: 'm', preflight: null, modelSigners: [{ signing_address: addr, signing_algo: 'ed25519' }],
       payload: { text: t, signature: sig, signing_address: addr, signing_algo: 'ed25519', signature_kind: 'provider_tee' },
     });
     expect(v.verified).toBe(true);
@@ -147,7 +147,7 @@ describe('NearAiLlm', () => {
     const post = t.calls.find((c) => c.url.endsWith('/chat/completions'))!;
     expect(post.init.headers.authorization).toBe('Bearer k');
     const body = JSON.parse(post.init.body);
-    expect(body.model).toBe('anthropic/claude-haiku-5-5');
+    expect(body.model).toBe(DEFAULT_MODEL);
     expect(body.response_format.type).toBe('json_schema');
     expect(body.response_format.json_schema.strict).toBe(true);
     const receipt = await r.receipt;
