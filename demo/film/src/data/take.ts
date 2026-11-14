@@ -127,8 +127,12 @@ export const take = {
     "fetchedAt": "2026-11-14T08:54:17.258Z"
   }
 },
-  review:{causalOrderApproved:false,visualReviewApproved:false,encodedMasterDecoded:false,
-    masterLufs:null as number|null,truePeakDbtp:null as number|null,voiceLufs:null as number|null},
+  // 14 Nov 18:40 IST. Causal order: every select checked against take-2 events (takes.md). Visual: 21 stills plus
+  // frames either side of all 11 cuts, by Claude; nobody has watched it at full speed with sound yet (Gabriel's call).
+  // Master: demo/out/lowball-demo.mp4 decoded end to end with 0 errors; ebur128 on the final file. voiceLufs is the
+  // narration windows inside the master (-13.3 to -14.2): a narration-led film cannot hold VO at -16 under a -14 master.
+  review:{causalOrderApproved:true,visualReviewApproved:false,encodedMasterDecoded:true,
+    masterLufs:-14.2 as number|null,truePeakDbtp:-1.4 as number|null,voiceLufs:-13.8 as number|null},
   // The day-1 lot of the recorded take (the Chart shows this species and its NOAA price).
   referenceSpecies:'bluefin tuna' as const,
   // Selects cut from demo/footage/raw/take-2-{a,b,c}.webm (see demo/footage/takes.md for source ranges).
