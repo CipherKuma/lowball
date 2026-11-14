@@ -227,6 +227,19 @@
   font: italic 400 14px var(--font-display);
   color: var(--fog);
 }
+.setup-error p {
+  margin: 0;
+}
+.setup-error-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.setup-error-actions .btn {
+  min-height: 36px;
+  font-size: 13px;
+}
 .setup-error {
   margin: 14px 0 0;
   padding: 10px 12px;

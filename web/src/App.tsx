@@ -46,7 +46,15 @@ export function App() {
             transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
           >
             {current === 'title' && <Title onStart={begin} starting={g.pending === 'start'} />}
-            {current === 'setup' && <Setup meta={g.meta} view={view} error={g.failure?.message ?? null} />}
+            {current === 'setup' && (
+              <Setup
+                meta={g.meta}
+                view={view}
+                error={g.failure?.message ?? null}
+                errorCode={g.failure?.code}
+                onRetry={g.failure?.retry}
+              />
+            )}
             {current === 'room' && g.meta && (
               <Room meta={g.meta} view={view} pending={g.pending} act={g.act} offerLeniency={g.offerLeniency} openCase={() => setScreen('case')} />
             )}
