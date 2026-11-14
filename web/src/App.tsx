@@ -56,9 +56,33 @@ export function App() {
               />
             )}
             {current === 'room' && g.meta && (
-              <Room meta={g.meta} view={view} pending={g.pending} act={g.act} offerLeniency={g.offerLeniency} openCase={() => setScreen('case')} />
+              <Room
+                meta={g.meta}
+                view={view}
+                pending={g.pending}
+                act={g.act}
+                offerLeniency={g.offerLeniency}
+                openCase={() => setScreen('case')}
+                interro={{
+                  ask: (buyer, input) => void g.interrogate(buyer, input),
+                  usedToday: g.interrogatedToday,
+                  pending: g.interroPending,
+                  error: g.interroError,
+                  clearError: g.clearInterroError,
+                }}
+              />
             )}
-            {current === 'case' && <CaseFile load={g.loadCasefile} view={view} onReplay={() => { setScreen('setup'); g.start(); }} />}
+            {current === 'case' && (
+              <CaseFile
+                load={g.loadCasefile}
+                view={view}
+                wiretapUrl={g.wiretapUrl()}
+                onReplay={() => {
+                  setScreen('setup');
+                  g.start();
+                }}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

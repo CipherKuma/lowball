@@ -175,6 +175,26 @@ export class PreviewDriver implements Driver {
     return null;
   }
 
+  wiretapUrl() {
+    return null;
+  }
+
+  async interrogate(buyer: BuyerId, input: { audio?: Blob; text?: string }): Promise<void> {
+    const question = input.text ?? 'Four envelopes, one number. Who wrote it first?';
+    const scripted: Record<BuyerId, [string, string]> = {
+      marlow: ['You want names, captain? Go fish for them.', 'He grips the cane until his knuckles go white.'],
+      odile: ['I keep the books. Books do not testify.', 'She straightens a ledger that was already straight.'],
+      sully: ["I didn't write anything. I just — everyone said twelve.", 'The coin slips from his fingers twice.'],
+      ines: ['Darling, if I knew a secret, would I whisper it here?', 'She laughs a beat too late.'],
+      deacon: ['Ask your question to God.', 'He does not blink.'],
+    };
+    const [answer, tell] = scripted[buyer];
+    await this.emit(
+      { type: 'interrogation', buyer, question, answer, mood: buyer === 'sully' ? 'cracking' : 'cold', tell, pressure: buyer === 'sully' ? 4 : 2 } as unknown as GameEventBody,
+      1600,
+    );
+  }
+
   subscribe(fn: (e: GameEvent[], s: SessionStatus | null) => void) {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);

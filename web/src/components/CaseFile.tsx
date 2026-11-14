@@ -5,11 +5,22 @@ import { BUYER_NAMES } from '../../../shared/api';
 import { audio } from '../lib/audio';
 import type { View } from '../lib/state';
 import { accountUrl, txUrl } from '../lib/wallet';
+import { Wiretap } from './Wiretap';
 
 type Tab = 'pact' | 'room' | 'chain';
 const ease = [0.23, 1, 0.32, 1] as const;
 
-export function CaseFile({ load, view, onReplay }: { load: () => Promise<CasefileResponse>; view: View; onReplay: () => void }) {
+export function CaseFile({
+  load,
+  view,
+  wiretapUrl,
+  onReplay,
+}: {
+  load: () => Promise<CasefileResponse>;
+  view: View;
+  wiretapUrl: string | null;
+  onReplay: () => void;
+}) {
   const [data, setData] = useState<CasefileResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('pact');
@@ -54,7 +65,12 @@ export function CaseFile({ load, view, onReplay }: { load: () => Promise<Casefil
           {err && <p className="setup-error">The case file would not open: {err}</p>}
           {!data && !err && <p className="folder-loading">Pulling the file…</p>}
           {data && tab === 'pact' && <Pact data={data} confessor={confessor} />}
-          {data && tab === 'room' && <BackRoom data={data} />}
+          {data && tab === 'room' && (
+            <>
+              <Wiretap url={wiretapUrl} />
+              <BackRoom data={data} />
+            </>
+          )}
           {data && tab === 'chain' && <Chain data={data} view={view} />}
         </section>
         <footer className="folder-foot">

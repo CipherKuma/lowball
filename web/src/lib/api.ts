@@ -53,4 +53,29 @@ export const api = {
     call<LeniencyResponse>(`/api/session/${id}/leniency`, { method: 'POST', body: JSON.stringify({ txHash }) }),
   casefile: (id: string) => call<CasefileResponse>(`/api/session/${id}/casefile`),
   ttsUrl: (id: string, seq: number) => `${BASE}/api/tts?session=${encodeURIComponent(id)}&seq=${seq}`,
+  wiretapUrl: (id: string) => `${BASE}/api/session/${encodeURIComponent(id)}/wiretap`,
+  interrogate: async (id: string, buyer: string, input: { audio?: Blob; text?: string }) => {
+    const form = new FormData();
+    form.set('buyer', buyer);
+    if (input.audio) {
+      const ext = input.audio.type.includes('mp4') ? 'mp4' : input.audio.type.includes('ogg') ? 'ogg' : 'webm';
+      form.set('audio', input.audio, `question.${ext}`);
+    }
+    if (input.text) form.set('text', input.text);
+    let res: Response;
+    try {
+      res = await fetch(`${BASE}/api/session/${id}/interrogate`, { method: 'POST', body: form });
+    } catch {
+      throw new ApiFailure('The harbour line is down. Check your connection.', 'NETWORK', 0);
+    }
+    if (!res.ok) {
+      let body: ApiError | null = null;
+      try {
+        body = (await res.json()) as ApiError;
+      } catch {
+        /* non-JSON error */
+      }
+      throw new ApiFailure(body?.error ?? `Request failed (${res.status})`, body?.code ?? 'INTERNAL', res.status);
+    }
+  },
 };

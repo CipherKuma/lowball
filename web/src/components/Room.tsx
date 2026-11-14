@@ -7,6 +7,7 @@ import { useBlockHeight } from '../lib/useBlockHeight';
 import type { Pending } from '../lib/useGame';
 import { txUrl, yoctoToNear } from '../lib/wallet';
 import { BuyerCard, type BondState, type Outcome } from './BuyerCard';
+import { InterrogationRoom } from './Interrogation';
 import { Ledger } from './Ledger';
 import { Slab } from './Slab';
 
@@ -17,6 +18,13 @@ interface Props {
   act: (a: 'sell' | 'hold' | 'next_day') => void;
   offerLeniency: () => void;
   openCase: () => void;
+  interro: {
+    ask: (buyer: BuyerId, input: { audio?: Blob; text?: string }) => void;
+    usedToday: boolean;
+    pending: boolean;
+    error: string | null;
+    clearError: () => void;
+  };
 }
 
 function bondOf(v: View, id: BuyerId): BondState {
@@ -32,7 +40,13 @@ function outcomeOf(v: View, id: BuyerId): Outcome {
   return a.ok ? { kind: 'confessed' } : { kind: 'refused', code: a.errorCode };
 }
 
-export function Room({ meta, view, pending, act, offerLeniency, openCase }: Props) {
+export function Room({ meta, view, pending, act, offerLeniency, openCase, interro }: Props) {
+  const [cornered, setCornered] = useState<{ buyer: BuyerId; sinceSeq: number } | null>(null);
+  const phaseOk = view.status?.phase === 'lot_open' || view.status?.phase === 'settled';
+  const canLean = phaseOk && !view.slashed && !view.leniencyOpen && !interro.usedToday && pending === null;
+  const exchange = cornered
+    ? view.interrogations.find((i) => i.buyer === cornered.buyer && i.seq > cornered.sinceSeq) ?? null
+    : null;
   const status = view.status;
   const bestBid = view.reveals ? Math.max(...view.reveals.map((r) => r.amount)) : null;
   const bondNear = yoctoToNear(meta.bondYocto, 2);
@@ -95,6 +109,8 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase }: Prop
               deliberating={deliberatingSet.has(b.id)}
               outcome={outcomeOf(view, b.id)}
               teeUrl={view.tee[b.id]?.at(-1)?.attestationUrl}
+              pressure={view.pressure[b.id]}
+              onLean={canLean ? () => setCornered({ buyer: b.id, sinceSeq: view.lastSeq }) : undefined}
             />
           ))}
         </div>
@@ -106,6 +122,7 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase }: Prop
             identical={view.identical}
             settledPrice={view.settled?.price ?? null}
             token={view.token}
+            sea={view.sea}
             ownerName={view.token?.ownerBuyer ? meta.buyers.find((b) => b.id === view.token?.ownerBuyer)?.name ?? null : null}
           />
         </div>
@@ -122,6 +139,22 @@ export function Room({ meta, view, pending, act, offerLeniency, openCase }: Prop
         onNext={() => act('next_day')}
         onLeniency={offerLeniency}
       />
+
+      <AnimatePresence>
+        {cornered && (
+          <InterrogationRoom
+            buyer={meta.buyers.find((b) => b.id === cornered.buyer)!}
+            exchange={exchange}
+            pending={interro.pending}
+            error={interro.error}
+            onAsk={(input) => interro.ask(cornered.buyer, input)}
+            onClose={() => {
+              setCornered(null);
+              interro.clearError();
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {(view.slashed || view.holdout || view.closed) && (

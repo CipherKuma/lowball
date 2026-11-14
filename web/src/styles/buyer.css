@@ -63,6 +63,52 @@
   100% { clip-path: inset(0 0 0 0); }
 }
 
+.lean-btn {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 14px;
+  background: linear-gradient(180deg, transparent 55%, rgba(8, 13, 15, 0.82));
+  opacity: 0;
+  transition: opacity 180ms var(--ease-out);
+}
+.lean-btn span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 163, 61, 0.6);
+  background: rgba(11, 20, 24, 0.85);
+  color: var(--amber);
+  font: 600 12px/1 var(--font-ui);
+  letter-spacing: 0.04em;
+}
+.portrait[data-leanable]:hover .lean-btn,
+.lean-btn:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .lean-btn {
+    opacity: 1;
+    background: none;
+  }
+}
+.pressure-pips {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.pressure-pips i {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: rgba(200, 209, 201, 0.18);
+}
+.pressure-pips i[data-on] {
+  background: var(--rust-hot);
+}
 .tee-badge {
   position: absolute;
   top: 8px;

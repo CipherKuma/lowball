@@ -75,6 +75,10 @@ export interface BuyerCardProps {
   index: number;
   /** latest OutLayer TDX attestation for an act this buyer signed inside the enclave */
   teeUrl?: string;
+  /** pressure from interrogations, 0..6 */
+  pressure?: number;
+  /** when set, clicking the portrait opens the back room for this buyer */
+  onLean?: () => void;
 }
 
 export function BuyerCard(p: BuyerCardProps) {
@@ -92,7 +96,12 @@ export function BuyerCard(p: BuyerCardProps) {
       aria-label={`${p.name}, ${TITLES[p.id]}`}
     >
       <Bubble line={p.line} />
-      <div className="portrait">
+      <div className="portrait" data-leanable={p.onLean ? true : undefined}>
+        {p.onLean && (
+          <button className="lean-btn" onClick={p.onLean} aria-label={`Lean on ${p.name}`}>
+            <span>Lean on {p.name.split(' ')[0] === 'The' ? 'him' : p.name.split(' ')[0]}</span>
+          </button>
+        )}
         <img className="portrait-calm" src={`/art/${p.id}_calm.webp`} alt="" draggable={false} />
         <img
           className="portrait-cracked"
@@ -154,7 +163,16 @@ export function BuyerCard(p: BuyerCardProps) {
       <div className="buyer-meta">
       <header className="nameplate">
         <h3 className="display">{p.name}</h3>
-        <p>{TITLES[p.id]}</p>
+        <p>
+          {TITLES[p.id]}
+          {!!p.pressure && (
+            <span className="pressure-pips" aria-label={`Pressure ${p.pressure} of 6`}>
+              {Array.from({ length: 6 }, (_, i) => (
+                <i key={i} data-on={i < (p.pressure ?? 0) || undefined} />
+              ))}
+            </span>
+          )}
+        </p>
       </header>
       <div className="bond" title="Bond held by the Lowball contract">
         <span className="bond-box" aria-hidden />

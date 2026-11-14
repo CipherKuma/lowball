@@ -19,6 +19,7 @@ export function Slab({
   settledPrice,
   token,
   ownerName,
+  sea,
 }: {
   lot: Lot | null;
   bestBid: number | null;
@@ -26,6 +27,7 @@ export function Slab({
   settledPrice: number | null;
   token: View['token'];
   ownerName: string | null;
+  sea?: View['sea'];
 }) {
   const price = settledPrice ?? bestBid;
   const gap = lot && price != null ? lot.fairValue - price : null;
@@ -64,6 +66,20 @@ export function Slab({
                   <dd className="mono">{gap != null ? (gap > 0 ? `−${gap}` : '0') : '··'}</dd>
                 </div>
               </dl>
+              {(lot.market || sea) && (
+                <p className="source-row mono">
+                  {lot.market && (
+                    <a href={lot.market.url} target="_blank" rel="noreferrer" title="Board price comes from real ex-vessel prices">
+                      {lot.market.source} · {lot.market.year} ex-vessel ${lot.market.usdPerLb.toFixed(2)}/lb ↗
+                    </a>
+                  )}
+                  {sea && (
+                    <span title={`${sea.source}, ${sea.at}`}>
+                      · swell {sea.waveM.toFixed(1)} m off {sea.port.split(',')[0]} (live)
+                    </span>
+                  )}
+                </p>
+              )}
               {token && (
                 <motion.p
                   className="token-chip mono"

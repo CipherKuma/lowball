@@ -75,7 +75,14 @@ function cue(e: GameEvent, driver: Driver, firstDay: { done: boolean }) {
       audio.say('holdout');
       audio.playMusic('harbour_loop');
       return;
-    default:
+    default: {
+      // brief-3 events: the interrogated buyer's answer and the narrator's day recap are voiced live.
+      const t = (e as { type: string }).type;
+      if (t === 'interrogation' || t === 'recap') {
+        const url = driver.ttsUrl(e.seq);
+        if (url) audio.sayUrl(url);
+      }
+    }
   }
 }
 
@@ -138,6 +145,27 @@ export function useGame() {
     void go();
   }, [run, view.seasonId, view.status?.seasonId]);
 
+  const [interrogatedDay, setInterrogatedDay] = useState<number | null>(null);
+  const [interroError, setInterroError] = useState<string | null>(null);
+  const [interroPending, setInterroPending] = useState(false);
+  const interrogate = useCallback(
+    async (buyer: BuyerId, input: { audio?: Blob; text?: string }) => {
+      const d = driverRef.current;
+      if (!d) return;
+      setInterroPending(true);
+      setInterroError(null);
+      try {
+        await d.interrogate(buyer, input);
+        setInterrogatedDay(view.lot?.day ?? null);
+      } catch (err) {
+        setInterroError(err instanceof Error ? err.message : 'They would not talk.');
+      } finally {
+        setInterroPending(false);
+      }
+    },
+    [view.lot?.day],
+  );
+
   const loadCasefile = useCallback(() => {
     const d = driverRef.current;
     if (!d) return Promise.reject(new Error('No session'));
@@ -156,5 +184,23 @@ export function useGame() {
   }, [view.closed, view.slashed]);
 
   const confessor: BuyerId | null = view.slashed?.confessor ?? null;
-  return { preview, meta, view, pending, failure, start, act, offerLeniency, loadCasefile, confessor, dismissFailure: () => setFailure(null) };
+  return {
+    preview,
+    meta,
+    view,
+    pending,
+    failure,
+    start,
+    act,
+    offerLeniency,
+    loadCasefile,
+    confessor,
+    dismissFailure: () => setFailure(null),
+    interrogate,
+    interrogatedToday: interrogatedDay !== null && interrogatedDay === view.lot?.day,
+    interroPending,
+    interroError,
+    clearInterroError: () => setInterroError(null),
+    wiretapUrl: () => driverRef.current?.wiretapUrl() ?? null,
+  };
 }

@@ -84,6 +84,17 @@ export function Ledger({ view, status, days, pending, holdsLeft, onSell, onHold,
         </button>
       </div>
 
+      {!view.slashed && !view.closed && (
+        <p className="ledger-hint">Click a buyer to lean on them in the back room · once a day</p>
+      )}
+
+      {view.recaps.length > 0 && (
+        <div className="rumours dispatch">
+          <span>Harbour dispatch</span>
+          <p>{view.recaps[view.recaps.length - 1].text}</p>
+        </div>
+      )}
+
       {view.rumours.length > 0 && (
         <div className="rumours">
           <span>On the pier</span>

@@ -26,6 +26,10 @@ export interface Driver {
   leniency(seasonId: number): Promise<BuyerId | null>;
   casefile(): Promise<CasefileResponse>;
   ttsUrl(seq: number): string | null;
+  /** Corner one buyer in the back room: recorded speech or typed text. The answer arrives as an event. */
+  interrogate(buyer: BuyerId, input: { audio?: Blob; text?: string }): Promise<void>;
+  /** The cartel's private channel performed as audio (Case File, season closed). */
+  wiretapUrl(): string | null;
   subscribe(onEvents: (events: GameEvent[], status: SessionStatus | null) => void): () => void;
 }
 
@@ -102,6 +106,15 @@ export class LiveDriver implements Driver {
 
   ttsUrl(seq: number) {
     return this.meta ? api.ttsUrl(this.meta.sessionId, seq) : null;
+  }
+
+  async interrogate(buyer: BuyerId, input: { audio?: Blob; text?: string }): Promise<void> {
+    this.loop();
+    await api.interrogate(this.id(), buyer, input);
+  }
+
+  wiretapUrl() {
+    return this.meta ? api.wiretapUrl(this.meta.sessionId) : null;
   }
 
   subscribe(fn: (e: GameEvent[], s: SessionStatus | null) => void) {

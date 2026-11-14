@@ -7,6 +7,7 @@ import type {
   SessionStatus,
   SlashedBuyer,
 } from '../../../shared/api';
+import { applyExtra, initialExtra, marketOf, type ExtraEvent, type ExtraView, type Market } from './extra';
 
 export interface Lot {
   day: number;
@@ -14,6 +15,7 @@ export interface Lot {
   weightKg: number;
   fairValue: number;
   tx: string;
+  market: Market | null;
 }
 export interface DayRecord {
   day: number;
@@ -43,7 +45,7 @@ export interface TxItem {
   tx: string;
 }
 
-export interface View {
+export interface View extends ExtraView {
   lastSeq: number;
   playerAccountId: string | null;
   seasonId: number | null;
@@ -78,6 +80,7 @@ export interface View {
 }
 
 export const initialView: View = {
+  ...initialExtra,
   lastSeq: 0,
   playerAccountId: null,
   seasonId: null,
@@ -131,7 +134,7 @@ export function apply(v: View, e: GameEvent): View {
       return {
         ...n,
         cartelForming: false,
-        lot: { day: e.day, species: e.species, weightKg: e.weightKg, fairValue: e.fairValue, tx: e.tx },
+        lot: { day: e.day, species: e.species, weightKg: e.weightKg, fairValue: e.fairValue, tx: e.tx, market: marketOf(e) },
         committed: {},
         reveals: null,
         identical: false,
@@ -230,7 +233,7 @@ export function apply(v: View, e: GameEvent): View {
     case 'error':
       return { ...n, error: { code: e.code, message: e.message, retryable: e.retryable, seq: e.seq } };
     default:
-      return n;
+      return applyExtra(n, e as unknown as ExtraEvent);
   }
 }
 
