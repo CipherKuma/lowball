@@ -4,11 +4,11 @@ import { PERSONAS } from './cast.js';
 import type { LotMemory, SessionState } from './state.js';
 import { FAIR_VALUE_RANGE } from './lots.js';
 
-// Accounting rate told to buyers: 1 mark = 0.002 NEAR. At this rate a 0.1 NEAR bond is 50 marks, while a
+// Accounting rate told to buyers: 1 mark = 0.001 NEAR. At this rate a 0.05 NEAR bond is 50 marks, while a
 // member's pooled share of a lot is ~15-30 marks: loyalty outweighs the bond early in the season and not
 // late, which is the tension the game is built on (tuned after the 2026-11-14 live run, where every buyer
 // defected on day 1 and nearly all confessed at the first offer).
-export const MARK_NEAR = 0.002;
+export const MARK_NEAR = 0.001;
 const marksOf = (near: string) => Math.round(Number(near) / MARK_NEAR);
 
 export function bondNear(s: SessionState): string {
