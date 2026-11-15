@@ -5,6 +5,7 @@ import type { ArtifactKind, SpendEntry, Store, TeeJobRow } from './types.js';
 /** In-memory Store used by tests and the sim harness. */
 export class MemoryStore implements Store {
   states = new Map<string, SessionState>();
+  createdAt = new Map<string, number>();
   locks = new Map<string, number>();
   events = new Map<string, GameEvent[]>();
   artifacts = new Map<string, { kind: ArtifactKind; key: string; value: unknown }[]>();
@@ -18,11 +19,23 @@ export class MemoryStore implements Store {
 
   async createSession(id: string, state: SessionState, ip: string) {
     this.states.set(id, structuredClone(state));
+    this.createdAt.set(id, Date.now());
     this.sessions.push({ ip, at: Date.now() });
   }
   async loadState(id: string) {
     const s = this.states.get(id);
     return s ? structuredClone(s) : null;
+  }
+  async getSessionRow(id: string) {
+    const s = this.states.get(id);
+    return s ? { state: structuredClone(s), createdAt: this.createdAt.get(id) ?? 0 } : null;
+  }
+  async listSessionsByPlayer(accountId: string, limit: number) {
+    return [...this.states.entries()]
+      .filter(([, s]) => s.playerAccountId === accountId)
+      .map(([id, s]) => ({ id, state: structuredClone(s), createdAt: this.createdAt.get(id) ?? 0 }))
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit);
   }
   async saveState(id: string, state: SessionState) {
     this.states.set(id, structuredClone(state));

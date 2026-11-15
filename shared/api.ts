@@ -146,6 +146,27 @@ export interface AuthVerifyResponse {
   expiresAt: number;
 }
 
+/** One season in a player's history (GET /api/session/:id/summary, GET /api/me/seasons). */
+export interface SeasonSummary {
+  sessionId: string;
+  playerAccountId: string;
+  playerKind: 'guest' | 'wallet';
+  contractId: string;
+  buyers: BuyerInfo[];
+  days: number;
+  bondYocto: string;
+  payoutEvm: string | null;
+  seasonId: number | null;
+  phase: string;          // state.phase
+  day: number;
+  closed: boolean;        // phase === 'closed'
+  failed: boolean;        // phase === 'failed'
+  confessor: BuyerId | null;
+  /** yocto paid to the player from slashed bonds; '0' when the season closed with nobody confessing; null while open */
+  payoutYocto: string | null;
+  createdAt: number;      // ms, sessions.created_at
+}
+
 export interface CreateSessionResponse {
   sessionId: string;
   playerAccountId: string;

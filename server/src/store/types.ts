@@ -23,6 +23,10 @@ export interface Store {
   createSession(id: string, state: SessionState, ip: string): Promise<void>;
   loadState(id: string): Promise<SessionState | null>;
   saveState(id: string, state: SessionState): Promise<void>;
+  /** state plus the row's created_at (ms); null for an unknown id */
+  getSessionRow(id: string): Promise<{ state: SessionState; createdAt: number } | null>;
+  /** sessions whose state.playerAccountId is `accountId`, newest first */
+  listSessionsByPlayer(accountId: string, limit: number): Promise<{ id: string; state: SessionState; createdAt: number }[]>;
   /** true when the lock was acquired */
   tryLock(id: string, ttlMs: number): Promise<boolean>;
   unlock(id: string): Promise<void>;

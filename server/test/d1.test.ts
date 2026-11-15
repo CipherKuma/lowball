@@ -56,6 +56,22 @@ function storeContract(name: string, make: () => Store) {
       expect(await s.countSessionsSince('2.2.2.2', 0)).toBe(0);
     });
 
+    it('lists a player\'s sessions newest first and exposes created_at', async () => {
+      const s = make();
+      const acct = `list-${crypto.randomUUID()}.t`;
+      const ids = [crypto.randomUUID(), crypto.randomUUID()];
+      for (const id of ids) {
+        await s.createSession(id, { ...sample(), playerAccountId: acct }, '3.3.3.3');
+        await new Promise((r) => setTimeout(r, 3));
+      }
+      const rows = await s.listSessionsByPlayer(acct, 10);
+      expect(rows.map((r) => r.id)).toEqual([ids[1], ids[0]]);
+      expect(rows[0]!.createdAt).toBeGreaterThanOrEqual(rows[1]!.createdAt);
+      expect((await s.getSessionRow(ids[0]!))?.createdAt).toBe(rows[1]!.createdAt);
+      expect(await s.getSessionRow(crypto.randomUUID())).toBeNull();
+      expect(await s.listSessionsByPlayer(acct, 1)).toHaveLength(1);
+    });
+
     it('has a cross-session lock and keeps the newest enclave jobs first', async () => {
       const s = make();
       const name = `lock-${crypto.randomUUID()}`;

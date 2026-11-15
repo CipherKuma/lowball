@@ -17,6 +17,7 @@ import {
 } from './schemas.js';
 import { synthesize, type CacheLike } from './tts.js';
 import { registerFeatureRoutes } from './features/routes.js';
+import { buildSummary, listSeasons } from './game/summary.js';
 import { speakable } from './features/voice.js';
 
 export interface AppOptions {
@@ -127,6 +128,17 @@ export function createApp(o: AppOptions): Hono {
     const id = sessionId(c);
     const q = EventsQuerySchema.parse({ after: c.req.query('after') ?? 0 });
     return c.json(await getEvents(o.deps(c), id, q.after));
+  });
+
+  app.get('/api/session/:id/summary', async (c) => {
+    const summary = await buildSummary(o.deps(c).store, sessionId(c));
+    if (!summary) throw new AppError('NOT_FOUND', 'No such session.');
+    return c.json(summary);
+  });
+
+  app.get('/api/me/seasons', async (c) => {
+    const { accountId } = await requireAccount(authOf(c), c.req.header('authorization'));
+    return c.json({ seasons: await listSeasons(o.deps(c).store, accountId) });
   });
 
   app.post('/api/session/:id/step', async (c) => {

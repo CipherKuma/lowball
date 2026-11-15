@@ -93,6 +93,17 @@ export class D1Store implements Store {
     const row = await this.db.prepare('SELECT state FROM sessions WHERE id = ?').bind(id).first<{ state: string }>();
     return row ? (JSON.parse(row.state) as SessionState) : null;
   }
+  async getSessionRow(id: string) {
+    const row = await this.db.prepare('SELECT state, created_at FROM sessions WHERE id = ?').bind(id).first<{ state: string; created_at: number }>();
+    return row ? { state: JSON.parse(row.state) as SessionState, createdAt: row.created_at } : null;
+  }
+  async listSessionsByPlayer(accountId: string, limit: number) {
+    const r = await this.db
+      .prepare("SELECT id, state, created_at FROM sessions WHERE json_extract(state, '$.playerAccountId') = ? ORDER BY created_at DESC LIMIT ?")
+      .bind(accountId, limit)
+      .all<{ id: string; state: string; created_at: number }>();
+    return r.results.map((x) => ({ id: x.id, state: JSON.parse(x.state) as SessionState, createdAt: x.created_at }));
+  }
   async saveState(id: string, state: SessionState) {
     await this.db.prepare('UPDATE sessions SET state = ? WHERE id = ?').bind(JSON.stringify(state), id).run();
   }
