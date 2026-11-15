@@ -4,6 +4,8 @@
 
 **Five AI fish buyers are rigging your auction. Build a case, offer leniency, and make one of them talk.**
 
+> Submitted version: tag `hackathon-submission` (bfe5d4d). Later commits are post-deadline fixes: https://github.com/CipherKuma/lowball/compare/hackathon-submission...main
+
 Every morning you land a catch at Pier Nine. Five buyers seal their bids, and the number keeps coming
 back the same, and low. Before the season they signed a secret pact. You can't out-haggle a cartel, so
 you do what real antitrust regulators do (it is modelled on the US DOJ Antitrust Division's
