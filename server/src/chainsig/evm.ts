@@ -95,6 +95,11 @@ export class EvmRpc {
     return BigInt(await this.call<string>('eth_getTransactionCount', [address, tag]));
   }
 
+  /** Gas the node estimates for a transfer (a fresh recipient costs far more than 21000). */
+  async estimateGas(tx: { from: string; to: string; value: string }): Promise<bigint> {
+    return BigInt(await this.call<string>('eth_estimateGas', [tx]));
+  }
+
   async chainId(): Promise<bigint> {
     return BigInt(await this.call<string>('eth_chainId', []));
   }

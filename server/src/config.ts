@@ -1,6 +1,6 @@
 import { BUYER_IDS, type BuyerId } from '../../shared/api.js';
 import { RealChain } from './chain/real.js';
-import { EvmRpc, relayPayout } from './chainsig/index.js';
+import { EvmRpc, checkPayoutAddress, relayPayout } from './chainsig/index.js';
 import type { GameDeps, PayoutRelay } from './game/ctx.js';
 import { NearAiLlm } from './llm/client.js';
 import { costUsd, DEFAULT_NEARAI_BUDGET_USD, DEFAULT_TTS_MAX_PER_SESSION } from './pricing.js';
@@ -69,6 +69,7 @@ export function buildDeps(env: Env): GameDeps {
     const evm = new EvmRpc({ urls: env.SEPOLIA_RPC_URLS ? env.SEPOLIA_RPC_URLS.split(',').map((s) => s.trim()) : undefined });
     const deskId = env.DESK_ACCOUNT_ID || `desk.${contractId}`;
     const payout: PayoutRelay = {
+      check: (to) => checkPayoutAddress(to, { near: rpc, evm, deskId }),
       relay: (seasonId, o) => relayPayout(seasonId, { near: rpc, evm, deskId, waitSignedMs: o.waitSignedMs, waitReceiptMs: o.waitReceiptMs }),
     };
     const pactKeys = {} as Record<BuyerId, (typeof buyerKeys)[BuyerId]['pact']>;

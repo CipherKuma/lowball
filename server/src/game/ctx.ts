@@ -20,7 +20,16 @@ export interface GameConfig {
 }
 
 /** Cross-chain payout relayer (server/src/chainsig). Absent when the Worker has none configured. */
+export interface PayoutCheckResult {
+  ok: boolean;
+  gasNeeded: string;
+  gasLimit: string;
+  reason?: string;
+}
+
 export interface PayoutRelay {
+  /** can the desk pay this address within its configured gas limit? Absent: unchecked. */
+  check?(to: string): Promise<PayoutCheckResult>;
   relay(
     seasonId: number,
     o: { waitSignedMs: number; waitReceiptMs: number },

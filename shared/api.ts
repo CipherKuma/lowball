@@ -52,7 +52,9 @@ export type ServerErrorCode =
   | 'ALREADY_FORGED'
   // additive: wallet sign-in (NEP-413) and wallet-mode seasons, and the short-recording guard
   | 'AUTH_BAD_SIGNATURE' | 'AUTH_NONCE_USED' | 'AUTH_NONCE_EXPIRED' | 'AUTH_NONCE_UNKNOWN'
-  | 'AUTH_NOT_FULL_ACCESS' | 'AUTH_BAD_RECIPIENT' | 'AUTH_REQUIRED' | 'TOO_SHORT';
+  | 'AUTH_NOT_FULL_ACCESS' | 'AUTH_BAD_RECIPIENT' | 'AUTH_REQUIRED' | 'TOO_SHORT'
+  // additive: the payout desk cannot pay an EVM address that does not exist on Sepolia yet
+  | 'PAYOUT_ADDRESS_UNSUPPORTED';
 
 export type ErrorCode = ContractErrorCode | ServerErrorCode;
 

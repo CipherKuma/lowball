@@ -10,6 +10,7 @@ import {
   CreateSessionSchema,
   WalletSessionSchema,
   EventsQuerySchema,
+  PayoutCheckQuerySchema,
   LeniencySchema,
   SessionIdSchema,
   StepSchema,
@@ -117,11 +118,24 @@ export function createApp(o: AppOptions): Hono {
     // wallet mode needs the bearer token before anything else is touched
     const account = wallet ? await requireAccount(authOf(c), c.req.header('authorization')) : null;
     const deps = o.deps(c);
+    const payoutEvm = wallet ? wallet.payoutEvm : guest!.payoutEvm;
+    if (payoutEvm && deps.payout?.check) {
+      const chk = await deps.payout.check(payoutEvm);
+      if (!chk.ok) throw new AppError('PAYOUT_ADDRESS_UNSUPPORTED');
+    }
     const ip = c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for') ?? 'local';
     const used = await deps.store.countSessionsSince(ip, Date.now() - 3_600_000);
     if (used >= o.maxSessionsPerIpHour(c)) throw new AppError('RATE_LIMITED');
     if (wallet && account) return c.json(await createSession(deps, '', ip, wallet.payoutEvm, { accountId: account.accountId }));
     return c.json(await createSession(deps, guest!.playerPublicKey, ip, guest!.payoutEvm));
+  });
+
+  app.get('/api/payout/check', async (c) => {
+    const q = PayoutCheckQuerySchema.safeParse({ to: c.req.query('to') });
+    if (!q.success) throw new AppError('BAD_REQUEST', 'to must be a 0x address (40 hex characters).');
+    const deps = o.deps(c);
+    if (!deps.payout?.check) return c.json({ ok: true, gasNeeded: '0', gasLimit: '0', reason: 'unchecked' });
+    return c.json(await deps.payout.check(q.data.to));
   });
 
   app.get('/api/session/:id/events', async (c) => {

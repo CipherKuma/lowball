@@ -86,6 +86,12 @@ export const SERVER_ERRORS: Record<string, ErrorInfo> = {
   AUTH_NOT_FULL_ACCESS: { message: 'That key is not a full access key of this account.', retryable: false, status: 401 },
   AUTH_BAD_RECIPIENT: { message: 'The sign-in message does not match what was issued.', retryable: false, status: 401 },
   AUTH_REQUIRED: { message: 'Sign in with your wallet first.', retryable: false, status: 401 },
+  PAYOUT_ADDRESS_UNSUPPORTED: {
+    message:
+      'That Ethereum address has never been used on Sepolia, and the payout desk can only pay an address that already exists there. Send it any amount of Sepolia ETH first, or take your payout in NEAR.',
+    retryable: false,
+    status: 422,
+  },
   TOO_SHORT: { message: 'That was too short to hear. Try again.', retryable: false, status: 422 },
   TEE_UNAVAILABLE: { message: "A buyer's enclave job did not complete. Try again.", retryable: true, status: 503 },
 };

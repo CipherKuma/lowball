@@ -39,3 +39,5 @@ export const TtsQuerySchema = z.object({
   session: z.string().uuid(),
   seq: z.coerce.number().int().min(1).max(1_000_000),
 });
+
+export const PayoutCheckQuerySchema = z.object({ to: z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'to must be 0x followed by 40 hex characters') });
