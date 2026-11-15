@@ -1,11 +1,13 @@
 import {bundle} from '@remotion/bundler';
 import {openBrowser,renderStill,selectComposition} from '@remotion/renderer';
-import {mkdirSync,writeFileSync} from 'node:fs';
+import {existsSync,mkdirSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
 const frames=process.argv.slice(2).map(Number);
 if(!frames.length||frames.some(f=>!Number.isInteger(f)||f<0||f>=4050))throw new Error('Supply frames from 0 to 4049');
-const disk=spawnSync('/Users/gabrielantonyxaviour/.agents/bin/disk-check',[],{stdio:'inherit'});
+// Optional local disk guard ($HOME/.agents/bin/disk-check); skipped where it doesn't exist.
+const diskCheck=`${process.env.HOME}/.agents/bin/disk-check`;
+const disk=existsSync(diskCheck)?spawnSync(diskCheck,[],{stdio:'inherit'}):{status:0};
 if(disk.status!==0)process.exit(disk.status??1);
 mkdirSync('review',{recursive:true});
 const serveUrl=await bundle({entryPoint:resolve('src/index.ts'),outDir:resolve('build/review')});

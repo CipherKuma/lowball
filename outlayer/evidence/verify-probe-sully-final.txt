@@ -112,5 +112,6 @@
     reproduce            outlayer-verify tx 8ZdsCrCCewf8wJotGMdi2pGwTbjKEmK9zZnpfL2hSShu
                          --network testnet
 
-  Evidence bundle written to /Users/gabrielantonyxaviour/Documents/hackathons/near-lowball/outlayer/evidence/bundle-probe-sully-final-8ZdsCrCC.json
-  Re-check it with no network at all: outlayer-verify bundle /Users/gabrielantonyxaviour/Documents/hackathons/near-lowball/outlayer/evidence/bundle-probe-sully-final-8ZdsCrCC.json --offline
+  Evidence bundle written to <repo>/outlayer/evidence/bundle-probe-sully-final-8ZdsCrCC.json
+  Re-check it with no network at all: outlayer-verify bundle <repo>/outlayer/evidence/bundle-probe-sully-final-8ZdsCrCC.json --offline
+  [paths redacted on 15 Nov 2026: the local absolute repo path is shown as <repo>; the tool output is otherwise unchanged]
