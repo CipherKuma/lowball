@@ -80,6 +80,9 @@ export const api = {
   casefile: (id: string) => call<CasefileResponse>(`/api/session/${id}/casefile`),
   /** one season's standing (open or closed), to resume it or reopen its case file */
   summary: (id: string) => call<SeasonSummary>(`/api/session/${encodeURIComponent(id)}/summary`),
+  /** can the payout desk pay this Sepolia address? (a never-used address needs more gas than the desk signs for) */
+  payoutCheck: (to: string) =>
+    call<{ ok: boolean; gasNeeded: string; gasLimit: string; reason?: string }>(`/api/payout/check?to=${encodeURIComponent(to)}`),
   /** every season the signed-in wallet played, newest first */
   mySeasons: (token: string) => call<{ seasons: SeasonSummary[] }>('/api/me/seasons', { headers: bearer(token) }),
   ttsUrl: (id: string, seq: number) => `${BASE}/api/tts?session=${encodeURIComponent(id)}&seq=${seq}`,

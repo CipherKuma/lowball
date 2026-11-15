@@ -10,6 +10,7 @@ import { Title } from './components/Title';
 import { TopBar } from './components/TopBar';
 import { Tutorial } from './components/tutorial/Tutorial';
 import { MaterialDefs } from './components/ui/MaterialDefs';
+import { api } from './lib/api';
 import { audio } from './lib/audio';
 import { connectEthereum, EvmError } from './lib/evm';
 import { useIdentity } from './lib/identity';
@@ -27,6 +28,18 @@ const readDone = () => {
   }
 };
 
+const UNPAYABLE =
+  'That Ethereum address has never been used on Sepolia, and the payout desk can only pay an address that already exists there. Send it any amount of Sepolia ETH first, or take your payout in NEAR.';
+/** null when the desk can pay `address` (or the check could not run); otherwise the reason to show. */
+async function payoutRefusal(address: string): Promise<string | null> {
+  try {
+    const r = await api.payoutCheck(address);
+    return r.ok ? null : UNPAYABLE;
+  } catch {
+    return null;
+  }
+}
+
 export function App() {
   const g = useGame();
   const id = useIdentity();
@@ -38,7 +51,8 @@ export function App() {
     setEvm({ address: null, busy: true, error: null });
     try {
       const { address } = await connectEthereum();
-      setEvm({ address, busy: false, error: null });
+      const unpayable = await payoutRefusal(address);
+      setEvm(unpayable ? { address: null, busy: false, error: unpayable } : { address, busy: false, error: null });
     } catch (e) {
       setEvm({ address: null, busy: false, error: e instanceof EvmError ? e.message : 'The Ethereum wallet did not answer.' });
     }
@@ -66,6 +80,21 @@ export function App() {
   // Signed in with an Ethereum wallet (0x NEAR account): that address is the default Chain Signatures payout.
   const [payNear, setPayNear] = useState(false);
   const payoutAddress = evm.address ?? (payNear ? null : id.evmAddress ?? null);
+  // An Ethereum sign-in defaults the payout to that address; fall back to NEAR when the desk cannot pay it.
+  useEffect(() => {
+    const a = id.evmAddress;
+    if (!a || evm.address || payNear) return;
+    let live = true;
+    void payoutRefusal(a).then((why) => {
+      if (live && why) {
+        setPayNear(true);
+        setEvm({ address: null, busy: false, error: why });
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, [id.evmAddress, evm.address, payNear]);
   const openTutorial = () => {
     audio.unlock();
     setScreen('tutorial');
