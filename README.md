@@ -101,6 +101,9 @@ confession, a forged one, or a replayed one is refused on-chain.
   access the shared master secret outside an enclave.
 - Simulation numbers come from a mock chain that enforces the contract's rules; live seasons are on testnet.
 - Testnet only: bonds and payouts are testnet NEAR and Sepolia ETH.
+- A Sepolia payout needs an address that already exists on Sepolia (has held any Sepolia ETH). Sepolia now
+  charges about 207,000 gas to create a new account, and the payout desk signs every payout with a 21,000 gas
+  limit, so the game checks the address first and offers the NEAR payout instead.
 - HOT and MyNearWallet don't appear in NEAR Connect on testnet (their manifests don't mark testnet support).
   NEAR Auth (FastAuth) isn't offered: its shared testnet login accepts only a localhost callback.
 
