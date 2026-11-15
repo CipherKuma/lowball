@@ -1,6 +1,6 @@
 # Lowball UI — direction A, "Under the lamp"
 
-Approved by Gabriel, 14 Nov 2026 21:50 IST. References: Papers, Please (documents on a desk), Cultist Simulator
+Approved by the team, 14 Nov 2026 21:50 IST. References: Papers, Please (documents on a desk), Cultist Simulator
 (cards on a table), Genesis Noir teaser (posters pinned to a wall), and for the back room only, Detective Box /
 Cuchillo Midnight (camera framing, tape-deck readouts). The painted art in `public/art` stays; it is good.
 

@@ -1,6 +1,6 @@
 # Lowball — brief 3: ElevenLabs depth + real-world data (agent contract; terse)
 
-Hand back by **12:00Z**. Testnet + existing keys only. Gabriel approved generous ElevenLabs use
+Hand back by **12:00Z**. Testnet + existing keys only. The team approved generous ElevenLabs use
 (credits are plentiful); still cache everything you generate. Same git rules (explicit paths,
 `features:` prefix, Claude-Session trailer). Files < 300 lines. zod on every input, `{error, code}`.
 

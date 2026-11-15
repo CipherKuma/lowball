@@ -12,8 +12,7 @@ are on the record, lean on a buyer in the back room, then offer **leniency**. Th
 the signed pact to our NEAR contract walks free. Every other signer loses their bond to you. A second
 confession, a forged one, or a replayed one is refused on-chain.
 
-- **Play:** https://play.lowball-game.pages.dev · **Connect your NEAR wallet** (NEAR Connect: Meteor web or extension, Intear, Nightly, Ledger, or MetaMask through Ethereum Wallets; NEAR testnet). Judging without a wallet? Use **Judge demo: no wallet** on the landing page. · **Demo video:** _[X post link — added at submission]_
-- **Also filed at this hackathon:** _[other filed project — Gabriel names it at submission]_
+- **Play:** https://play.lowball-game.pages.dev · **Connect your NEAR wallet** (NEAR Connect: Meteor web or extension, Intear, Nightly, Ledger, or MetaMask through Ethereum Wallets; NEAR testnet). Judging without a wallet? Use **Judge demo: no wallet** on the landing page. · **Demo video:** https://x.com/CipherKuma/status/2121749417464311999
 - **Contract:** [`lowball-ck.testnet`](https://testnet.nearblocks.io/address/lowball-ck.testnet) · **Payout desk:** [`desk.lowball-ck.testnet`](https://testnet.nearblocks.io/address/desk.lowball-ck.testnet)
 - **Tracks:** Games With Real Economies · Privacy & Private AI · Agent Economy
 

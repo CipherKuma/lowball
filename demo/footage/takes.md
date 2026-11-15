@@ -50,7 +50,7 @@ Raw takes stay local until the final cut is approved, then go to Dropbox with `~
 
 ## Take 10 (final, wallet-first) — 15 Nov 2026 00:58 IST, season 64
 
-- Player: **cipherkuma.testnet** in the Meteor web wallet (team recording wallet, Chrome on CDP 9412, approved by Gabriel
+- Player: **cipherkuma.testnet** in the Meteor web wallet (team recording wallet, Chrome on CDP 9412, approved by the team
   for testnet recording). Sign-in = NEAR Connect → Meteor "Sign Message: Sign in to Lowball"; leniency = Meteor
   "Approve Transaction" for `offer_leniency` (`58XrpDpt7WNFrxL7qwygCfAvVhKF6TsE1xS2NQBT5Vjj`).
 - Origin: local production build of `ce51dc2` on `http://127.0.0.1:4399`, `/api` proxied to the live Worker (live testnet

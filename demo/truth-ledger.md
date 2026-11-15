@@ -31,7 +31,7 @@ commit `ce51dc2` (`http://127.0.0.1:4399`) pointed at the live API and the live 
 | Without leniency the ring held (96% identical); with it a buyer cracked in 9 of 10 seasons | `server/sim/RESULTS.md` (real NEAR AI calls, mocked chain) | the ledger scene shows the caveat |
 
 Not claimed: enclave mode in this take; a Sepolia payout in this take; that the fisher's voice is a live human; that the
-recording browser was a stranger's (it is the team's recording wallet, approved by Gabriel for testnet recording).
+recording browser was a stranger's (it is the team's recording wallet, approved by the team for testnet recording).
 Continuity: from Connect to the case file the season plays in order with no skipped stage. Three stretches are shown faster
 than real time and labelled on screen (the season being written ×7, next day → Sully's poster ×7, back to the table →
 the day-2 sale ×4); the Meteor screens are zoomed crops of the real wallet tab (take-10-m1, take-10-m2), shown in real time.

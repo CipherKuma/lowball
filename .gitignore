@@ -15,3 +15,7 @@ demo/out/
 demo/vo2/*.json
 demo/actor/*.wav
 demo/*.log
+
+# Submission packet drafts: local only (the filed post is linked from the README)
+demo/submission.md
+demo/x-post.md

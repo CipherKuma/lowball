@@ -17,7 +17,7 @@ film's composition under a new folder there named `lowball/`; copy assets in, do
 - If a take shows something different from the script (e.g. nobody confesses), keep the take honest
   and pick another take; never fake an outcome.
 
-## Gabriel's machine (binding, 14 Nov 16:35 IST)
+## The build machine (binding, 14 Nov 16:35 IST)
 No audio may play on the Mac and no window may appear or take focus. Launch Chrome yourself with
 `--headless=new --mute-audio --remote-debugging-port=<port>` and attach with `agent-browser connect <port>`;
 agent-browser's `--args` did not reach Chrome on 14 Nov, so never rely on it. Before any page loads, map
