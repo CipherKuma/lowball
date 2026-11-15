@@ -10,7 +10,7 @@ import type {
 import { ApiFailure, api } from './api';
 import { expireSession, walletAuth } from './identity';
 import { offerLeniencyWithWallet, type LeniencyState } from './identity/walletLeniency';
-import { freshFisherKey, signOfferLeniency } from './wallet';
+import { adoptFisherKey, freshFisherKey, signOfferLeniency, type FisherKey } from './wallet';
 
 export type { LeniencyState } from './identity/walletLeniency';
 
@@ -19,6 +19,8 @@ export interface StartOptions {
   mode?: 'guest' | 'wallet';
   /** "pay me on Sepolia": slashed NEAR is paid cross-chain to this 0x address */
   payoutEvm?: string;
+  /** pick up a season this player already started (after a reload, or from "Your seasons") instead of opening one */
+  resume?: { meta: SessionMeta; fisherKey?: FisherKey };
 }
 
 export interface SessionMeta {
@@ -64,6 +66,12 @@ export class LiveDriver implements Driver {
   constructor(private readonly opts: StartOptions = {}) {}
 
   async start(): Promise<SessionMeta> {
+    if (this.opts.resume) {
+      if (this.opts.resume.fisherKey) adoptFisherKey(this.opts.resume.fisherKey);
+      this.meta = this.opts.resume.meta;
+      this.loop();
+      return this.meta;
+    }
     let s;
     if (this.opts.mode === 'wallet') {
       const auth = await walletAuth();
@@ -105,7 +113,9 @@ export class LiveDriver implements Driver {
         const r = await api.events(this.meta.sessionId, this.after);
         if (r.events.length) this.after = r.events[r.events.length - 1].seq;
         this.listeners.forEach((l) => l(r.events, r.status));
-        if (r.status.phase === 'closed' || r.status.phase === 'failed') this.stop();
+        // a closed season still pages through its history (200 events a call) before polling stops
+        const caughtUp = !r.events.length || this.after >= (r.status.lastSeq ?? 0);
+        if ((r.status.phase === 'closed' || r.status.phase === 'failed') && caughtUp) this.stop();
       } catch {
         /* transient; the next tick retries */
       } finally {

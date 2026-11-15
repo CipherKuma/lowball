@@ -4,6 +4,7 @@ import { Backdrop } from './components/Backdrop';
 import { CaseFile } from './components/CaseFile';
 import { Identity } from './components/Identity';
 import { Room } from './components/Room';
+import { Seasons } from './components/Seasons';
 import { Setup } from './components/Setup';
 import { Title } from './components/Title';
 import { TopBar } from './components/TopBar';
@@ -12,9 +13,11 @@ import { MaterialDefs } from './components/ui/MaterialDefs';
 import { audio } from './lib/audio';
 import { connectEthereum, EvmError } from './lib/evm';
 import { useIdentity } from './lib/identity';
+import { metaOf, recordFor, useSeasons } from './lib/seasons';
 import { useGame } from './lib/useGame';
+import type { SeasonSummary } from '../../shared/api';
 
-type Screen = 'title' | 'tutorial' | 'identity' | 'setup' | 'room' | 'case';
+type Screen = 'title' | 'tutorial' | 'identity' | 'setup' | 'room' | 'case' | 'seasons';
 const TUTORIAL_KEY = 'lowball.tutorial.v1';
 const readDone = () => {
   try {
@@ -40,11 +43,26 @@ export function App() {
       setEvm({ address: null, busy: false, error: e instanceof EvmError ? e.message : 'The Ethereum wallet did not answer.' });
     }
   };
-  // A wallet season makes no account (no account_created event), so the player is the signed-in wallet account.
+  // A wallet season makes no account (no account_created event), so the player is the season's wallet account.
   const view =
-    g.view.playerAccountId || g.meta?.playerKind !== 'wallet' ? g.view : { ...g.view, playerAccountId: id.kind === 'wallet' ? id.accountId : null };
+    g.view.playerAccountId || g.meta?.playerKind !== 'wallet' ? g.view : { ...g.view, playerAccountId: g.meta.playerAccountId };
 
   const walletReady = id.status === 'ready' && id.kind === 'wallet' && !!id.accountId;
+  const walletAccount = walletReady ? id.accountId : null;
+  const seasons = useSeasons(walletAccount);
+  const { reload: reloadSeasons } = seasons;
+  useEffect(() => {
+    if (screen === 'title' || screen === 'seasons') reloadSeasons();
+  }, [screen, reloadSeasons]);
+  // A season resumes where its signer is: the wallet that played it, or the key this browser kept for it.
+  const canResume = (s: SeasonSummary) => (s.playerKind === 'wallet' ? s.playerAccountId === walletAccount : !!recordFor(s.sessionId)?.fisherKey);
+  const pickUp = (s: SeasonSummary) => {
+    audio.unlock();
+    setChosen(s.playerKind);
+    if (!s.closed) audio.playMusic('harbour_loop', 2400);
+    g.start({ resume: { meta: metaOf(s), fisherKey: recordFor(s.sessionId)?.fisherKey } });
+    setScreen(s.closed ? 'case' : 'setup');
+  };
   // Signed in with an Ethereum wallet (0x NEAR account): that address is the default Chain Signatures payout.
   const [payNear, setPayNear] = useState(false);
   const payoutAddress = evm.address ?? (payNear ? null : id.evmAddress ?? null);
@@ -93,9 +111,9 @@ export function App() {
   // Setup ends when the first lot is on the zinc.
   const current: Screen = screen === 'setup' && view.lot ? 'room' : screen;
   const bg =
-    current === 'case' ? '/art/bg_casefile.webp' : current === 'title' || current === 'identity' ? '/art/bg_pier_title.webp' : '/art/bg_auction.webp';
+    current === 'case' || current === 'seasons' ? '/art/bg_casefile.webp' : current === 'title' || current === 'identity' ? '/art/bg_pier_title.webp' : '/art/bg_auction.webp';
   const tense = view.leniencyOpen && !view.slashed && !view.holdout;
-  const front = current === 'title' || current === 'tutorial' || current === 'identity';
+  const front = current === 'title' || current === 'tutorial' || current === 'identity' || current === 'seasons';
   const kindNow = g.meta?.playerKind ?? chosen ?? 'guest';
 
   return (
@@ -103,7 +121,7 @@ export function App() {
       <MaterialDefs />
       <Backdrop
         src={bg}
-        dim={current === 'title' ? 0.3 : current === 'identity' || current === 'tutorial' ? 0.55 : current === 'case' ? 0.35 : tense ? 0.35 : 0.12}
+        dim={current === 'title' ? 0.3 : current === 'identity' || current === 'tutorial' || current === 'seasons' ? 0.55 : current === 'case' ? 0.35 : tense ? 0.35 : 0.12}
         tense={tense}
       />
       <div className="app">
@@ -117,8 +135,24 @@ export function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
           >
+            {current === 'seasons' && (
+              <Seasons
+                seasons={seasons}
+                walletAccount={walletAccount}
+                canResume={canResume}
+                onResume={pickUp}
+                onOpenCase={pickUp}
+                onBack={() => setScreen('title')}
+              />
+            )}
             {current === 'title' && (
               <Title
+                docket={{
+                  count: seasons.seasons.length,
+                  open: seasons.open,
+                  onResume: pickUp,
+                  onOpen: () => setScreen('seasons'),
+                }}
                 onConnect={connectFromTitle}
                 onJudgeDemo={judgeDemo}
                 onHowTo={openTutorial}
@@ -187,12 +221,21 @@ export function App() {
                 }}
               />
             )}
-            {current === 'case' && (
+            {current === 'case' && !view.closed && (
+              <main className="docket">
+                <p className="typed docket-note" role="status">
+                  {g.failure ? g.failure.message : 'Pulling the folder from the cabinet…'}
+                </p>
+                {g.failure && <button className="typed-link docket-back" onClick={() => setScreen('seasons')}>← Back to your seasons</button>}
+              </main>
+            )}
+            {current === 'case' && view.closed && (
               <CaseFile
                 load={g.loadCasefile}
                 view={view}
                 wiretapUrl={g.wiretapUrl()}
                 forge={g.forge}
+                onSeasons={() => setScreen('seasons')}
                 onReplay={() => {
                   setScreen('setup');
                   g.start({ mode: chosen ?? undefined, payoutEvm: chosen === 'guest' ? evm.address ?? undefined : payoutAddress ?? undefined });

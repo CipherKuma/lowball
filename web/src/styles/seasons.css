@@ -1,0 +1,98 @@
+/* "Your seasons": the harbour office's docket. One manila folder per season, a tab with the season number,
+   a verdict stamp, and the one thing to do with it (resume, or open its case file). */
+.docket {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 22px;
+  padding: clamp(22px, 5vh, 56px) max(var(--gutter), env(safe-area-inset-right, 0px)) 40px max(var(--gutter), env(safe-area-inset-left, 0px));
+}
+.docket > .lamp-pool { position: fixed; }
+.docket-head { text-align: center; max-width: 60ch; }
+.docket-kicker { margin: 0; font-size: 14px; letter-spacing: 0.24em; color: var(--lamp); }
+.docket-title {
+  margin: 6px 0 4px;
+  font-size: clamp(44px, 6vw, 76px);
+  font-weight: 900;
+  color: var(--text);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+.docket-sub { margin: 0; font-size: 15px; line-height: 1.45; color: var(--text); opacity: 0.86; text-shadow: 0 1px 3px #000, 0 0 14px rgba(0, 0, 0, 0.8); }
+.docket-note { margin: 0; font-size: 15px; color: var(--muted); text-align: center; }
+.docket-note--err { display: grid; justify-items: center; gap: 4px; color: var(--text); }
+.docket-note--err p { margin: 0; }
+.docket-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 440px;
+  padding: 26px 28px;
+  text-align: center;
+  transform: rotate(-0.6deg);
+  box-shadow: var(--shadow-lift);
+}
+.docket-empty p { margin: 0; color: var(--paper-ink); }
+.docket-empty .spoken { font-size: 24px; }
+
+.docket-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: min(980px, 100%);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 470px));
+  justify-content: center;
+  gap: 30px 26px;
+}
+.folder {
+  position: relative;
+  min-width: 0;
+  margin-top: 18px;
+  padding: 0;
+  transform: rotate(-0.5deg);
+  box-shadow: var(--shadow-lift);
+}
+.folder--tilt { transform: rotate(0.6deg); }
+.folder-tab {
+  position: absolute;
+  top: -22px;
+  left: 18px;
+  padding: 4px 14px 2px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--paper-ink);
+  background: inherit;
+  background-color: var(--manila);
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.18);
+}
+.folder-body { display: grid; gap: 10px; padding: 18px 20px 18px; }
+.folder-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.folder-when { margin: 0; font-size: 13.5px; color: var(--paper-ink-2); }
+.folder-stamp { flex-shrink: 0; font-size: 17px; margin-top: -4px; }
+.folder-line { margin: 0; font-size: 19px; line-height: 1.25; color: var(--paper-ink); }
+.folder-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.folder-facts div { min-width: 0; }
+.folder-facts dt { margin: 0 0 2px; font-size: 11px; }
+.folder-facts dd { margin: 0; font-size: 14px; line-height: 1.35; color: var(--paper-ink); overflow-wrap: anywhere; }
+.folder-actions { display: flex; align-items: center; gap: 12px; padding-top: 10px; border-top: 1px dashed rgba(31, 23, 14, 0.28); }
+.folder-btn { font-size: 17px; padding-inline: 20px; }
+.folder-locked { margin: 0; font-size: 14px; line-height: 1.4; color: var(--paper-ink-2); }
+.docket-back { font-size: 15px; }
+
+/* the landing's way in */
+.bill-docket { display: grid; justify-items: center; gap: 4px; }
+.bill-docket .ticket { background-color: var(--telegram); }
+
+@media (max-width: 560px) {
+  .folder-facts { grid-template-columns: 1fr; }
+  .folder-line { font-size: 17px; }
+  .folder-body { padding: 16px 16px; }
+}
+.cf-seasons { margin-left: auto; font-size: 15px; color: var(--text); text-shadow: 0 1px 2px #000; }

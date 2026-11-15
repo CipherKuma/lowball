@@ -10,6 +10,7 @@ import type {
   EventsResponse,
   ForgeResponse,
   LeniencyResponse,
+  SeasonSummary,
   StepAction,
   StepResponse,
 } from '../../../shared/api';
@@ -77,6 +78,10 @@ export const api = {
   leniency: (id: string, txHash?: string) =>
     call<LeniencyResponse>(`/api/session/${id}/leniency`, { method: 'POST', body: JSON.stringify(txHash ? { txHash } : {}) }),
   casefile: (id: string) => call<CasefileResponse>(`/api/session/${id}/casefile`),
+  /** one season's standing (open or closed), to resume it or reopen its case file */
+  summary: (id: string) => call<SeasonSummary>(`/api/session/${encodeURIComponent(id)}/summary`),
+  /** every season the signed-in wallet played, newest first */
+  mySeasons: (token: string) => call<{ seasons: SeasonSummary[] }>('/api/me/seasons', { headers: bearer(token) }),
   ttsUrl: (id: string, seq: number) => `${BASE}/api/tts?session=${encodeURIComponent(id)}&seq=${seq}`,
   wiretapUrl: (id: string) => `${BASE}/api/session/${encodeURIComponent(id)}/wiretap`,
   forge: (id: string) => call<ForgeResponse>(`/api/session/${id}/forge`, { method: 'POST', body: '{}' }),

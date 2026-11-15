@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useState } from 'react';
-import type { BuyerId } from '../../../shared/api';
+import type { BuyerId, SeasonSummary } from '../../../shared/api';
 import { Counter } from './landing/Counter';
 import { Wall } from './landing/Wall';
 
@@ -11,12 +11,14 @@ interface Props {
   starting: boolean;
   tutorialDone: boolean;
   wallet: { status: 'idle' | 'connecting' | 'signing' | 'ready' | 'error'; accountId: string | null; error: string | null };
+  /** the player's own seasons: resume the one still in play, or open the docket */
+  docket?: { count: number; open: SeasonSummary | null; onResume: (s: SeasonSummary) => void; onOpen: () => void };
 }
 
 const DROP = [0.2, 0.9, 0.25, 1.15] as const;
 
 /** Landing: the noticeboard on the pier shed. One LOWBALL poster, the ring pinned round it, five sealed bids under it. */
-export function Title({ onConnect, onJudgeDemo, onHowTo, starting, tutorialDone, wallet }: Props) {
+export function Title({ onConnect, onJudgeDemo, onHowTo, starting, tutorialDone, wallet, docket }: Props) {
   const still = useReducedMotion();
   const [focus, setFocus] = useState<BuyerId | null>(null);
   const busy = starting || wallet.status === 'connecting' || wallet.status === 'signing';
@@ -59,6 +61,19 @@ export function Title({ onConnect, onJudgeDemo, onHowTo, starting, tutorialDone,
             </p>
             {wallet.error && <p className="bill-error typed" role="alert">{wallet.error}</p>}
           </div>
+
+          {docket && docket.count > 0 && (
+            <div className="bill-docket">
+              {docket.open && (
+                <button className="ticket" onClick={() => docket.onResume(docket.open!)} disabled={busy}>
+                  Resume season #{docket.open.seasonId ?? '—'} · day {Math.max(1, docket.open.day)} of {docket.open.days}
+                </button>
+              )}
+              <button className="typed-link" onClick={docket.onOpen}>
+                Your seasons ({docket.count}): case files and payouts
+              </button>
+            </div>
+          )}
 
           <div className="bill-alt">
             <button className="ticket" onClick={onJudgeDemo} disabled={busy} aria-label="Judge demo: no wallet">Judge demo: no wallet</button>

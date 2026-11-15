@@ -28,12 +28,15 @@ export function CaseFile({
   wiretapUrl,
   forge,
   onReplay,
+  onSeasons,
 }: {
   load: () => Promise<CasefileResponse>;
   view: View;
   wiretapUrl: string | null;
   forge: () => Promise<ForgeResponse>;
   onReplay: () => void;
+  /** back to the docket of this player's seasons */
+  onSeasons?: () => void;
 }) {
   const still = useReducedMotion();
   const [data, setData] = useState<CasefileResponse | null>(null);
@@ -162,6 +165,11 @@ export function CaseFile({
             Play another season
           </button>
           <span className="plaque-note">A fresh pact, the same five buyers, new money on the line.</span>
+          {onSeasons && (
+            <button className="typed-link cf-seasons" onClick={onSeasons}>
+              All your seasons →
+            </button>
+          )}
         </footer>
       </motion.div>
     </main>

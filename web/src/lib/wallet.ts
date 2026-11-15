@@ -40,6 +40,16 @@ export function freshFisherKey(): FisherKey {
 }
 
 let memo: FisherKey | null = null;
+
+/** Resuming a guest season: its own key signs offer_leniency again. */
+export function adoptFisherKey(key: FisherKey) {
+  memo = key;
+  try {
+    localStorage.setItem(STORE, JSON.stringify(key));
+  } catch {
+    /* private mode: memory only */
+  }
+}
 export function currentFisherKey(): FisherKey | null {
   return memo ?? read();
 }

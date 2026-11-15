@@ -5,7 +5,9 @@ import { audio } from './audio';
 import { LiveDriver, type Driver, type LeniencyState, type SessionMeta, type StartOptions } from './driver';
 import { getIdentity } from './identity/store';
 import { PreviewDriver } from './preview';
+import { recordSeason } from './seasons';
 import { apply, initialView, type View } from './state';
+import { currentFisherKey } from './wallet';
 
 type Act = { type: 'events'; events: GameEvent[]; status: SessionStatus | null } | { type: 'reset' };
 
@@ -95,6 +97,8 @@ export function useGame() {
   const [pending, setPending] = useState<Pending>(null);
   const [failure, setFailure] = useState<{ message: string; code: string; retry?: () => void } | null>(null);
   const firstDay = useRef({ done: false });
+  // Resuming replays the whole season's history; only events after that history are voiced and cued.
+  const replayTo = useRef(-1);
   const [leniencyState, setLeniencyState] = useState<LeniencyState>('idle');
 
   const run = useCallback(async (label: Pending, fn: () => Promise<unknown>, retry?: () => void) => {
@@ -113,20 +117,27 @@ export function useGame() {
 
   /** `mode` defaults to the signed-in identity: a connected wallet plays as the wallet, anything else as a guest. */
   const start = useCallback((opts: StartOptions = {}) => {
-    const mode = opts.mode ?? (getIdentity().kind === 'wallet' ? 'wallet' : 'guest');
+    const mode = opts.resume ? (opts.resume.meta.playerKind ?? 'guest') : (opts.mode ?? (getIdentity().kind === 'wallet' ? 'wallet' : 'guest'));
+    const resuming = !!opts.resume && !preview;
     const d: Driver = preview ? new PreviewDriver() : new LiveDriver({ ...opts, mode });
     setLeniencyState('idle');
+    setMeta(null);
     driverRef.current = d;
-    firstDay.current.done = false;
+    firstDay.current.done = resuming;
+    replayTo.current = resuming ? Number.POSITIVE_INFINITY : -1;
     dispatch({ type: 'reset' });
     d.subscribe((events, status) => {
+      if (driverRef.current !== d) return;
+      if (replayTo.current === Number.POSITIVE_INFINITY && status) replayTo.current = status.lastSeq;
       dispatch({ type: 'events', events, status });
-      for (const e of events) cue(e, d, firstDay.current);
+      for (const e of events) if (e.seq > replayTo.current) cue(e, d, firstDay.current);
     });
     const go = () =>
       run('start', async () => {
         const m = await d.start();
         setMeta(m);
+        if (resuming) return;
+        if (d.kind === 'live') recordSeason(m, m.playerKind === 'wallet' ? null : currentFisherKey());
         await d.step('begin');
       }, go);
     void go();
