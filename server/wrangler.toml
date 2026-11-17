@@ -36,4 +36,6 @@ ALLOWED_ORIGIN = "*"
 #        server signs with the buyers' pact keys ("standard"). on: always enclave. off: always standard.
 #  Right before create_season the Worker registers the buyers' keys for the chosen mode (register_buyer_key) under a
 #  lock, because the contract snapshots them there. See src/tee/mode.ts and outlayer/deployed.json.
-TEE_MODE = "auto"
+# 17 Nov: every enclave sign_pact job failed in 11-18 s (both attempts) while probes passed, so auto kept picking
+# enclave mode and no cartel could form. Live seasons run standard mode until that path is fixed; "auto" restores it.
+TEE_MODE = "off"

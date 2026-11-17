@@ -96,6 +96,9 @@ confession, a forged one, or a replayed one is refused on-chain.
 - OutLayer's testnet executor pool is unreliable (job latency from 15 s to over two minutes on 14 Nov). When it
   is unhealthy, a season runs in **standard mode**: the buyers' keys are server-held for that season, the
   game says so, and the contract's key snapshot records it.
+- Since 17 Nov every live season runs in standard mode: the enclaves still pass their probe job, but every
+  enclave pact-signing job failed, so no cartel could form. Enclave mode returns once that path is fixed; the
+  recorded enclave runs and their attestation evidence are in `outlayer/evidence/`.
 - Attestation checks the TDX quote, GPU evidence and signer binding; NEAR AI publishes no measurement
   allowlist, so measurements are recorded, not matched. OutLayer's own governance can, per its docs,
   access the shared master secret outside an enclave.
