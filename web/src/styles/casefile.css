@@ -125,3 +125,7 @@
   .cf-tabbtn { padding: 12px 14px 10px; font-size: 15px; }
   .cf-foot { flex-direction: column; align-items: stretch; }
 }
+/* how the buyers signed this season: an honest slip under the cover facts */
+.cf-mode { position: relative; z-index: 1; margin: 14px 0 0; padding: 8px 12px 7px; font-size: 14px; line-height: 1.45; color: var(--paper-ink); transform: rotate(-0.3deg); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22); }
+.cf-mode .label { display: block; margin-bottom: 2px; font-size: 11px; }
+.cf-mode[data-mode='standard'] { border-left: 3px solid var(--stamp); }

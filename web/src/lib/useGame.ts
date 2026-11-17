@@ -132,12 +132,17 @@ export function useGame() {
       dispatch({ type: 'events', events, status });
       for (const e of events) if (e.seq > replayTo.current) cue(e, d, firstDay.current);
     });
+    // "Try again" after a failed setup resumes the same season: the session is opened once, and only `begin`
+    // (which the server resumes, e.g. after a standard-mode restart outran the proxy) is sent again.
+    let opened: SessionMeta | null = null;
     const go = () =>
       run('start', async () => {
-        const m = await d.start();
-        setMeta(m);
-        if (resuming) return;
-        if (d.kind === 'live') recordSeason(m, m.playerKind === 'wallet' ? null : currentFisherKey());
+        if (!opened) {
+          opened = await d.start();
+          setMeta(opened);
+          if (resuming) return;
+          if (d.kind === 'live') recordSeason(opened, opened.playerKind === 'wallet' ? null : currentFisherKey());
+        } else if (resuming) return;
         await d.step('begin');
       }, go);
     void go();

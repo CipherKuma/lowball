@@ -67,6 +67,8 @@ export function CaseFile({
 
   const verified = data?.receipts.filter((r) => r.verification.verified).length ?? 0;
   const confessor = view.slashed?.confessor;
+  // The season's last mode event wins: a season that restarted in standard mode says so.
+  const seasonMode = view.mode?.mode ?? data?.mode ?? null;
   const slashedCount = view.slashed?.slashed.length ?? 0;
 
   return (
@@ -114,6 +116,14 @@ export function CaseFile({
               </div>
             </dl>
           </header>
+          {seasonMode && (
+            <p className="cf-mode paper paper--telegram typed" data-mode={seasonMode}>
+              <span className="label">How the buyers signed</span>
+              {seasonMode === 'standard'
+                ? `This season ran in standard mode: the buyers signed with keys our server held, not keys sealed in Intel TDX enclaves.${view.mode?.reason ? ` ${view.mode.reason}` : ''}`
+                : "Enclave mode: each buyer's pact key was derived and used inside its own Intel TDX enclave on OutLayer, and never left it."}
+            </p>
+          )}
 
           <div className="cf-tabs" role="tablist" aria-label="Case file sections" onKeyDown={onTabKey}>
             {TABS.map(([k, label]) => (
