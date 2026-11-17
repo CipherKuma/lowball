@@ -30,6 +30,8 @@ export interface TeeRun {
   txHash: string;
   /** wall clock from send to the final result, for the latency record */
   ms: number;
+  /** OutLayer's own failure text from the receipt logs (e.g. output_storage_unpaid) when the output came back null */
+  error?: string;
 }
 
 /** TEE_MODE: 'auto' picks per season from enclave health, 'on' always uses enclaves, 'off' never does. */

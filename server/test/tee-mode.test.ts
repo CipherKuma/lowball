@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { BUYER_IDS, type GameEvent } from '../../shared/api.js';
 import { casefile, createSession, getEvents, leniency, step } from '../src/game/engine.js';
 import { toB64 } from '../src/near/bytes.js';
+import { PROBE_SEASON_ID } from '../src/tee/acts.js';
 import { assessHealth, HEALTH } from '../src/tee/mode.js';
 import type { TeeJobRow } from '../src/store/types.js';
 import { PLAYER_PK } from './helpers.js';
@@ -89,19 +90,19 @@ describe('TEE_MODE=auto', () => {
     expect(registrations(rig)).toHaveLength(0);
   });
 
-  it('no recent data: ONE probe job with a 60 s cap decides; it is recorded as a job', async () => {
+  it('no recent data: ONE drill pact (the real sign_pact op, probe_pact in the job record) with a 60 s cap decides', async () => {
     const ok = rigWithTee({}, {}, { teeMode: 'auto' });
     await start(ok.rig);
-    expect(ok.enclave.calls.filter((c) => c.op === 'probe')).toEqual([{ buyer: 'marlow', op: 'probe', cap: HEALTH.probeCapMs }]);
-    expect(modeEvent(await all(ok.rig, [...ok.rig.store.states.keys()][0]!))).toMatchObject({ mode: 'enclave', reason: expect.stringContaining('probe') });
-    expect((await ok.rig.store.recentTeeJobs(20)).filter((j) => j.op === 'probe' && j.ok)).toHaveLength(1);
+    expect(ok.enclave.calls.filter((c) => c.seasonId === PROBE_SEASON_ID)).toEqual([{ buyer: 'marlow', op: 'sign_pact', cap: HEALTH.probeCapMs, seasonId: PROBE_SEASON_ID }]);
+    expect(modeEvent(await all(ok.rig, [...ok.rig.store.states.keys()][0]!))).toMatchObject({ mode: 'enclave', reason: expect.stringContaining('drill pact') });
+    expect((await ok.rig.store.recentTeeJobs(20)).filter((j) => j.op === 'probe_pact' && j.ok)).toHaveLength(1);
 
-    const bad = rigWithTee({ fail: (_b, op) => op === 'probe' }, {}, { teeMode: 'auto' });
+    const bad = rigWithTee({ fail: (_b, op, input) => op === 'sign_pact' && input.season_id === PROBE_SEASON_ID }, {}, { teeMode: 'auto' });
     await start(bad.rig);
     expect(modeEvent(await all(bad.rig, [...bad.rig.store.states.keys()][0]!))).toMatchObject({ mode: 'standard', reason: expect.stringContaining('probe failed') });
-    expect(bad.enclave.calls.filter((c) => c.op !== 'probe')).toHaveLength(0);
+    expect(bad.enclave.calls.filter((c) => c.seasonId !== PROBE_SEASON_ID)).toHaveLength(0);
     // the failed probe now counts against the enclaves for the next sessions (no second probe within 30 minutes)
-    expect((await bad.rig.store.recentTeeJobs(20)).some((j) => j.op === 'probe' && !j.ok)).toBe(true);
+    expect((await bad.rig.store.recentTeeJobs(20)).some((j) => j.op === 'probe_pact' && !j.ok)).toBe(true);
   });
 
   it('TEE_MODE=on always uses enclaves, off never does, whatever the health data says', async () => {

@@ -1,7 +1,7 @@
 import type { GameEvent } from '../../../shared/api.js';
 import type { SessionState } from '../game/state.js';
 
-export type ArtifactKind = 'receipt' | 'tx' | 'tee';
+export type ArtifactKind = 'receipt' | 'tx' | 'tee' | 'tee_error';
 
 export interface SpendEntry {
   model: string;

@@ -1,7 +1,7 @@
 // OutlayerTransport: the request_execution it sends and how it waits for the result (fake signer and RPC).
 import { describe, expect, it } from 'vitest';
 import { RpcError } from '../src/near/rpc.js';
-import { OutlayerTransport } from '../src/tee/outlayer.js';
+import { depositYocto, OutlayerTransport } from '../src/tee/outlayer.js';
 import type { TeeDeployment } from '../src/tee/types.js';
 
 const deployment: TeeDeployment = {
@@ -16,7 +16,7 @@ const deployment: TeeDeployment = {
   },
 };
 
-function rig(results: (() => unknown)[], sendOk = true) {
+function rig(results: (() => unknown)[], sendOk = true, depositYocto?: bigint) {
   const sent: { receiver: string; action: any; wait: string }[] = [];
   const signer = {
     accountId: 'house.testnet',
@@ -37,7 +37,7 @@ function rig(results: (() => unknown)[], sendOk = true) {
   };
   let t = 0;
   const transport = new OutlayerTransport({
-    deployment, signer: signer as never, rpc: rpc as never, sleep: async () => { t += 3000; }, now: () => t, timeoutMs: 20_000, pollMs: 3000,
+    deployment, signer: signer as never, rpc: rpc as never, sleep: async () => { t += 3000; }, now: () => t, timeoutMs: 20_000, pollMs: 3000, depositYocto,
   });
   return { transport, sent, calls };
 }
@@ -55,7 +55,9 @@ describe('OutlayerTransport', () => {
     expect(s.wait).toBe('NONE');
     expect(s.action.method).toBe('request_execution');
     expect(s.action.gas).toBe(300n * 10n ** 12n);
-    expect(s.action.deposit).toBe(7_100_000_000_000_000_000_000n);
+    // the run (0.0071 NEAR) plus storage for an 8 KB output (8192 x 1e19 yocto = 0.0819 NEAR), rounded up: 0.09 NEAR
+    expect(s.action.deposit).toBe(90_000_000_000_000_000_000_000n);
+    expect(s.action.deposit).toBeGreaterThan(7_100_000_000_000_000_000_000n + 8192n * 10n ** 19n);
     const args = JSON.parse(new TextDecoder().decode(s.action.args));
     expect(args.source.WasmUrl).toEqual({ url: 'https://f/bb.wasm', hash: 'bb', build_target: 'wasm32-wasip2' });
     expect(args.secrets_ref).toEqual({ profile: 'default', account_id: 'owner.testnet' });
@@ -87,5 +89,31 @@ describe('OutlayerTransport', () => {
     const t0 = Date.now();
     await expect(transport.run('sully', {}, { timeoutMs: 100 })).rejects.toMatchObject({ code: 'TEE_UNAVAILABLE' });
     expect(Date.now() - t0).toBeLessThan(3000);
+  });
+
+  it('the deposit is configurable (OUTLAYER_DEPOSIT_NEAR); a bad value falls back to the default', async () => {
+    const custom = rig([() => ok({ ok: true })], true, depositYocto('0.2'));
+    await custom.transport.run('odile', { op: 'x' });
+    expect(custom.sent[0]!.action.deposit).toBe(200_000_000_000_000_000_000_000n);
+    expect(depositYocto(undefined)).toBe(90_000_000_000_000_000_000_000n);
+    expect(depositYocto('')).toBe(90_000_000_000_000_000_000_000n);
+    expect(depositYocto('lots')).toBe(90_000_000_000_000_000_000_000n);
+    expect(depositYocto('0')).toBe(90_000_000_000_000_000_000_000n);
+  });
+
+  it('an OutLayer "Execution failed: output_storage_unpaid" receipt log comes back as the run\'s error, not a silent null', async () => {
+    const text = 'Execution failed: "output_storage_unpaid: the output is 2087 bytes and needs 20870000000000000000000 yoctoNEAR held for its storage; the payment had 5920799800000000000000 left after the run\'s cost. Attach more NEAR to request_execution"';
+    const failing = () => ({ status: { SuccessValue: '' }, receipts_outcome: [{ outcome: { logs: ['unrelated'] } }, { outcome: { logs: [text] } }] });
+    const { transport } = rig([failing]);
+    const r = await transport.run('marlow', { op: 'sign_pact' });
+    expect(r.output).toBeNull();
+    expect(r.error).toContain('output_storage_unpaid');
+    expect(r.error).toContain('2087 bytes');
+    // wrapped final_execution_outcome shape too
+    const wrapped = rig([() => ({ final_execution_outcome: failing() })]);
+    expect((await wrapped.transport.run('marlow', { op: 'sign_pact' })).error).toContain('Execution failed');
+    // a good run has no error even if logs exist
+    const good = rig([() => ({ status: { SuccessValue: btoa('{"ok":true}') }, receipts_outcome: [{ outcome: { logs: ['fine'] } }] })]);
+    expect((await good.transport.run('marlow', { op: 'sign_pact' })).error).toBeUndefined();
   });
 });

@@ -17,10 +17,13 @@ export const HEALTH = {
   lockWaitMs: 100_000,
 } as const;
 
+/** The jobs health is judged by: the pact path only (a live sign_pact, or the synthetic one the probe runs). The old `probe` op and confession jobs never count. */
+export const PACT_OPS: readonly string[] = ['sign_pact', 'probe_pact'];
+
 export type Health =
   | { state: 'healthy'; detail: string }
   | { state: 'unhealthy'; detail: string }
-  /** no job in the last 30 minutes (or none ever): nothing to judge by, so a probe job decides */
+  /** no pact job in the last 30 minutes (or none ever): nothing to judge by, so a drill pact (probe_pact) decides */
   | { state: 'unknown'; detail: string };
 
 function p90(xs: number[]): number {
@@ -29,9 +32,10 @@ function p90(xs: number[]): number {
 }
 
 /** Pure: judge enclave health from the newest-first job attempts. */
-export function assessHealth(jobs: TeeJobRow[], now: number): Health {
-  if (jobs.length === 0) return { state: 'unknown', detail: 'no enclave jobs recorded yet' };
-  if (now - jobs[0]!.at > HEALTH.recentMs) return { state: 'unknown', detail: 'no enclave job in the last 30 minutes' };
+export function assessHealth(all: TeeJobRow[], now: number): Health {
+  const jobs = all.filter((j) => PACT_OPS.includes(j.op)).slice(0, HEALTH.window);
+  if (jobs.length === 0) return { state: 'unknown', detail: 'no pact jobs recorded yet' };
+  if (now - jobs[0]!.at > HEALTH.recentMs) return { state: 'unknown', detail: 'no pact job in the last 30 minutes' };
   const ok = jobs.filter((j) => j.ok);
   const rate = ok.length / jobs.length;
   const pct = `${ok.length} of the last ${jobs.length} enclave jobs succeeded`;
@@ -104,7 +108,7 @@ export async function chooseMode(ctx: GameCtx): Promise<{ mode: SeasonMode; reas
   if (configured === 'on') return { mode: 'enclave', reason: 'Enclave signing is switched on.' };
   let jobs: TeeJobRow[] = [];
   try {
-    jobs = await ctx.deps.store.recentTeeJobs(HEALTH.window);
+    jobs = await ctx.deps.store.recentTeeJobs(HEALTH.window * 6);
   } catch (e) {
     debug('tee', 'health read failed', String(e).slice(0, 120));
   }
@@ -112,7 +116,7 @@ export async function chooseMode(ctx: GameCtx): Promise<{ mode: SeasonMode; reas
   if (h.state === 'healthy') return { mode: 'enclave', reason: `The enclaves look healthy: ${h.detail}.` };
   if (h.state === 'unhealthy') return { mode: 'standard', reason: `The enclaves look unhealthy: ${h.detail}.` };
   const probe = await ctx.deps.tee!.probe(ctx, 'marlow', HEALTH.probeCapMs);
-  if (probe.ok) return { mode: 'enclave', reason: `${h.detail}; a probe job answered in ${Math.round(probe.ms / 1000)} s.` };
+  if (probe.ok) return { mode: 'enclave', reason: `${h.detail}; a drill pact was signed in ${Math.round(probe.ms / 1000)} s.` };
   return { mode: 'standard', reason: `${h.detail}; ${probe.reason}.` };
 }
 

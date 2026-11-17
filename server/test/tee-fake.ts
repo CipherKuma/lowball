@@ -15,13 +15,13 @@ export interface Script {
   signPact: BuyerId[];
   confess: BuyerId[];
   /** throw (a transport failure) for this job */
-  fail?: (buyer: BuyerId, op: string) => boolean;
+  fail?: (buyer: BuyerId, op: string, input: Record<string, unknown>) => boolean;
   /** corrupt what a buyer's enclave returns */
   tamper?: (buyer: BuyerId, out: Record<string, any>) => void;
 }
 
 export class FakeEnclave implements TeeTransport {
-  calls: { buyer: BuyerId; op: string; cap?: number }[] = [];
+  calls: { buyer: BuyerId; op: string; cap?: number; seasonId?: number }[] = [];
   n = 0;
   constructor(
     private keys: Record<BuyerId, KeyPair>,
@@ -30,8 +30,8 @@ export class FakeEnclave implements TeeTransport {
 
   async run(buyer: BuyerId, input: Record<string, unknown>, opts?: { timeoutMs?: number }): Promise<TeeRun> {
     const op = String(input.op);
-    this.calls.push({ buyer, op, cap: opts?.timeoutMs });
-    if (this.script.fail?.(buyer, op)) throw new AppError('TEE_UNAVAILABLE', 'fake job failure');
+    this.calls.push({ buyer, op, cap: opts?.timeoutMs, seasonId: typeof input.season_id === 'number' ? input.season_id : undefined });
+    if (this.script.fail?.(buyer, op, input)) throw new AppError('TEE_UNAVAILABLE', 'fake job failure');
     const key = this.keys[buyer];
     if (op === 'probe') {
       return { output: { ok: true, op, buyer, public_key_b64: toB64(key.publicKey), has_api_key: true }, txHash: `tx-probe-${buyer}-${++this.n}`, ms: 5 };

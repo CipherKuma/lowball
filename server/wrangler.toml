@@ -39,3 +39,6 @@ ALLOWED_ORIGIN = "*"
 # 17 Nov: every enclave sign_pact job failed in 11-18 s (both attempts) while probes passed, so auto kept picking
 # enclave mode and no cartel could form. Live seasons run standard mode until that path is fixed; "auto" restores it.
 TEE_MODE = "off"
+# NEAR attached to each OutLayer request_execution: the run (0.0071) plus output storage (1e19 yocto per byte, 8 KB = 0.082).
+# The unused part is refunded. 0.0071 alone made OutLayer refuse to store the 2 KB sign_pact output (output_storage_unpaid).
+OUTLAYER_DEPOSIT_NEAR = "0.09"

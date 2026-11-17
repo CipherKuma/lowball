@@ -8,8 +8,21 @@ import type { NearSigner } from '../near/signer.js';
 import type { TeeDeployment, TeeJobOptions, TeeRun, TeeTransport } from './types.js';
 
 const TGAS = 10n ** 12n;
-/** attached to request_execution; the contract refunds what the job does not use (estimate for 60 s: 0.0070001 NEAR) */
-const DEPOSIT = nearToYocto('0.0071');
+/**
+ * Attached to request_execution; the contract refunds what the job does not use. It must cover the run (estimate for
+ * 60 s: 0.0071 NEAR) AND the storage of the output, 1e19 yocto per output byte (a 2087-byte sign_pact output needs
+ * 0.0209 NEAR). 0.0071 + 8 KB x 1e19 = 0.0890; rounded up to 0.09 NEAR. The 17 Nov failure was this: 0.0071 left
+ * 0.0059 after the run, so OutLayer refused to store the output ("output_storage_unpaid") and the job read as null.
+ */
+export const DEFAULT_DEPOSIT_NEAR = '0.09';
+export function depositYocto(near: string | undefined): bigint {
+  try {
+    const v = nearToYocto((near ?? '').trim() || DEFAULT_DEPOSIT_NEAR);
+    return v > 0n ? v : nearToYocto(DEFAULT_DEPOSIT_NEAR);
+  } catch {
+    return nearToYocto(DEFAULT_DEPOSIT_NEAR);
+  }
+}
 const GAS = 300n * TGAS;
 const LIMITS = { max_instructions: 1_000_000_000, max_memory_mb: 128, max_execution_seconds: 60 };
 
@@ -23,6 +36,27 @@ export interface OutlayerOptions {
   timeoutMs?: number;
   pollMs?: number;
   now?: () => number;
+  /** attached to every request_execution (default 0.09 NEAR, see DEFAULT_DEPOSIT_NEAR); the unused part is refunded */
+  depositYocto?: bigint;
+}
+
+/** The guest's output (null when it failed) and, when OutLayer logged why on the receipt, its own words. */
+interface Result {
+  output: unknown;
+  error?: string;
+}
+
+/** OutLayer reports a failed execution in a receipt log, not in the transaction status: find it. */
+export function executionFailure(res: any): string | undefined {
+  const top = res?.final_execution_outcome ?? res;
+  const outcomes: any[] = [...(top?.receipts_outcome ?? []), top?.transaction_outcome].filter(Boolean);
+  for (const o of outcomes) {
+    for (const line of (o?.outcome?.logs ?? []) as unknown[]) {
+      const text = String(line);
+      if (/Execution failed|output_storage_unpaid/.test(text)) return text.slice(0, 400);
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -71,20 +105,20 @@ export class OutlayerTransport implements TeeTransport {
     };
     const sent = await this.o.signer.send(
       d.outlayerContract,
-      [{ kind: 'functionCall', method: 'request_execution', args: utf8(JSON.stringify(args)), gas: GAS, deposit: DEPOSIT }],
+      [{ kind: 'functionCall', method: 'request_execution', args: utf8(JSON.stringify(args)), gas: GAS, deposit: this.o.depositYocto ?? depositYocto(undefined) }],
       'NONE',
     );
     debug('tee', buyer, 'sent', sent.hash, `${this.now() - started} ms`, sent.ok ? 'ok' : String(sent.errorCode));
     if (!sent.ok) throw new AppError('TEE_UNAVAILABLE', `request_execution for ${buyer} failed: ${sent.errorCode ?? 'rejected'}`);
-    const output = await this.result(sent.hash, started, opts.timeoutMs).catch((e) => {
+    const { output, error } = await this.result(sent.hash, started, opts.timeoutMs).catch((e) => {
       debug('tee', buyer, 'result failed', sent.hash, `${this.now() - started} ms`, String(e));
       throw e;
     });
-    debug('tee', buyer, 'result', sent.hash, `${this.now() - started} ms`, output === null ? 'null' : 'ok');
-    return { output, txHash: sent.hash, ms: this.now() - started };
+    debug('tee', buyer, 'result', sent.hash, `${this.now() - started} ms`, output === null ? 'null' : 'ok', error ?? '');
+    return { output, txHash: sent.hash, ms: this.now() - started, ...(error ? { error } : {}) };
   }
 
-  private async result(txHash: string, started: number, capMs?: number): Promise<unknown> {
+  private async result(txHash: string, started: number, capMs?: number): Promise<Result> {
     const timeout = capMs ?? this.o.timeoutMs ?? 100_000;
     const poll = this.o.pollMs ?? 4000;
     await this.sleep(poll);
@@ -99,7 +133,9 @@ export class OutlayerTransport implements TeeTransport {
         const st = top?.status;
         if (st && typeof st === 'object' && 'SuccessValue' in st) {
           const text = new TextDecoder().decode(Uint8Array.from(atob(st.SuccessValue as string), (c) => c.charCodeAt(0)));
-          return text.trim() === '' ? null : JSON.parse(text);
+          const output = text.trim() === '' ? null : JSON.parse(text);
+          const error = output === null || output === undefined ? executionFailure(res) : undefined;
+          return { output, ...(error ? { error } : {}) };
         }
         if (st && typeof st === 'object' && 'Failure' in st) {
           throw new AppError('TEE_UNAVAILABLE', `OutLayer job transaction failed: ${JSON.stringify(st.Failure).slice(0, 160)}`);

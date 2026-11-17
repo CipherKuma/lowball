@@ -15,7 +15,7 @@ import deployedTee from '../../outlayer/deployed.json';
 import { NearSigner } from './near/signer.js';
 import { parseSecretKey } from './near/keys.js';
 import { TeeActs } from './tee/acts.js';
-import { OutlayerTransport } from './tee/outlayer.js';
+import { depositYocto, OutlayerTransport } from './tee/outlayer.js';
 import type { TeeDeployment, TeeMode } from './tee/types.js';
 
 export interface Resolved {
@@ -52,7 +52,7 @@ export function ttsMaxPerSession(env: Env): number {
 export function buildDeps(env: Env): GameDeps {
   setDebug(env.DEBUG);
   const { contractId, houseId } = resolveIds(env);
-  const key = [contractId, houseId, env.NEARAI_MODEL, env.RPC_URLS, env.DESK_ACCOUNT_ID, env.SEPOLIA_RPC_URLS, env.TEE_MODE, env.TEE_BUYERS].join('|');
+  const key = [contractId, houseId, env.NEARAI_MODEL, env.RPC_URLS, env.DESK_ACCOUNT_ID, env.SEPOLIA_RPC_URLS, env.TEE_MODE, env.TEE_BUYERS, env.OUTLAYER_DEPOSIT_NEAR].join('|');
   const store = new D1Store(env.DB);
   ledger = store;
   if (!cached || cached.key !== key) {
@@ -80,7 +80,7 @@ export function buildDeps(env: Env): GameDeps {
     if (teeModeOf(env) !== 'off') {
       const deployment = deployedTee as unknown as TeeDeployment;
       const signer = new NearSigner({ accountId: houseId, keyPair: parseSecretKey(env.HOUSE_PRIVATE_KEY), rpc });
-      tee = new TeeActs(deployment, new OutlayerTransport({ deployment, signer, rpc }));
+      tee = new TeeActs(deployment, new OutlayerTransport({ deployment, signer, rpc, depositYocto: depositYocto(env.OUTLAYER_DEPOSIT_NEAR) }));
     }
     cached = { key, chain, llm, pactKeys, payout, tee };
   }

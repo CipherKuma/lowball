@@ -1,6 +1,5 @@
-import { z } from 'zod';
 import { debug } from '../log.js';
-import type { BuyerId, Mood, TeeActRecord } from '../../../shared/api.js';
+import { BUYER_IDS, type BuyerId, type Mood, type TeeActRecord } from '../../../shared/api.js';
 import type { PactJson } from '../chain/types.js';
 import { AppError } from '../errors.js';
 import type { GameCtx } from '../game/ctx.js';
@@ -8,36 +7,9 @@ import { checkSignatureCrypto, sha256Hex, type SignaturePayload } from '../llm/v
 import { fromB64, utf8 } from '../near/bytes.js';
 import { verify } from '../near/keys.js';
 import { confessionMessage, pactMessage } from '../near/pact.js';
+import { z } from 'zod';
+import { DeliberateOut, PactOut, type CommonOut } from './schemas.js';
 import type { TeeDeployment, TeeRun, TeeTransport } from './types.js';
-
-const NearAiSig = z
-  .object({ text: z.string(), signature: z.string(), signing_address: z.string(), signing_algo: z.string(), signature_kind: z.string().optional() })
-  .nullable();
-
-const Common = {
-  ok: z.literal(true),
-  buyer: z.string(),
-  buyer_account: z.string(),
-  season_id: z.number(),
-  decision: z.string(),
-  say: z.string(),
-  mood: z.string(),
-  public_key_b64: z.string(),
-  pact_message_sha256: z.string(),
-  signed_message_sha256: z.string(),
-  nearai: z.object({
-    model: z.string(),
-    chat_id: z.string(),
-    request_sha256: z.string(),
-    response_sha256: z.string(),
-    signature: NearAiSig,
-  }),
-  receipt: z.object({ message: z.string(), signature: z.string() }),
-  run: z.object({ request_id: z.string().optional() }).passthrough(),
-};
-type CommonOut = z.infer<z.ZodObject<typeof Common>>;
-const PactOut = z.object({ ...Common, op: z.literal('sign_pact'), signature: z.string().nullable() });
-const DeliberateOut = z.object({ ...Common, op: z.literal('deliberate'), reasoning: z.string().nullable(), confession_sig: z.string().nullable() });
 
 export interface PactVote {
   chatId: string;
@@ -53,6 +25,11 @@ export interface TeeDeliberation {
   reasoning: string;
   confessionSigB64: string | null;
 }
+
+/** the health probe's synthetic pact: a season id no real season reaches and a fixed nonce */
+export const PROBE_SEASON_ID = Number.MAX_SAFE_INTEGER;
+export const PROBE_NONCE = '4242424242';
+export const PROBE_OP = 'probe_pact';
 
 const MOODS: Mood[] = ['calm', 'tense', 'cracking', 'cold'];
 const moodOf = (m: string): Mood => MOODS.find((x) => x === m) ?? 'calm';
@@ -95,6 +72,16 @@ export class TeeActs {
     }
   }
 
+  /** Why an attempt failed, kept on the session (kind 'tee_error', not part of the case file) so a failure is never a silent null. */
+  private async recordFailure(ctx: GameCtx, buyer: BuyerId, op: string, why: string): Promise<void> {
+    try {
+      const at = Date.now();
+      await ctx.deps.store.addArtifact(ctx.id, 'tee_error', `${at}:${buyer}:${op}`, { at, buyer, op, why: why.slice(0, 400) });
+    } catch (e) {
+      debug('tee', 'failure record failed', String(e).slice(0, 120));
+    }
+  }
+
   /**
    * One job with one retry: a transport error, a timeout, an empty result (a guest trap) or a guest error is tried
    * again once. The two attempts share one budget (JOB_BUDGET_MS, so a pact round ends in about 90 s): the first may
@@ -117,10 +104,13 @@ export class TeeActs {
         await this.record(ctx, buyer, op, good, run.ms);
         if (good) return { run, attempts: attempt };
         const err = (run.output as { error?: unknown } | null)?.error;
-        last = new AppError('TEE_UNAVAILABLE', `${buyer}'s enclave job failed: ${typeof err === 'string' ? err.slice(0, 140) : 'returned nothing'}`);
+        const why = typeof err === 'string' ? err.slice(0, 140) : (run.error ?? 'returned nothing');
+        last = new AppError('TEE_UNAVAILABLE', `${buyer}'s enclave job failed: ${why}`);
+        await this.recordFailure(ctx, buyer, op, why);
       } catch (e) {
         last = e;
         await this.record(ctx, buyer, op, false, Date.now() - t0);
+        await this.recordFailure(ctx, buyer, op, e instanceof Error ? e.message : String(e));
         debug('tee', buyer, 'attempt', attempt, 'failed', String(e).slice(0, 160));
       }
       this.stats.failedAttempts++;
@@ -130,22 +120,43 @@ export class TeeActs {
   }
 
   /**
-   * One quick `probe` job (the enclave derives its key, calls NEAR AI /models, signs a canary) with a hard cap.
-   * ok only when it answered in time, as the registered build, with the API key sealed in. Recorded as a job.
+   * The health probe: the real `sign_pact` op on a synthetic pact, so it travels the same path as a live pact (request,
+   * enclave run, NEAR AI call, output storage, result read). The season id and nonce are fixed and can never be a real
+   * season's (next_season_id counts up from 0), and the pact is never sent to the contract. ok only when the output
+   * carries a signature that verifies, against the registered enclave key, over the exact pact message. Recorded as
+   * op 'probe_pact', which with 'sign_pact' is all TEE_MODE=auto judges by.
    */
   async probe(ctx: GameCtx, buyer: BuyerId, capMs: number): Promise<{ ok: boolean; ms: number; reason: string }> {
     const dep = this.deployment.buyers[buyer];
     const t0 = Date.now();
+    const mate = BUYER_IDS.find((b) => b !== buyer)!;
+    const account = (id: BuyerId) => ctx.state.buyers.find((b) => b.id === id)!.accountId;
+    const pact: PactJson = { season_id: PROBE_SEASON_ID, cap: 60, members: [account(buyer), account(mate)], nonce: PROBE_NONCE };
+    const input = {
+      op: 'sign_pact', season_id: PROBE_SEASON_ID, buyer_account: account(buyer), pact_json: pact,
+      system: 'This is a connectivity drill by the harbour office, not a real season. Nothing is at stake.',
+      user: 'Drill. A pact with a cap of 60 marks is put in front of you. Answer with "sign": true to sign it, and say "drill" in one short sentence.',
+    };
+    const fail = (reason: string, ms: number) => ({ ok: false, ms, reason: `probe failed: ${reason}`.slice(0, 200) });
     try {
-      const run = await this.transport.run(buyer, { op: 'probe', nonce: `auto${t0}` }, { timeoutMs: capMs });
-      const o = run.output as { ok?: unknown; public_key_b64?: unknown; has_api_key?: unknown } | null;
-      const good = !!o && o.ok === true && o.public_key_b64 === dep.publicKeyB64 && o.has_api_key === true;
-      await this.record(ctx, buyer, 'probe', good, run.ms);
-      return { ok: good, ms: run.ms, reason: good ? 'probe answered' : 'probe answered with an unexpected result' };
+      const run = await this.transport.run(buyer, input, { timeoutMs: capMs });
+      const parsed = PactOut.safeParse(run.output);
+      let reason = run.error ?? 'no usable output';
+      let good = false;
+      if (parsed.success) {
+        const o = parsed.data;
+        const msg = pactMessage({ seasonId: PROBE_SEASON_ID, cap: pact.cap, members: pact.members, nonce: BigInt(PROBE_NONCE) });
+        good = o.buyer === buyer && o.public_key_b64 === dep.publicKeyB64 && o.signature !== null && verify(fromB64(o.signature), msg, fromB64(dep.publicKeyB64));
+        reason = good ? 'ok' : o.signature === null ? `he declined the drill pact (${o.decision})` : 'the signature did not verify against the registered key';
+      }
+      await this.record(ctx, buyer, PROBE_OP, good, run.ms);
+      if (!good) await this.recordFailure(ctx, buyer, PROBE_OP, reason);
+      return good ? { ok: true, ms: run.ms, reason: 'a signed drill pact verified' } : fail(reason, run.ms);
     } catch (e) {
       const ms = Date.now() - t0;
-      await this.record(ctx, buyer, 'probe', false, ms);
-      return { ok: false, ms, reason: `probe failed: ${e instanceof AppError ? e.message : String(e)}`.slice(0, 160) };
+      await this.record(ctx, buyer, PROBE_OP, false, ms);
+      await this.recordFailure(ctx, buyer, PROBE_OP, e instanceof Error ? e.message : String(e));
+      return fail(e instanceof AppError ? e.message : String(e), ms);
     }
   }
 

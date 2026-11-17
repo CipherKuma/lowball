@@ -98,6 +98,8 @@ export interface SessionState {
   finalize: Finalize | null;
   /** how this season's buyers sign (chosen right before create_season); undefined on sessions that predate it */
   mode?: SeasonMode;
+  /** set once when an enclave season lost its pact to failed enclave jobs and restarted in standard mode (at most once per session) */
+  fallback?: { fromSeasonId: number; at: number; closed: boolean };
   // ---- optional feature fields (BRIEF-3); absent on sessions written before them ----
   /** live sea state, fetched once at season begin; null: the fetch was tried and failed (no multiplier) */
   sea?: SeaState | null;

@@ -7,7 +7,7 @@ import { pickRumour } from './cast.js';
 import type { GameCtx } from './ctx.js';
 import { openNextLot } from './days.js';
 import { cartelPrompt, system } from './prompts.js';
-import { teeRoundTwo } from '../tee/cartel.js';
+import { enclaveBlockedPact, teeRoundTwo } from '../tee/cartel.js';
 import { chooseMode, ensureKeys, teeFor, withModeLock } from '../tee/mode.js';
 import { ensureSea } from '../features/sea.js';
 
@@ -52,7 +52,7 @@ async function cartelRound(ctx: GameCtx, round: 1 | 2): Promise<ChannelMessage[]
 }
 
 /** Two rounds of private talk, then the signers (if at least two) sign one pact. */
-async function formCartel(ctx: GameCtx): Promise<void> {
+async function formCartel(ctx: GameCtx): Promise<'done' | 'restart'> {
   const s = ctx.state;
   if (s.seasonId === null) throw new AppError('BAD_PHASE');
   await ctx.emit({ type: 'cartel_forming' });
@@ -67,11 +67,14 @@ async function formCartel(ctx: GameCtx): Promise<void> {
   if (tee) {
     // TEE_BUYERS=1: round 2 is five enclave jobs; they decide sign yes/no and sign the pact themselves.
     s.channel = s.channel.filter((m) => m.round !== 2);
-    s.channel.push(...(await teeRoundTwo(ctx, tee, r1)));
+    const two = await teeRoundTwo(ctx, tee, r1);
+    s.channel.push(...two.msgs);
+    // The enclaves, not the buyers, stopped the cartel: do not run a plain auction, restart in standard mode (once).
+    if (!s.fallback && enclaveBlockedPact(two)) return 'restart';
     await ctx.emit({ type: 'rumour', text: pickRumour(s.seed) });
     s.setup.cartelDone = true;
     await ctx.save();
-    return;
+    return 'done';
   }
   const r2 = await cartelRound(ctx, 2);
   s.channel.push(...r2);
@@ -103,13 +106,53 @@ async function formCartel(ctx: GameCtx): Promise<void> {
   await ctx.emit({ type: 'rumour', text: pickRumour(s.seed) });
   s.setup.cartelDone = true;
   await ctx.save();
+  return 'done';
+}
+
+/**
+ * The enclaves failed the cartel's pact (not the buyers' choice): forget the enclave season and set the session up
+ * again in standard mode. State is reset and saved first, so a request cut short here resumes through beginSeason.
+ */
+async function restartStandard(ctx: GameCtx): Promise<void> {
+  const s = ctx.state;
+  s.fallback = { fromSeasonId: s.seasonId!, at: (ctx.deps.now ?? Date.now)(), closed: false };
+  s.mode = 'standard';
+  s.seasonId = null;
+  s.pact = null;
+  s.channel = [];
+  s.setup = { bondsDone: [], cartelDone: false };
+  await ctx.emit({ type: 'line', buyer: 'marlow', text: 'The enclaves did not answer. The harbour restarts the season in standard mode.', mood: 'calm', note: true });
+  await ctx.emit({ type: 'mode', mode: 'standard', reason: 'The buyers\' enclaves did not sign the pact, so the harbour restarted the season in standard mode.' });
+  await ctx.save();
+}
+
+/** close the abandoned enclave season (house may close any time; posted bonds are refunded to the buyers) */
+async function closeAbandoned(ctx: GameCtx): Promise<void> {
+  const f = ctx.state.fallback;
+  if (!f || f.closed) return;
+  const r = await ctx.chain.closeSeason(f.fromSeasonId);
+  await ctx.recordTx('close_season (enclave restart)', ctx.chain.houseId, r);
+  if (!r.ok && r.errorCode !== 'E_CLOSED') throw new AppError(r.errorCode ?? 'TX_FAILED', 'could not close the enclave season');
+  f.closed = true;
+  await ctx.save();
 }
 
 /** begin: treasury check, season, bonds, private cartel talk, first lot. Resumable after a failure. */
 export async function beginSeason(ctx: GameCtx): Promise<void> {
+  if (ctx.state.phase !== 'created') throw new AppError('BAD_PHASE', 'The season has already begun.');
+  if ((await setupSeason(ctx)) === 'restart') {
+    await restartStandard(ctx);
+    await setupSeason(ctx);
+  }
+  await ensureSea(ctx);
+  await openNextLot(ctx);
+}
+
+/** season, bonds and the cartel; 'restart' when the enclaves blocked the pact (see restartStandard) */
+async function setupSeason(ctx: GameCtx): Promise<'done' | 'restart'> {
   const s = ctx.state;
   const { chain, config } = ctx.deps;
-  if (s.phase !== 'created') throw new AppError('BAD_PHASE', 'The season has already begun.');
+  await closeAbandoned(ctx);
   const buyerAccounts = s.buyers.map((b) => b.accountId);
 
   if (s.seasonId === null) {
@@ -153,7 +196,5 @@ export async function beginSeason(ctx: GameCtx): Promise<void> {
   const bad = bonds.find((r) => r.status === 'rejected') as PromiseRejectedResult | undefined;
   if (bad) throw bad.reason;
 
-  if (!s.setup.cartelDone) await formCartel(ctx);
-  await ensureSea(ctx);
-  await openNextLot(ctx);
+  return s.setup.cartelDone ? 'done' : formCartel(ctx);
 }

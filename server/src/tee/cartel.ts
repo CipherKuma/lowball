@@ -26,7 +26,17 @@ function finalStep(base: string, cap: number): string {
  * accounts, fresh nonce); each buyer's enclave decides whether to sign it and signs it itself. A buyer whose job
  * fails after its retry abstains; no server-held key ever signs in enclave mode.
  */
-export async function teeRoundTwo(ctx: GameCtx, tee: TeeActs, round1: ChannelMessage[]): Promise<ChannelMessage[]> {
+export interface RoundTwo {
+  msgs: ChannelMessage[];
+  /** buyers whose enclave job failed after its retry (as opposed to a buyer who answered and refused) */
+  failed: BuyerId[];
+  /** buyers whose enclave answered and signed */
+  signed: number;
+  /** a pact formed (>= 2 signers) and s.pact is set */
+  formed: boolean;
+}
+
+export async function teeRoundTwo(ctx: GameCtx, tee: TeeActs, round1: ChannelMessage[]): Promise<RoundTwo> {
   const s = ctx.state;
   if (s.seasonId === null) throw new AppError('BAD_PHASE');
   const accounts = s.buyers.map((b) => b.accountId);
@@ -50,6 +60,7 @@ export async function teeRoundTwo(ctx: GameCtx, tee: TeeActs, round1: ChannelMes
   // and the player is told plainly. One slow or dead enclave never blocks the season.
   const done: { id: BuyerId; buyerAccount: string; v: Awaited<ReturnType<TeeActs['signPact']>> }[] = [];
   const msgs: ChannelMessage[] = [];
+  const failed: BuyerId[] = [];
   for (const [i, r] of results.entries()) {
     const id = BUYER_IDS[i]!;
     if (r.status === 'fulfilled') {
@@ -57,6 +68,7 @@ export async function teeRoundTwo(ctx: GameCtx, tee: TeeActs, round1: ChannelMes
       msgs.push({ round: 2, buyer: id, say: r.value.v.say, proposeCap: cap, sign: r.value.v.sign, mood: r.value.v.mood, chatId: r.value.v.chatId });
       continue;
     }
+    failed.push(id);
     await ctx.emit({ type: 'line', buyer: id, text: `${BUYER_NAMES[id]}'s enclave never answered; he stays out of the pact.`, mood: 'calm', note: true });
     msgs.push({ round: 2, buyer: id, say: '(no answer: his enclave did not respond)', proposeCap: cap, sign: false, mood: 'calm', chatId: '' });
   }
@@ -70,5 +82,14 @@ export async function teeRoundTwo(ctx: GameCtx, tee: TeeActs, round1: ChannelMes
       signatures: signers.map((d) => ({ buyer: d.id, signer: d.buyerAccount, signatureB64: d.v.signatureB64! })),
     };
   }
-  return msgs;
+  return { msgs, failed, signed: signers.length, formed: s.pact !== null };
+}
+
+/**
+ * True when the season should restart in standard mode: no pact formed AND it could have, i.e. the buyers whose
+ * enclave jobs failed plus the ones who signed would have made two. Buyers who all answered and refused (or too many
+ * of them did) are a real "no cartel", not an enclave outage.
+ */
+export function enclaveBlockedPact(r: RoundTwo): boolean {
+  return !r.formed && r.failed.length > 0 && r.signed + r.failed.length >= 2;
 }
