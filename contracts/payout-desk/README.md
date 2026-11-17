@@ -58,6 +58,7 @@ Faucets that need no sign-in exist (for example a proof-of-work faucet); none wa
 | `pay_evm(season_id, to, amount_yocto)` | `game` only, **payable** | attached deposit must equal `amount_yocto`; needs >= 90 TGas prepaid (use 100+). Returns the `Pending` record |
 | `prepare(next_nonce, max_fee_per_gas, max_priority_fee_per_gas)` | owner | the relayer's `--sync` calls it with the address's pending Sepolia nonce and suggested fees |
 | `set_rate(rate_num, rate_den)` | owner | |
+| `set_gas_limit(gas_limit)` | owner | 21,000..=1,000,000 (`E_BAD_GAS_LIMIT`); signed into payouts requested afterwards. A never-used recipient address costs ~207k gas on Sepolia, so the house raises it above 21,000 |
 | `refresh_derived_address()` | owner | asks the signer's `derived_public_key` view and stores the EIP-55 address |
 | `retry_payout(season_id)` | owner | re-requests a `Failed` payout (same recipient and amount) |
 | `get_payout(season_id)` | view | record below |
@@ -75,7 +76,7 @@ requested_block, signed_block, error`.
 point (r = bytes 1..33), `verified` means `env::ecrecover` on chain matched the desk's own address.
 
 Error codes (panic strings): `E_NOT_GAME E_NOT_OWNER E_DEPOSIT_MISMATCH E_GAS_TOO_LOW E_ALREADY_PAID E_BAD_ADDRESS
-E_AMOUNT_ZERO E_OVERFLOW E_BAD_FEES E_BAD_RATE E_NO_PAYOUT E_NOT_FAILED`; stored in a `Failed` record:
+E_AMOUNT_ZERO E_OVERFLOW E_BAD_FEES E_BAD_RATE E_BAD_GAS_LIMIT E_NO_PAYOUT E_NOT_FAILED`; stored in a `Failed` record:
 `E_SIGN_FAILED` (MPC timeout or error), `E_SIG_FORMAT`, `E_SIG_UNRECOVERABLE`, `E_SIG_MISMATCH` (valid signature by
 another key: never accepted). Events: NEP-297 `lowball-desk` `payout_requested | payout_signed | payout_failed`.
 

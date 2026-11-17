@@ -23,6 +23,8 @@ use near_sdk::{
 pub const DEFAULT_PATH: &str = "lowball-desk-v1";
 /// Minimum prepaid gas on `pay_evm`: 50 (signer) + 20 (callback) + own execution + headroom.
 pub const MIN_PREPAID_TGAS: u64 = 90;
+pub const MIN_GAS_LIMIT: u64 = 21_000;
+pub const MAX_GAS_LIMIT: u64 = 1_000_000;
 const SIGN_GAS: Gas = Gas::from_tgas(50);
 const CALLBACK_GAS: Gas = Gas::from_tgas(20);
 const KEY_VIEW_GAS: Gas = Gas::from_tgas(15);
@@ -84,6 +86,15 @@ impl Desk {
         self.next_nonce = next_nonce;
         self.max_fee_per_gas = max_fee_per_gas.0;
         self.max_priority_fee_per_gas = max_priority_fee_per_gas.0;
+    }
+
+    /// Gas limit signed into every later payout. Sepolia charges ~207k gas to send ETH to an address
+    /// that never existed (21k to an existing one); unused gas is refunded, so a high limit is free.
+    /// Applies to `pay_evm` and `retry_payout` requests made after this call, never to signed ones.
+    pub fn set_gas_limit(&mut self, gas_limit: u64) {
+        self.only_owner();
+        ensure((MIN_GAS_LIMIT..=MAX_GAS_LIMIT).contains(&gas_limit), "E_BAD_GAS_LIMIT");
+        self.gas_limit = gas_limit;
     }
 
     pub fn set_rate(&mut self, rate_num: U128, rate_den: U128) {

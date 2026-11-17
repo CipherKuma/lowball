@@ -227,3 +227,66 @@ fn live_mpc_response_verifies_with_env_ecrecover() {
     let pk = env::ecrecover(&digest, &rs, sig.recovery_id, true).expect("recovers (low-s accepted with the malleability check on)");
     assert_eq!(eip55(&eth_address_from_pubkey(&pk)), "0x26f5De6d3FBF78378c51965F0ca67E40462b92ab");
 }
+
+#[test]
+fn owner_sets_gas_limit_and_new_payouts_use_it() {
+    let mut d = desk();
+    assert_eq!(d.get_config().gas_limit, PLAIN_TRANSFER_GAS);
+    testing_env!(ctx("house.testnet", 0, 50));
+    d.set_gas_limit(250_000);
+    assert_eq!(d.get_config().gas_limit, 250_000);
+    let p = pay(&mut d, 5, TO, NEAR_0_2);
+    assert_eq!(p.gas_limit, 250_000);
+    // The signed preimage really carries 250_000 (0x03d090), not 21_000 (0x5208).
+    assert!(p.unsigned_tx.contains("8303d090"));
+    assert!(!p.unsigned_tx.contains("825208"));
+    // Boundaries are accepted.
+    testing_env!(ctx("house.testnet", 0, 50));
+    d.set_gas_limit(21_000);
+    d.set_gas_limit(1_000_000);
+    assert_eq!(d.get_config().gas_limit, 1_000_000);
+}
+
+#[test]
+#[should_panic(expected = "E_NOT_OWNER")]
+fn non_owner_cannot_set_gas_limit() {
+    let mut d = desk();
+    testing_env!(ctx("lowball-ck.testnet", 0, 50));
+    d.set_gas_limit(250_000);
+}
+
+#[test]
+fn out_of_bounds_gas_limit_is_rejected() {
+    let mut d = desk();
+    for bad in [0u64, 20_999, 1_000_001, u64::MAX] {
+        testing_env!(ctx("house.testnet", 0, 50));
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| d.set_gas_limit(bad)));
+        assert!(r.is_err(), "{bad} accepted");
+        assert_eq!(d.get_config().gas_limit, PLAIN_TRANSFER_GAS);
+    }
+}
+
+#[test]
+fn retry_resigns_with_the_current_gas_limit() {
+    let mut d = desk();
+    let first = pay(&mut d, 3, TO, NEAR_0_2);
+    assert_eq!(first.gas_limit, 21_000);
+    callback(&mut d, 3, Err(PromiseError::Failed));
+    testing_env!(ctx("house.testnet", 0, 50));
+    d.set_gas_limit(250_000);
+    testing_env!(ctx("house.testnet", 0, 200));
+    let again = d.retry_payout(3);
+    assert_eq!(again.gas_limit, 250_000);
+    assert_ne!(again.digest, first.digest);
+}
+
+#[test]
+#[should_panic(expected = "E_NOT_FAILED")]
+fn retry_refuses_an_already_signed_payout() {
+    // A Signed payout that later reverted on Sepolia cannot be re-requested: documented limitation.
+    let mut d = desk();
+    pay(&mut d, 3, TO, NEAR_0_2);
+    callback(&mut d, 3, Ok(sig_json(R, S, 0)));
+    testing_env!(ctx("house.testnet", 0, 200));
+    d.retry_payout(3);
+}
