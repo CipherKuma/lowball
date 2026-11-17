@@ -55,7 +55,7 @@ confession, a forged one, or a replayed one is refused on-chain.
 | **NEP-245** | Every catch is a `CATCH` token (`s{season}-d{day}`, amount = kg), escrowed then transferred to the winning buyer | `contract/src/mt.rs` |
 | **Chain Signatures** | Optional: slashed bonds pay out in Sepolia ETH from an address NEAR's MPC network derives and signs for | `contracts/payout-desk/` |
 | **NEAR AI Cloud** | Every buyer decision runs on Qwen3.6-35B in NEAR AI's own-fleet **Confidential TEE**; each response signature is checked against a signer proven by a live Intel TDX quote + NVIDIA GPU attestation | `server/src/llm/`, `server/evidence/` |
-| **OutLayer** (Intel TDX) | **Enclave mode:** each buyer's pact key is derived inside its own enclave binary; the pact signature and the confession signature are made there, and the attestation verifies (first accepted enclave confession: season 32, `research/outlayer-integration.md`). Each season picks enclave or standard mode from OutLayer's live health, records it on-chain through the contract's key snapshot, and shows it in the top bar | `outlayer/`, `server/src/tee/` |
+| **OutLayer** (Intel TDX) | **Enclave mode:** each buyer's pact key is derived inside its own enclave binary; the pact signature and the confession signature are made there, and the attestation verifies. On the live game this first worked on 17 Nov, season 79 (pact job [`HW14F3t9…`](https://testnet.nearblocks.io/txns/HW14F3t9rtzhp7TWQQXobZTMwjUwCsRSVfumcxonNwVd), confession job [`5sjbhrY9…`](https://testnet.nearblocks.io/txns/5sjbhrY9j9vBu792ox5gRFpLDVFrBdWf9bqdu6Jfbzj)); every live season before it ran in standard mode (see Limits). Season 32 on 14 Nov was a local test run against the same testnet contract (`outlayer/evidence/E2E-RUN.tee.md`). Each season picks enclave or standard mode from the health of recent enclave pact jobs, records it on-chain through the contract's key snapshot, and shows it in the top bar and the case file | `outlayer/`, `server/src/tee/` |
 | **NEAR Connect** (`@hot-labs/near-connect`) | Your own wallet (Meteor web or extension, Intear, Nightly, Ledger on testnet) signs you in and signs `offer_leniency`; slashed bonds are paid to your account | `web/src/lib/near-connect.ts`, `web/src/lib/identity.ts` |
 | **NEP-413 sign-in** | Server-issued 32-byte nonce, fixed recipient and message, single use (replays refused), key must be a full-access key on your account | `server/src/auth/` |
 | **EIP-6963 / EIP-1193** | Optional: your own Ethereum wallet's address receives the Chain Signatures payout on Sepolia | `web/src/lib/evm.ts` |
@@ -96,9 +96,13 @@ confession, a forged one, or a replayed one is refused on-chain.
 - OutLayer's testnet executor pool is unreliable (job latency from 15 s to over two minutes on 14 Nov). When it
   is unhealthy, a season runs in **standard mode**: the buyers' keys are server-held for that season, the
   game says so, and the contract's key snapshot records it.
-- Since 17 Nov every live season runs in standard mode: the enclaves still pass their probe job, but every
-  enclave pact-signing job failed, so no cartel could form. Enclave mode returns once that path is fixed; the
-  recorded enclave runs and their attestation evidence are in `outlayer/evidence/`.
+- Before 17 Nov 09:16 IST no live season signed its pact in an enclave. Our Worker attached too little NEAR
+  to each OutLayer job to store the enclave's pact output (OutLayer: `output_storage_unpaid`), so every live
+  enclave pact job failed. Live seasons until then ran in standard mode, except our own health-check season 73
+  that morning: it ran in enclave mode, no pact formed, and it closed with no cartel. The deposit is fixed
+  (checked first on preview seasons 76 and 78), health now counts only pact jobs, and a season whose enclaves
+  cannot form the pact restarts once in standard mode, so a player never gets an auction with no cartel. The
+  case file says which mode each season used.
 - Attestation checks the TDX quote, GPU evidence and signer binding; NEAR AI publishes no measurement
   allowlist, so measurements are recorded, not matched. OutLayer's own governance can, per its docs,
   access the shared master secret outside an enclave.

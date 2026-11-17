@@ -36,9 +36,10 @@ ALLOWED_ORIGIN = "*"
 #        server signs with the buyers' pact keys ("standard"). on: always enclave. off: always standard.
 #  Right before create_season the Worker registers the buyers' keys for the chosen mode (register_buyer_key) under a
 #  lock, because the contract snapshots them there. See src/tee/mode.ts and outlayer/deployed.json.
-# 17 Nov: every enclave sign_pact job failed in 11-18 s (both attempts) while probes passed, so auto kept picking
-# enclave mode and no cartel could form. Live seasons run standard mode until that path is fixed; "auto" restores it.
-TEE_MODE = "off"
+# 17 Nov: sign_pact had failed on every live run (OutLayer output_storage_unpaid: the 0.0071 NEAR deposit could not
+# hold the 2 KB output). Fixed by OUTLAYER_DEPOSIT_NEAR below; health now counts pact-path jobs only (sign_pact,
+# probe_pact), and an enclave season whose pact cannot form restarts once in standard mode.
+TEE_MODE = "auto"
 # NEAR attached to each OutLayer request_execution: the run (0.0071) plus output storage (1e19 yocto per byte, 8 KB = 0.082).
 # The unused part is refunded. 0.0071 alone made OutLayer refuse to store the 2 KB sign_pact output (output_storage_unpaid).
 OUTLAYER_DEPOSIT_NEAR = "0.09"
